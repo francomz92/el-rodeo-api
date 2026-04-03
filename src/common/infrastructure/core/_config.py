@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = ["*"]
     ALLOWED_HEADERS: list[str] = ["*"]
     TRUSTED_HOSTS: list[str] = ["*"]
+    DB_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
