@@ -1,0 +1,11 @@
+line-length = 140
+
+[format]
+quote-style = "double"
+docstring-code-format = true
+skip-magic-trailing-comma = false
+
+[lint.isort]
+force-wrap-aliases = true
+combine-as-imports = true
+order-by-type = false
