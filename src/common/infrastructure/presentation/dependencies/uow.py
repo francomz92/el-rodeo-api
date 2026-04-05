@@ -3,13 +3,11 @@ from typing import Annotated
 from fastapi import Depends
 
 from src.common.application.ports.uow import IUoW
-from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker, async_sessionmaker
 from src.common.infrastructure.persistence.uow import UnitOfWork
+from .db import GetSession
 
 
-def _get_uow(
-    session_maker: async_sessionmaker = Depends(lambda: AsyncSessionMaker),
-) -> IUoW:
+def _get_uow(session_maker: GetSession) -> IUoW:
     return UnitOfWork(session_maker=session_maker)
 
 
