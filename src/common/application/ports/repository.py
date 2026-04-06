@@ -1,9 +1,5 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 
 
 class IRepository(ABC): ...
-
-
-class RepositoryType(str, Enum):
-    pass

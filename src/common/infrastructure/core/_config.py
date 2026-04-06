@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ALLOWED_HEADERS: list[str] = ["*"]
     TRUSTED_HOSTS: list[str] = ["*"]
     DB_URL: str
+    SECRET: str
+    JWT_ALGORITHM: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -33,7 +35,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def _get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore
 
 
 settings = _get_settings()
