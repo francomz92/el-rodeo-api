@@ -13,3 +13,7 @@ class IUserRepository(IRepository):
     @abstractmethod
     async def get_by_dni(self, dni: str) -> UserEntity | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def create(self, dni: str, hashed_password: str) -> UserEntity:
+        raise NotImplemented
