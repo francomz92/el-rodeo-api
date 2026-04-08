@@ -7,7 +7,6 @@ from src.common.domain.services.security import ISecurityService
 
 
 class ChangePasswordCase:
-
     def __init__(
         self,
         uow: IUoW,
@@ -33,5 +32,3 @@ class ChangePasswordCase:
             repository = uow.get_repository(IUserRepository)
             await repository.update_password(password)
             await uow.commit()
-            
-

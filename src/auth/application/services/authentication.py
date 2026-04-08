@@ -6,7 +6,6 @@ from src.common.application.ports.uow import IUoW
 
 
 class AuthService:
-
     def __init__(self, token_service: ITokenService) -> None:
         self.token_service = token_service
 
