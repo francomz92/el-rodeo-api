@@ -17,6 +17,7 @@ class UserRepository(IUserRepository):
             id=user_db.id,
             dni=user_db.dni,
             created_at=user_db.created_at,
+            is_admin=user_db.is_admin,
             _hashed_password=user_db.password,
         )
 

@@ -10,6 +10,7 @@ class UserEntity:
     id: UUID
     dni: str
     created_at: datetime
+    is_admin: bool
     _hashed_password: str = field(default_factory=str)
 
     def passwords_match(self, security_service: ISecurityService, password: str) -> bool:

@@ -17,3 +17,7 @@ class IUserRepository(IRepository):
     @abstractmethod
     async def create(self, dni: str, hashed_password: str) -> UserEntity:
         raise NotImplemented
+
+    @abstractmethod
+    async def update_password(self, password: str) -> UserEntity:
+        raise NotImplemented
