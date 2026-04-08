@@ -1,5 +1,4 @@
 from datetime import date
-from enum import Enum
 from uuid import UUID
 
 from sqlalchemy import Float, ForeignKey, String, Date
@@ -9,11 +8,10 @@ from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.persistence.models import Model
 
 
-
 class AnimalTypes(Model):
     __tablename__ = "animal_types"
 
-    name: Mapped[str] = mapped_column(String(50), index=True)
+    name: Mapped[str] = mapped_column(String(50), index=True, unique=True)
 
 
 class Animals(Model):
@@ -30,6 +28,5 @@ class Animals(Model):
     breed: Mapped[str] = mapped_column(String(50))
     status: Mapped[AnimalStatus] = mapped_column(String, index=True)
 
-
-    user: Mapped["User"] = Relationship(back_populates="animals")   # type: ignore
+    user: Mapped["User"] = Relationship(back_populates="animals")  # type: ignore
     type: Mapped["AnimalTypes"] = Relationship(back_populates="animals")
