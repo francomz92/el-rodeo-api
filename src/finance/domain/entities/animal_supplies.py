@@ -8,13 +8,13 @@ from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 
 
 @dataclass
-class SuplyTypeEntinty:
+class SupplyTypeEntinty:
     id: UUID
     name: str
 
 
 @dataclass
-class AnimalSupplieEntity:
+class AnimalSupplyEntity:
     id: UUID
     name: str
     amount: float
@@ -24,7 +24,7 @@ class AnimalSupplieEntity:
     description: str = field(default_factory=str)
 
     user: UserEntity | None = None
-    type: SuplyTypeEntinty | None = None
+    type: SupplyTypeEntinty | None = None
 
     def validate_critical_amount(self):
         if self.critical_amount < self.amount:

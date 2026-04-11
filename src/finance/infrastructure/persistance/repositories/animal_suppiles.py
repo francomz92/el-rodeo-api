@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 from src.common.infrastructure.persistence.connections.db import AsyncSession
 from src.finance.application.ports.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
-from src.finance.domain.entities.animal_supplies import AnimalSupplieEntity
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.infrastructure.persistance.models import AnimalSupplie
 
 
@@ -14,7 +14,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository):
     def __int__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalSupplieEntity | None:
+    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalSupplyEntity | None:
         query = (
             select(AnimalSupplie)
             .where(AnimalSupplie.id == id, AnimalSupplie.user_id == user_id)
@@ -26,7 +26,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository):
         supplie_db = result.scalar_one_or_none()
         return self._build_animal_supplie_with_type(supplie_db) if supplie_db else None
 
-    async def list_all(self, user_id: UUID) -> list[AnimalSupplieEntity]:
+    async def list_all(self, user_id: UUID) -> list[AnimalSupplyEntity]:
         query = (
             select(AnimalSupplie)
             .where(AnimalSupplie.user_id == user_id)
@@ -64,8 +64,8 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository):
         query = delete(AnimalSupplie).where(AnimalSupplie.id == id)
         await self.db.execute(query)
 
-    def _build_animal_supplie_with_type(self, supplie_data: AnimalSupplie) -> AnimalSupplieEntity:
-        return AnimalSupplieEntity(
+    def _build_animal_supplie_with_type(self, supplie_data: AnimalSupplie) -> AnimalSupplyEntity:
+        return AnimalSupplyEntity(
             id=supplie_data.id,
             created_at=supplie_data.created_at,
             name=supplie_data.name,

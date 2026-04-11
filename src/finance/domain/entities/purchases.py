@@ -3,7 +3,7 @@ from datetime import date
 from uuid import UUID
 
 from src.auth.domain.entities import UserEntity
-from src.finance.domain.entities.animal_supplies import AnimalSupplieEntity, UnitOfMeasurement
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, UnitOfMeasurement
 
 
 @dataclass
@@ -16,7 +16,7 @@ class PurchaseEntity:
     unit_of_measurement: UnitOfMeasurement
 
     user: UserEntity | None = None
-    supplie: AnimalSupplieEntity | None = None
+    supplie: AnimalSupplyEntity | None = None
 
     def validate_unit_price(self):
         if self.unit_price < 0:
