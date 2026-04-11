@@ -17,7 +17,7 @@ class Sales(Model):
     price: Mapped[float] = mapped_column(Float)
     price_per_kg: Mapped[float] = mapped_column(Float)
     weight: Mapped[float] = mapped_column(Float)
-    description: Mapped[str] = mapped_column(String(500))
+    description: Mapped[str] = mapped_column(String(500), default_factory=str)
 
     user: Mapped["Users"] = Relationship(back_populates="sales")  # type: ignore
     buyer: Mapped["Buyers"] = Relationship(back_populates="purchases")  # type: ignore

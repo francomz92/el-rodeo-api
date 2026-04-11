@@ -1,0 +1,28 @@
+from dataclasses import dataclass, field
+from datetime import date
+from uuid import UUID
+
+from src.auth.domain.entities import UserEntity
+from src.cattle.domain.entities.animal import AnimalEntity
+from src.market.domain.entities.buyers import BuyerEntity
+
+
+@dataclass
+class SaleEntity:
+    id: UUID
+    user_id: UUID
+    buyer_id: UUID
+    animal_id: UUID
+    sale_date: date
+    price: float
+    price_per_kg: float
+    weight: float
+    description: str = field(default_factory=str)
+
+    user: UserEntity | None = None
+    buyer: BuyerEntity | None = None
+    animal: AnimalEntity | None = None
+
+    def validate_price_per_kg(self):
+        if self.price_per_kg < self.price:
+            raise ValueError("Price per kg can not be lower than price of sale")
