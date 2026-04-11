@@ -1,5 +1,5 @@
-from ._animal_supplies import AnimalSupplies, AnimalSupplieTypes
-from ._pruchases import Expenses
+from ._animal_supplies import AnimalSupplie, AnimalSupplieType
+from ._pruchases import Purchase
 
 
-__all__ = ["AnimalSupplies", "AnimalSupplieTypes", "Expenses"]
+__all__ = ["AnimalSupplie", "AnimalSupplieType", "Purchase"]

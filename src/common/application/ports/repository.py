@@ -1,5 +1,7 @@
-from abc import ABC, abstractmethod
-from enum import Enum
+from abc import ABC
 
 
-class IRepository(ABC): ...
+class IRepository(ABC):
+    """Used for store the repositories list for UoW"""
+
+    pass

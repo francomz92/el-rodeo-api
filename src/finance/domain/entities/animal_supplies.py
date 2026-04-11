@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from src.auth.domain.entities import UserEntity
+from src.common.utils.date_utils import get_current_datetime
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 
 
@@ -15,13 +16,11 @@ class SuplyTypeEntinty:
 @dataclass
 class AnimalSupplieEntity:
     id: UUID
-    user_id: UUID
-    type_id: UUID
-    created_at: datetime
     name: str
     amount: float
     critical_amount: float
     unit_of_measurement: UnitOfMeasurement
+    created_at: datetime = field(default_factory=get_current_datetime)
     description: str = field(default_factory=str)
 
     user: UserEntity | None = None

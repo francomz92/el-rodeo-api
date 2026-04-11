@@ -8,7 +8,6 @@ from src.auth.domain.entities import UserEntity
 @dataclass
 class BuyerEntity:
     id: UUID
-    user_id: UUID
     created_at: datetime
     name: str
     description: str = field(default_factory=str)

@@ -15,9 +15,9 @@ class IUserRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def create(self, dni: str, hashed_password: str) -> UserEntity:
+    async def create(self, dni: str, hashed_password: str) -> None:
         raise NotImplemented
 
     @abstractmethod
-    async def update_password(self, password: str) -> UserEntity:
+    async def update_password(self, id: UUID, password: str) -> None:
         raise NotImplemented

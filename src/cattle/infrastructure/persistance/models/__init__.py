@@ -1,4 +1,4 @@
-from ._animals import Animals, AnimalTypes
+from ._animals import Animal, AnimalType
 
 
-__all__ = ["Animals", "AnimalTypes"]
+__all__ = ["Animal", "AnimalType"]

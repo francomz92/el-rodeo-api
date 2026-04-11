@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, Relationship, mapped_column
 from src.common.infrastructure.persistence.models import Model
 
 
-class Buyers(Model):
+class Buyer(Model):
     __tablename__ = "buyers"
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)

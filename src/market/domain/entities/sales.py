@@ -10,9 +10,6 @@ from src.market.domain.entities.buyers import BuyerEntity
 @dataclass
 class SaleEntity:
     id: UUID
-    user_id: UUID
-    buyer_id: UUID
-    animal_id: UUID
     sale_date: date
     price: float
     price_per_kg: float

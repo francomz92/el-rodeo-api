@@ -9,7 +9,6 @@ from src.finance.domain.entities.animal_supplies import AnimalSupplieEntity, Uni
 @dataclass
 class PurchaseEntity:
     id: UUID
-    supplie_id: UUID
     amount: float
     price: float
     purchase_date: date

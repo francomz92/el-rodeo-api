@@ -15,8 +15,6 @@ class AnimalTypeEntinty:
 @dataclass
 class AnimalEntity:
     id: UUID
-    user_id: UUID
-    type_id: UUID
     name: str
     tag: str
     date_of_birth: date
@@ -26,8 +24,8 @@ class AnimalEntity:
     breed: str
     status: AnimalStatus
 
-    user: UserEntity | None
-    type: AnimalTypeEntinty | None
+    user: UserEntity | None = None
+    type: AnimalTypeEntinty | None = None
 
     def validate_initial_weight_date(self):
         if self.initial_weight_date < self.date_of_birth:

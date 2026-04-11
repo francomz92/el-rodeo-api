@@ -16,8 +16,9 @@ class UserEntity:
     def passwords_match(self, security_service: ISecurityService, password: str) -> bool:
         return security_service.verify_password(password, self._hashed_password)
 
-    def validate_changed_password(
+    def update_password(
         self,
+        security_service: ISecurityService,
         password: str,
         new_password: str,
         confirmed_password: str,
@@ -26,3 +27,4 @@ class UserEntity:
             raise ValueError("Passwords miss matches")
         if password == new_password:
             raise ValueError("The new password must be different")
+        self._hashed_password = security_service.hash_password(new_password)

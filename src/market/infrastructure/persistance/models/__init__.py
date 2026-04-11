@@ -1,5 +1,5 @@
-from ._buyers import Buyers
-from ._sales import Sales
+from ._buyers import Buyer
+from ._sales import Sale
 
 
-__all__ = ["Buyers", "Sales"]
+__all__ = ["Buyer", "Sale"]
