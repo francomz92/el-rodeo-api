@@ -13,3 +13,6 @@ wheels/
 
 # Docs
 backlog.md
+
+# Logs
+*.log
