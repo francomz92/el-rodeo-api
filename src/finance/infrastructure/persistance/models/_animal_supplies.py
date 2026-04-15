@@ -24,7 +24,7 @@ class AnimalSupplie(Model):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animals_supplie_types", ondelete="SET NULL"))
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
-    description: Mapped[str] = mapped_column(String(500), default_factory=str)
+    description: Mapped[str] = mapped_column(String(500), default=str)
     amount: Mapped[float] = mapped_column(Float)
     critical_amount: Mapped[float] = mapped_column(Float)
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))

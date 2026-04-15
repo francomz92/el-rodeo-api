@@ -27,8 +27,9 @@ class Animal(Model):
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_types.id", ondelete="SET NULL"), nullable=True)
+    caravana: Mapped[str] = mapped_column(String(50), unique=True)
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
-    tag: Mapped[str] = mapped_column(String(50), default_factory=str)
+    tag: Mapped[str] = mapped_column(String(50), default=str)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     initial_weight: Mapped[float] = mapped_column(Float)
     initial_weight_date: Mapped[date] = mapped_column(Date)

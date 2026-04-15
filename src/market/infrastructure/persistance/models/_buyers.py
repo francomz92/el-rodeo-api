@@ -11,8 +11,8 @@ class Buyer(Model):
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    description: Mapped[str] = mapped_column(String(500), default_factory=str)
-    contact_number: Mapped[str] = mapped_column(String(10), default_factory=str)
-    contact_address: Mapped[str] = mapped_column(String(100), default_factory=str)
+    description: Mapped[str] = mapped_column(String(500), default=str)
+    contact_number: Mapped[str] = mapped_column(String(10), default=str)
+    contact_address: Mapped[str] = mapped_column(String(100), default=str)
 
     user: Mapped["User"] = Relationship(back_populates="buyers")  # type: ignore
