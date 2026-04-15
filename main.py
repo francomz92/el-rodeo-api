@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.common.infrastructure.core import configure_app, settings
+from src.common.infrastructure.core import settings
+from src.common.infrastructure.core.app import configure_app
 
 
 @asynccontextmanager
