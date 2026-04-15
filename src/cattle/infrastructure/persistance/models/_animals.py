@@ -8,7 +8,7 @@ from sqlalchemy import (
     Date,
     Enum as SQLEnum,
 )
-from sqlalchemy.orm import Mapped, Relationship, mapped_column
+from sqlalchemy.orm import Mapped, Relationship, mapped_column, DeclarativeBase
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.persistence.models import Model

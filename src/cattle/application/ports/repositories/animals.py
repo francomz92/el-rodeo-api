@@ -1,7 +1,7 @@
 from abc import abstractmethod
-from datetime import date
 from uuid import UUID
 
+from src.cattle.application.ports.dtos.animals import AnimalCreateDTO, AnimalUpdateDTO
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal import AnimalEntity
 from src.common.application.ports.repository import IRepository
@@ -11,7 +11,7 @@ class IAnimalsRepository(IRepository):
     @abstractmethod
     async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
         raise NotImplemented
-    
+
     @abstractmethod
     async def get_by_caravana(self, caravana: str) -> AnimalEntity | None:
         raise NotImplemented
@@ -21,34 +21,11 @@ class IAnimalsRepository(IRepository):
         raise NotImplemented
 
     @abstractmethod
-    async def create(
-        self,
-        user_id: UUID,
-        animal_type_id: UUID,
-        caravana: str,
-        name: str,
-        date_of_birth: date,
-        initial_weight: float,
-        initial_weight_date: date,
-        last_weight: float,
-        breed: str,
-        tag: str,
-        status: AnimalStatus,
-    ) -> None:
+    async def create(self, data: AnimalCreateDTO) -> AnimalEntity:
         raise NotImplemented
 
     @abstractmethod
-    async def update_data(
-        self,
-        id: UUID,
-        caravana: str,
-        name: str,
-        date_of_birth: date,
-        initial_weight: float,
-        initial_weight_date: date,
-        last_weight: float,
-        breed: str,
-    ) -> None:
+    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> None:
         raise NotImplemented
 
     @abstractmethod
