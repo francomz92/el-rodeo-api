@@ -17,7 +17,7 @@ class LoginUserCase:
             repository = uow.get_repository(IUserRepository)
             user = await repository.get_by_dni(dni)
             if not user:
-                raise ResourceNotFoundError(resource="Usuario", identifier=dni)
+                raise ResourceNotFoundError(f'El usuario con DNI "{dni}" no se encuentra registrado')
             passwords_match = user.passwords_match(self.security_service, password)
             if not passwords_match:
                 raise InvalidCredentialError("Las credenciales proporcionadas no son válidas")

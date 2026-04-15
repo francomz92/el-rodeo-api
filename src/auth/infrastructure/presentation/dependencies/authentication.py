@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, Header, Request
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from src.auth.application.services.authentication import AuthService
@@ -49,12 +49,14 @@ async def _get_change_password_case(
         auth_service=auth_service,
     )
 
+
 async def _get_current_user(
     uow: GetUnitOfWork,
     auth_service: "GetAuthService",
-    token: Annotated[str, Depends(oauth2_scheme)]
+    token: Annotated[str, Depends(oauth2_scheme)],
 ):
     return await auth_service.get_authenticated_user(uow=uow, token=token)
+
 
 GetAuthService = Annotated[AuthService, Depends(_get_auth_service)]
 GetCurrentUser = Annotated[UserEntity, Depends(_get_current_user)]
