@@ -1,12 +1,12 @@
 import sys
-from loguru import logger, Logger
+from loguru import logger
 from functools import lru_cache
 
 from src.common.infrastructure.core import settings
 
 
 @lru_cache
-def configure_logger(name: str = "error.log") -> Logger:
+def configure_logger(name: str = "error.log"):
     logger.remove()
     logger.add(
         sys.stdout,

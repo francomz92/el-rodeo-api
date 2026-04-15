@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class AnimalStatus(Enum, str):
-    AVAILABLE = "disponible"
-    UNAVAILABLE = "no_disponible"
+class AnimalStatus(StrEnum):
+    READY = "disponible"
+    NOT_READY = "no_disponible"
     SOLD = "vendido"

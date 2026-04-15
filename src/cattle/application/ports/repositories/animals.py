@@ -11,6 +11,10 @@ class IAnimalsRepository(IRepository):
     @abstractmethod
     async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
         raise NotImplemented
+    
+    @abstractmethod
+    async def get_by_caravana(self, caravana: str) -> AnimalEntity | None:
+        raise NotImplemented
 
     @abstractmethod
     async def list_for_user(self, user_id: UUID) -> list[AnimalEntity]:
@@ -21,12 +25,14 @@ class IAnimalsRepository(IRepository):
         self,
         user_id: UUID,
         animal_type_id: UUID,
+        caravana: str,
         name: str,
         date_of_birth: date,
         initial_weight: float,
         initial_weight_date: date,
         last_weight: float,
         breed: str,
+        tag: str,
         status: AnimalStatus,
     ) -> None:
         raise NotImplemented
@@ -35,6 +41,7 @@ class IAnimalsRepository(IRepository):
     async def update_data(
         self,
         id: UUID,
+        caravana: str,
         name: str,
         date_of_birth: date,
         initial_weight: float,

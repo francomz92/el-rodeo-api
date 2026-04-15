@@ -22,4 +22,4 @@ class PurchaseEntity:
         if self.unit_price < 0:
             raise ValueError("Purchase price cant be negative")
         if self.unit_price > self.price:
-            raise ValueError("Unit price cant be higher than purchase price")
+            raise ValueError("El precio unitario no puede ser superior al precio de compra")

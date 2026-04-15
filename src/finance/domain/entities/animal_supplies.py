@@ -28,4 +28,4 @@ class AnimalSupplyEntity:
 
     def validate_critical_amount(self):
         if self.critical_amount < self.amount:
-            raise ValueError("Critical amount must be higher than amount de supplies")
+            raise ValueError("La cantidad crítica debe ser superior a la cantidad de existencias")

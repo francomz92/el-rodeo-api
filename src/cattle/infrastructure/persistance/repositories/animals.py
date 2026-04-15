@@ -26,6 +26,18 @@ class AnimalRepository(IAnimalsRepository):
         result = await self.db.execute(query)
         animal_db = result.scalar_one_or_none()
         return self._build_animal_with_type(animal_db) if animal_db else None
+    
+    async def get_by_caravana(self, caravana: str) -> AnimalEntity | None:
+        query = (
+            select(Animal)
+            .where(Animal.caravana == caravana)
+            .options(
+                joinedload(Animal.type),
+            )
+        )
+        result = await self.db.execute(query)
+        animal_db = result.scalar_one_or_none()
+        return self._build_animal_with_type(animal_db) if animal_db else None
 
     async def list_for_user(self, user_id: UUID) -> list[AnimalEntity]:
         query = (
@@ -43,17 +55,20 @@ class AnimalRepository(IAnimalsRepository):
         self,
         user_id: UUID,
         animal_type_id: UUID,
+        caravana: str,
         name: str,
         date_of_birth: date,
         initial_weight: float,
         initial_weight_date: date,
         last_weight: float,
         breed: str,
+        tag: str,
         status: AnimalStatus,
     ) -> None:
         query = insert(Animal).values(
             user_id=user_id,
             type_id=animal_type_id,
+            caravana=caravana,
             name=name,
             date_of_birth=date_of_birth,
             initial_weight=initial_weight,
@@ -67,6 +82,7 @@ class AnimalRepository(IAnimalsRepository):
     async def update_data(
         self,
         id: UUID,
+        caravana: str,
         name: str,
         date_of_birth: date,
         initial_weight: float,
@@ -78,6 +94,7 @@ class AnimalRepository(IAnimalsRepository):
             update(Animal)
             .where(Animal.id == id)
             .values(
+                caravana=caravana,
                 name=name,
                 date_of_birth=date_of_birth,
                 initial_weight=initial_weight,
@@ -99,6 +116,7 @@ class AnimalRepository(IAnimalsRepository):
     def _build_animal_with_type(self, animal_data: Animal) -> AnimalEntity:
         return AnimalEntity(
             id=animal_data.id,
+            caravana=animal_data.caravana,
             name=animal_data.name,
             tag=animal_data.tag,
             date_of_birth=animal_data.date_of_birth,

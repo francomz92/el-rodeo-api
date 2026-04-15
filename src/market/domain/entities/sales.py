@@ -22,4 +22,4 @@ class SaleEntity:
 
     def validate_price_per_kg(self):
         if self.price_per_kg < self.price:
-            raise ValueError("Price per kg can not be lower than price of sale")
+            raise ValueError("El precio por kilo no puede ser inferior al precio de venta")

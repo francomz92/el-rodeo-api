@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UnitOfMeasurement(Enum, str):
+class UnitOfMeasurement(StrEnum):
     KILOGRAMS = "kg"
     GRAMS = "gr"
     UNIT = "unidades"
