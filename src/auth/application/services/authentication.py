@@ -15,5 +15,5 @@ class AuthService:
             repository = _uow.get_repository(IUserRepository)
             user = await repository.get_by_id(payload["user_id"])
             if not user:
-                raise UnauthorizedError("Unauthorized for this action")
+                raise UnauthorizedError("No autorizado para realizar esta acción")
         return user

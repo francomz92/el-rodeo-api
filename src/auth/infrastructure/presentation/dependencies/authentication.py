@@ -1,14 +1,18 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Header, Request
+from fastapi.security import OAuth2PasswordBearer
 
 from src.auth.application.services.authentication import AuthService
 from src.auth.application.uses_cases.change_password import ChangePasswordCase
 from src.auth.application.uses_cases.login_user import LoginUserCase
 from src.auth.application.uses_cases.register_user import RegisterUserCase
+from src.auth.domain.entities import UserEntity
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def _get_register_user_case(
@@ -30,10 +34,7 @@ def _get_login_user_case(
     )
 
 
-async def _get_auth_service(
-    uow: GetUnitOfWork,
-    token_service: GetTokenService,
-) -> AuthService:
+async def _get_auth_service(token_service: GetTokenService) -> AuthService:
     return AuthService(token_service=token_service)
 
 
@@ -48,8 +49,15 @@ async def _get_change_password_case(
         auth_service=auth_service,
     )
 
+async def _get_current_user(
+    uow: GetUnitOfWork,
+    auth_service: "GetAuthService",
+    token: Annotated[str, Depends(oauth2_scheme)]
+):
+    return await auth_service.get_authenticated_user(uow=uow, token=token)
 
 GetAuthService = Annotated[AuthService, Depends(_get_auth_service)]
+GetCurrentUser = Annotated[UserEntity, Depends(_get_current_user)]
 GetRegisterUserCase = Annotated[RegisterUserCase, Depends(_get_register_user_case)]
 GetLoginUserCase = Annotated[LoginUserCase, Depends(_get_login_user_case)]
 GetChangePasswordCase = Annotated[ChangePasswordCase, Depends(_get_change_password_case)]

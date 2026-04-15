@@ -24,7 +24,7 @@ class UserEntity:
         confirmed_password: str,
     ):
         if new_password != confirmed_password:
-            raise ValueError("Passwords miss matches")
+            raise ValueError("Las contraseñas deben coincidir")
         if password == new_password:
-            raise ValueError("The new password must be different")
+            raise ValueError("La nueva contraseña debe ser diferente")
         self._hashed_password = security_service.hash_password(new_password)

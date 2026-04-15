@@ -26,7 +26,7 @@ class ChangePasswordCase:
     ):
         user = await self.auth_service.get_authenticated_user(self.uow, token)
         if not user.passwords_match(self.security_service, password):
-            raise InvalidCredentialError("Inválid credentials")
+            raise InvalidCredentialError("Las credenciales proporcionadas no son válidas")
         user.update_password(self.security_service, password, new_password, confirmed_password)
         async with self.uow as uow:
             repository = uow.get_repository(IUserRepository)

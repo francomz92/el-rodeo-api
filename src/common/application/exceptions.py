@@ -6,5 +6,9 @@ class ApplicationError(Exception):
 
 class ResourceNotFoundError(Exception):
     def __init__(self, resource: str, identifier: str) -> None:
-        self.message = f'{resource} "{identifier}" not found'
+        self.message = f'{resource} "{identifier}" no encontrado'
         super().__init__(self.message)
+
+
+class AlreadyExistsError(ApplicationError):
+    pass

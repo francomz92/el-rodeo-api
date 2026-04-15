@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
@@ -7,6 +8,7 @@ from .repository import IRepository
 RepositoryType = TypeVar("RepositoryType", bound=IRepository)
 
 
+@dataclass
 class IUoW(ABC):
     @abstractmethod
     async def __aenter__(self) -> "IUoW":

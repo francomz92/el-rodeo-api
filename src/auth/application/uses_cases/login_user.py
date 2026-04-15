@@ -17,9 +17,9 @@ class LoginUserCase:
             repository = uow.get_repository(IUserRepository)
             user = await repository.get_by_dni(dni)
             if not user:
-                raise ResourceNotFoundError(resource="User", identifier=dni)
+                raise ResourceNotFoundError(resource="Usuario", identifier=dni)
             passwords_match = user.passwords_match(self.security_service, password)
             if not passwords_match:
-                raise InvalidCredentialError("Inválid credentials")
+                raise InvalidCredentialError("Las credenciales proporcionadas no son válidas")
             expire_time = 60 * 24  # 24 hs
             return self.token_service.generate({"user_id": user.id}, expire_time)
