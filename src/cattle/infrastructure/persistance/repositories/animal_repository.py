@@ -5,8 +5,8 @@ from sqlalchemy.orm import joinedload
 
 from src.common.application.types import UNSET
 from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository, IdentifierParams
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO
+from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
 from src.cattle.infrastructure.persistance.models import Animal
@@ -16,7 +16,7 @@ class AnimalRepository(IAnimalsRepository):
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def exists(self, identifier: UUID | IdentifierParams) -> bool:
+    async def exists(self, identifier: UUID | AnimalIdentifierDTO) -> bool:
         if isinstance(identifier, UUID):
             query = exists(Animal).where(Animal.id == identifier)
         else:
