@@ -17,5 +17,6 @@ class UpdateAnimalCase:
             if not animal:
                 raise ResourceNotFoundError("El animal que intenta actualizar no existe")
             await repository.update_data(id=id, data=data)
+            await uow.commit()
             await uow.refresh(animal)
         return animal
