@@ -1,7 +1,7 @@
 from src.common.application.ports.repository import IRepository
-from src.auth.infrastructure.persistance.repositories.users import IUserRepository, UserRepository
-from src.cattle.infrastructure.persistance.repositories.animals import IAnimalsRepository, AnimalRepository
-from src.cattle.infrastructure.persistance.repositories.animal_types import AnimalTypeRepository, IAnimalTypesRepository
+from src.auth.infrastructure.persistance.repositories.user_repository import IUserRepository, UserRepository
+from src.cattle.infrastructure.persistance.repositories.animal_repository import IAnimalsRepository, AnimalRepository
+from src.cattle.infrastructure.persistance.repositories.animal_type_repository import AnimalTypeRepository, IAnimalTypesRepository
 from src.finance.infrastructure.persistance.repositories.animal_suppiles import AnimalSuppliesRepository, IAnimalSuppliesRepository
 from src.finance.infrastructure.persistance.repositories.animal_supplie_types import SupplyTypesRepository, ISupplyTypesRepository
 from src.market.infrastructure.persistance.repositories.buyers import BuyersRepository, IBuyersRepository

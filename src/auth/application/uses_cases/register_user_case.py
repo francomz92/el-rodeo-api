@@ -1,7 +1,7 @@
-from src.auth.application.ports.dtos.users import UserCreationDTO
+from src.auth.application.ports.dtos.user_dtos import UserCreationDTO
 from src.auth.domain.entities import UserEntity
 from src.common.application.exceptions import AlreadyExistsError, NotPermissionError
-from src.auth.application.ports.repositories.users import IUserRepository
+from src.auth.application.ports.repositories.users_repository_port import IUserRepository
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService
 

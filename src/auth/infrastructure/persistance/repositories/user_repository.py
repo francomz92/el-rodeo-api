@@ -1,10 +1,9 @@
 from uuid import UUID
 from sqlalchemy import select, insert, update
 
-from src.auth.application.ports.dtos.users import UserCreationDTO, UserUpdateDTO
-from src.auth.application.ports.repositories.users import IUserRepository
+from src.auth.application.ports.dtos.user_dtos import UserCreationDTO, UserUpdateDTO
+from src.auth.application.ports.repositories.users_repository_port import IUserRepository
 from src.auth.domain.entities import UserEntity
-from src.auth.domain.entities.users import UserEntity
 from src.auth.infrastructure.persistance.models import User
 from src.common.application.types import UNSET
 from src.common.infrastructure.persistence.connections.db import AsyncSession

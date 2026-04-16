@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.auth.application.ports.dtos.users import UserCreationDTO, UserUpdateDTO
+from src.auth.application.ports.dtos.user_dtos import UserCreationDTO, UserUpdateDTO
 from src.common.application.ports.repository import IRepository
 from src.auth.domain.entities import UserEntity
 

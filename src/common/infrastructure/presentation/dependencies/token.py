@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.auth.application.ports.tokens import ITokenService
+from src.auth.application.ports.tokens_port import ITokenService
 from src.common.infrastructure.adapters.security.tokens import TokenService
 from src.common.infrastructure.core import settings
 

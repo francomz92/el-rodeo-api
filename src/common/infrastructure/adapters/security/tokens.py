@@ -2,7 +2,7 @@ import jwt
 from datetime import timedelta
 
 from src.auth.application.exceptions.authentication import InvalidCredentialError
-from src.auth.application.ports.tokens import ITokenService
+from src.auth.application.ports.tokens_port import ITokenService
 from src.common.utils.date_utils import get_current_datetime
 
 

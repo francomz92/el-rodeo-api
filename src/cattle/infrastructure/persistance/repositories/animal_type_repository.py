@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, exists
 
-from src.cattle.application.ports.repositories.animal_types import IAnimalTypesRepository
-from src.cattle.domain.entities.animal import AnimalTypeEntinty
+from src.cattle.application.ports.repositories.animal_type_repository_port import IAnimalTypesRepository
+from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
 from src.cattle.infrastructure.persistance.models import AnimalType
 from src.common.infrastructure.presentation.dependencies.db import AsyncSession
 
@@ -23,6 +23,11 @@ class AnimalTypeRepository(IAnimalTypesRepository):
         result = await self.db.execute(query)
         animal_types_list = result.scalars().unique().all()
         return [self._build_animal_type(type_data) for type_data in animal_types_list]
+
+    async def exists(self, id: UUID) -> bool:
+        query = exists(AnimalType).where(AnimalType.id == id).select()
+        result = await self.db.execute(query)
+        return result.scalar_one()
 
     def _build_animal_type(self, type_data: AnimalType) -> AnimalTypeEntinty:
         return AnimalTypeEntinty(id=type_data.id, name=type_data.name)

@@ -1,13 +1,20 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.cattle.application.ports.dtos.animals import AnimalCreateDTO, AnimalUpdateDTO
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO
 from src.cattle.domain.constants.animal import AnimalStatus
-from src.cattle.domain.entities.animal import AnimalEntity
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.common.application.ports.repository import IRepository
 
 
+
+
+
 class IAnimalsRepository(IRepository):
+    @abstractmethod
+    async def exists(self, identifier: UUID | AnimalIdentifierDTO) -> bool:
+        raise NotImplemented
+
     @abstractmethod
     async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
         raise NotImplemented

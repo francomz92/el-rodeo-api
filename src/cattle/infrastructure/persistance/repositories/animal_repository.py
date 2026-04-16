@@ -1,20 +1,28 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select, insert, update
+from sqlalchemy import delete, select, insert, update, exists
 from sqlalchemy.orm import joinedload
 
 from src.common.application.types import UNSET
 from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.cattle.application.ports.dtos.animals import AnimalCreateDTO, AnimalUpdateDTO
-from src.cattle.application.ports.repositories.animals import IAnimalsRepository
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO
+from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository, IdentifierParams
 from src.cattle.domain.constants.animal import AnimalStatus
-from src.cattle.domain.entities.animal import AnimalEntity, AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
 from src.cattle.infrastructure.persistance.models import Animal
 
 
 class AnimalRepository(IAnimalsRepository):
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+    async def exists(self, identifier: UUID | IdentifierParams) -> bool:
+        if isinstance(identifier, UUID):
+            query = exists(Animal).where(Animal.id == identifier)
+        else:
+            query = exists(Animal).where(Animal.caravana == identifier.caravana, Animal.type_id == identifier.type_id)
+        result = await self.db.execute(query.select())
+        return result.scalar_one()
 
     async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
         query = (

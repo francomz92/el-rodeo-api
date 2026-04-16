@@ -3,10 +3,10 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from src.auth.application.services.authentication import AuthService
-from src.auth.application.uses_cases.change_password import ChangePasswordCase
-from src.auth.application.uses_cases.login_user import LoginUserCase
-from src.auth.application.uses_cases.register_user import RegisterUserCase
+from src.auth.application.services.authentication_service import AuthService
+from src.auth.application.uses_cases.change_password_case import ChangePasswordCase
+from src.auth.application.uses_cases.login_user_case import LoginUserCase
+from src.auth.application.uses_cases.register_user_case import RegisterUserCase
 from src.auth.domain.entities import UserEntity
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService

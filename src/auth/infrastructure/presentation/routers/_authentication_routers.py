@@ -1,10 +1,10 @@
 from fastapi import APIRouter, status
 
-from src.auth.application.ports.dtos.users import UserCreationDTO
-from src.auth.infrastructure.adapters.http.input.authentication import ChangePasswordSchema, LoginSchema, RegisterSchema
-from src.auth.infrastructure.adapters.http.oputput.authentication import LoginResponseSchema
-from src.auth.infrastructure.adapters.http.oputput.user import UserSchema
-from src.auth.infrastructure.presentation.dependencies.authentication import (
+from src.auth.application.ports.dtos.user_dtos import UserCreationDTO
+from src.auth.infrastructure.adapters.http.input.authentication_schemas import ChangePasswordSchema, LoginSchema, RegisterSchema
+from src.auth.infrastructure.adapters.http.oputput.authentication_schemas import LoginResponseSchema
+from src.auth.infrastructure.adapters.http.oputput.user_schemas import UserSchema
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetChangePasswordCase,
     GetCurrentUser,
     GetLoginUserCase,

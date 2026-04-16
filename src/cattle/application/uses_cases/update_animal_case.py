@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from src.cattle.application.ports.dtos.animals import AnimalUpdateDTO
-from src.cattle.application.ports.repositories.animals import IAnimalsRepository
+from src.cattle.application.ports.dtos.animal_dtos import AnimalUpdateDTO
+from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
 from src.common.application.exceptions import ResourceNotFoundError
 from src.common.application.ports.uow import IUoW
 

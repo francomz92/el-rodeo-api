@@ -3,7 +3,7 @@ from datetime import date
 from uuid import UUID
 
 from src.auth.domain.entities import UserEntity
-from src.cattle.domain.entities.animal import AnimalEntity
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.market.domain.entities.buyers import BuyerEntity
 
 

@@ -33,3 +33,10 @@ class AnimalUpdateDTO:
     last_weight: float | None | type[UNSET] = UNSET
     breed: str | None | type[UNSET] = UNSET
     tag: str | None | type[UNSET] = UNSET
+
+
+@dataclass
+class AnimalIdentifierDTO:
+    user_id: UUID
+    type_id: UUID
+    caravana: str

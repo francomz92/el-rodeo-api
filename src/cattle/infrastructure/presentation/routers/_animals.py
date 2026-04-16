@@ -2,10 +2,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
-from src.auth.infrastructure.presentation.dependencies.authentication import GetCurrentUser
-from src.cattle.application.ports.dtos.animals import AnimalCreateDTO, AnimalUpdateDTO
-from src.cattle.infrastructure.adapters.http.input.animals import AnimalCreationSchema, AnimalUpdateSchema
-from src.cattle.infrastructure.adapters.http.output.animals import AnimalSchema
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO
+from src.cattle.infrastructure.adapters.http.input.animal_schemas import AnimalCreationSchema, AnimalUpdateSchema
+from src.cattle.infrastructure.adapters.http.output.animal_schemas import AnimalSchema
 from src.cattle.infrastructure.presentation.dependencies.animals import GetAnimalRegisterCase, GetAnimalUpdateCase
 
 

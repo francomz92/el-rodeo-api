@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.cattle.application.uses_cases.register_animal import RegisterAnimalCase
-from src.cattle.application.uses_cases.update_animal_data import UpdateAnimalCase
+from src.cattle.application.uses_cases.register_animal_case import RegisterAnimalCase
+from src.cattle.application.uses_cases.update_animal_case import UpdateAnimalCase
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 

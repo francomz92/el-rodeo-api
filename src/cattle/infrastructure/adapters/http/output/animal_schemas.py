@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.cattle.infrastructure.adapters.http.output.animal_types import AnimalTypeSchema
+from src.cattle.infrastructure.adapters.http.output.animal_type_schemas import AnimalTypeSchema
 
 
 class AnimalSchema(BaseModel):

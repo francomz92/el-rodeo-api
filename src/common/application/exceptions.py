@@ -14,3 +14,7 @@ class AlreadyExistsError(ApplicationError):
 
 class NotPermissionError(ApplicationError):
     pass
+
+
+class ValidationError(ApplicationError):
+    pass
