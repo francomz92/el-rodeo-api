@@ -1,7 +1,6 @@
 from src.auth.application.exceptions.authentication import InvalidCredentialError
 from src.auth.application.ports.repositories.users import IUserRepository
 from src.auth.application.services.authentication import AuthService
-from src.auth.domain.entities import UserEntity
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService
 

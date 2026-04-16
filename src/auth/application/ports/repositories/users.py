@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from uuid import UUID
 
+from src.auth.application.ports.dtos.users import UserCreationDTO, UserUpdateDTO
 from src.common.application.ports.repository import IRepository
 from src.auth.domain.entities import UserEntity
 
@@ -15,7 +16,11 @@ class IUserRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def create(self, dni: str, hashed_password: str) -> None:
+    async def create(self, data: UserCreationDTO, password: str) -> UserEntity:
+        raise NotImplemented
+
+    @abstractmethod
+    async def update_data(self, id: UUID, data: UserUpdateDTO) -> None:
         raise NotImplemented
 
     @abstractmethod

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, status
-from fastapi.exceptions import ValidationException
-from fastapi.responses import JSONResponse
 
+from src.auth.application.ports.dtos.users import UserCreationDTO
 from src.auth.infrastructure.adapters.http.input.authentication import ChangePasswordSchema, LoginSchema, RegisterSchema
 from src.auth.infrastructure.adapters.http.oputput.authentication import LoginResponseSchema
+from src.auth.infrastructure.adapters.http.oputput.user import UserSchema
 from src.auth.infrastructure.presentation.dependencies.authentication import (
     GetChangePasswordCase,
+    GetCurrentUser,
     GetLoginUserCase,
     GetRegisterUserCase,
 )
@@ -19,11 +20,15 @@ auth_router = APIRouter()
     path="/register",
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user in the database",
-    response_model=SimpleMessageSchema,
+    response_model=UserSchema,
 )
-async def register_user(data: RegisterSchema, register_user_case: GetRegisterUserCase):
-    await register_user_case.execute(dni=data.dni)
-    return {"message": "Usuario registrado exitosamente"}
+async def register_user(
+    data: RegisterSchema,
+    current_user: GetCurrentUser,
+    register_user_case: GetRegisterUserCase,
+):
+    payload = UserCreationDTO(**data.model_dump())
+    return await register_user_case.execute(data=payload, requesting_user=current_user)
 
 
 @auth_router.post(

@@ -8,6 +8,7 @@ from src.common.domain.services.security import ISecurityService
 @dataclass
 class UserEntity:
     id: UUID
+    name: str
     dni: str
     created_at: datetime
     is_admin: bool

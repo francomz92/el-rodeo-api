@@ -10,3 +10,7 @@ class ResourceNotFoundError(ApplicationError):
 
 class AlreadyExistsError(ApplicationError):
     pass
+
+
+class NotPermissionError(ApplicationError):
+    pass
