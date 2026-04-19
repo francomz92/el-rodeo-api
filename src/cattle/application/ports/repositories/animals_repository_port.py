@@ -1,13 +1,10 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO, AnimalsListQueryParamsDTO
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.common.application.ports.repository import IRepository
-
-
-
 
 
 class IAnimalsRepository(IRepository):
@@ -24,7 +21,14 @@ class IAnimalsRepository(IRepository):
         raise NotImplemented
 
     @abstractmethod
-    async def list_for_user(self, user_id: UUID) -> list[AnimalEntity]:
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        filters: AnimalsListQueryParamsDTO,
+        limit: int,
+        offset: int,
+        order_by: str,
+    ) -> list[AnimalEntity]:
         raise NotImplemented
 
     @abstractmethod

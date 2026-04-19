@@ -6,7 +6,6 @@ class ErrorDetail(TypedDict):
     message: str
 
 
-
 class ApplicationError(Exception):
     status_code: int
     error_code: str

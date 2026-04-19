@@ -11,4 +11,4 @@ from .business_errors import business_exception_handler
 def configure_exception_handlers(app: FastAPI):
     app.add_exception_handler(Exception, server_exception_handler)  # type: ignore
     app.add_exception_handler(RequestValidationError, _request_validation_exception_handler)  # type: ignore
-    app.add_exception_handler(ApplicationError, business_exception_handler) # type: ignore
+    app.add_exception_handler(ApplicationError, business_exception_handler)  # type: ignore

@@ -40,3 +40,11 @@ class AnimalIdentifierDTO:
     user_id: UUID
     type_id: UUID
     caravana: str
+
+
+@dataclass
+class AnimalsListQueryParamsDTO:
+    type_id: UUID | None | UNSET = UNSET
+    caravana: str | None | UNSET = UNSET
+    name: str | None | UNSET = UNSET
+    breed: str | None | UNSET = UNSET

@@ -1,12 +1,23 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
-from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO
-from src.cattle.infrastructure.adapters.http.input.animal_schemas import AnimalCreationSchema, AnimalUpdateSchema
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO, AnimalsListQueryParamsDTO
+from src.cattle.infrastructure.adapters.http.input.animal_schemas import (
+    AnimalCreationSchema,
+    AnimalUpdateSchema,
+    AnimalsListQueryParamsSchema,
+)
 from src.cattle.infrastructure.adapters.http.output.animal_schemas import AnimalSchema
-from src.cattle.infrastructure.presentation.dependencies.animals import GetAnimalDeleteCase, GetAnimalRegisterCase, GetAnimalUpdateCase
+from src.cattle.infrastructure.presentation.dependencies.animals import (
+    GetAnimalDeleteCase,
+    GetAnimalRegisterCase,
+    GetAnimalUpdateCase,
+    GetAnimalListCase,
+    GetObtainAnimalCase,
+)
 
 
 animals_router = APIRouter(
@@ -62,3 +73,42 @@ async def delete_animal(
 ):
     await animal_delete_use_case.execute(id, current_user.id)
     return None
+
+
+@animals_router.get(
+    path="/animals",
+    status_code=status.HTTP_200_OK,
+    summary="List all animals by current user authenticated in the database",
+    response_model=list[AnimalSchema],
+)
+async def list_animals_user(
+    current_user: GetCurrentUser, animal_list_use_case: GetAnimalListCase, query_params: Annotated[AnimalsListQueryParamsSchema, Query()]
+):
+    filters = AnimalsListQueryParamsDTO(
+        **query_params.model_dump(
+            exclude_unset=True,
+            exclude={"limit", "offset", "order_by"},
+        ),
+    )
+    animals_list = await animal_list_use_case.execute(
+        user_id=current_user.id,
+        filters=filters,
+        limit=query_params.limit,
+        offset=query_params.offset,
+        order_by=query_params.order_by,
+    )
+    return animals_list
+
+
+@animals_router.get(
+    path="/animals/{id}",
+    status_code=status.HTTP_200_OK,
+    summary="Get an animal in the database",
+    response_model=AnimalSchema,
+)
+async def get_animal(
+    id: UUID,
+    current_user: GetCurrentUser,
+    obtain_animal_case: GetObtainAnimalCase,
+):
+    return await obtain_animal_case.execute(id=id, user_id=current_user.id)

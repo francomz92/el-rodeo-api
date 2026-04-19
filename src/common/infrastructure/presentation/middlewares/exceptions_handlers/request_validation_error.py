@@ -18,8 +18,9 @@ async def _request_validation_exception_handler(
     details = [
         ErrorDetail(
             field=format_error_location(error.get("loc")),
-            message=error.get("msg", "Error de validación")
-        ) for error in exc.errors()
+            message=error.get("msg", "Error de validación"),
+        )
+        for error in exc.errors()
     ]
     error_response = StandardErrorResponse(
         success=False,

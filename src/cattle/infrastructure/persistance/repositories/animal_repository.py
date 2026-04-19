@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from src.common.application.types import UNSET
 from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO
+from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO, AnimalsListQueryParamsDTO
 from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
@@ -48,10 +48,22 @@ class AnimalRepository(IAnimalsRepository):
         animal_db = result.scalar_one_or_none()
         return self._build_animal_with_type(animal_db) if animal_db else None
 
-    async def list_for_user(self, user_id: UUID) -> list[AnimalEntity]:
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        filters: AnimalsListQueryParamsDTO,
+        limit: int,
+        offset: int,
+        order_by: str,
+    ) -> list[AnimalEntity]:
+        kws = {k: v for k, v in vars(filters) if v != UNSET}
         query = (
             select(Animal)
             .where(Animal.user_id == user_id)
+            .filter(**kws)
+            .limit(limit)
+            .offset(offset)
+            .order_by(order_by)
             .options(
                 joinedload(Animal.type),
             )

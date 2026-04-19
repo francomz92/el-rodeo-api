@@ -24,8 +24,8 @@ class RegisterAnimalCase:
             type_exists = await type_repository.exists(id=data.type_id)
             if not type_exists:
                 raise BusinessValidationError(
-                    message="Tipo de anima inexistente",
-                    details=[{"field": "type_id", "message": "Debe seleccionar un tipo válido"}]
+                    message="Tipo de animal inexistente",
+                    details=[{"field": "type_id", "message": "Debe seleccionar un tipo válido"}],
                 )
             animal = await repository.create(data=data)
             await uow.commit()

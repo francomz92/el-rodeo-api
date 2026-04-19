@@ -6,7 +6,6 @@ from src.common.application.ports.uow import IUoW
 
 
 class DeleteAnimalCase:
-
     def __init__(self, uow: IUoW) -> None:
         self.uow = uow
 
