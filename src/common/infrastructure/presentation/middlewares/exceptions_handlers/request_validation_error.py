@@ -1,12 +1,36 @@
 from fastapi import Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from fastapi.exception_handlers import request_validation_exception_handler
+
+from src.common.infrastructure.adapters.http.output.errors import (
+    ErrorDetail,
+    ErrorPayload,
+    StandardErrorResponse,
+    format_error_location,
+)
+from src.common.utils.date_utils import get_current_datetime
 
 
-async def _request_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def _request_validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    details = [
+        ErrorDetail(
+            field=format_error_location(error.get("loc")),
+            message=error.get("msg", "Error de validación")
+        ) for error in exc.errors()
+    ]
+    error_response = StandardErrorResponse(
+        success=False,
+        error=ErrorPayload(
+            code="validation_error",
+            message="Error de validación",
+            details=details,
+        ),
+        timestamp=get_current_datetime().isoformat(),
+    )
     return JSONResponse(
         status_code=422,
-        content={"detail": jsonable_encoder(exc.errors())},
+        content={"detail": error_response.model_dump()},
     )

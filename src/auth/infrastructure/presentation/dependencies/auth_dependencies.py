@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security.api_key import APIKeyHeader
 
 from src.auth.application.services.authentication_service import AuthService
 from src.auth.application.uses_cases.change_password_case import ChangePasswordCase
@@ -12,7 +12,7 @@ from src.common.infrastructure.presentation.dependencies.security import GetSecu
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = APIKeyHeader(name="Authorization")
 
 
 def _get_register_user_case(

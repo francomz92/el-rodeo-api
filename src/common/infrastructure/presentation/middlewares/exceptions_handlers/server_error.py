@@ -1,18 +1,23 @@
 from fastapi import Request, status
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from src.common.infrastructure.presentation.exceptions import exceptions_list
+from src.common.infrastructure.adapters.http.output.errors import ErrorPayload, StandardErrorResponse
 from src.common.utils import log
+from src.common.utils.date_utils import get_current_datetime
 
 
-async def server_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    status_code = exceptions_list.get(type(exc), None)
-    if not status_code:
-        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    error = jsonable_encoder(exc)
-    log.error(f"Server error:\n{error}\n")
+async def server_exception_handler(request: Request, exc: RuntimeError) -> JSONResponse:
+    error_response = StandardErrorResponse(
+        success=False,
+        error=ErrorPayload(
+            code="Internal server error",
+            message=str(exc),
+        ),
+        timestamp=get_current_datetime().isoformat(),
+    )
+    error = error_response.model_dump()
+    log.error(error)
     return JSONResponse(
-        status_code=status_code,
-        content={"detail": error},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=error,
     )
