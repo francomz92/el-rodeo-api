@@ -24,7 +24,7 @@ class AnimalRepository(IAnimalsRepository):
         result = await self.db.execute(query.select())
         return result.scalar_one()
 
-    async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
+    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalEntity | None:
         query = (
             select(Animal)
             .where(Animal.id == id, Animal.user_id == user_id)
@@ -64,12 +64,13 @@ class AnimalRepository(IAnimalsRepository):
         query = insert(Animal).values(vars(data)).returning(Animal.id)
         result = await self.db.execute(query)
         animal_id = result.scalar_one()
-        return await self.get_by_id(id=animal_id, user_id=user_id)  # type: ignore
+        return await self.get_by_id(id=animal_id, user_id=data.user_id)  # type: ignore
 
-    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> None:
+    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> AnimalEntity:
         kws = {k: v for k, v in vars(data).items() if v is not UNSET}
         query = update(Animal).where(Animal.id == id).values(**kws)
         await self.db.execute(query)
+        return await self.get_by_id(id=id, user_id=data.user_id)  # type: ignore
 
     async def update_status(self, id: UUID, status: AnimalStatus):
         query = update(Animal).where(Animal.id == id).values(status=status)

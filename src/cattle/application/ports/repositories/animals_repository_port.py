@@ -16,7 +16,7 @@ class IAnimalsRepository(IRepository):
         raise NotImplemented
 
     @abstractmethod
-    async def get_by_id(self, id: UUID, user_id: UUID | None) -> AnimalEntity | None:
+    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalEntity | None:
         raise NotImplemented
 
     @abstractmethod
@@ -32,7 +32,7 @@ class IAnimalsRepository(IRepository):
         raise NotImplemented
 
     @abstractmethod
-    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> None:
+    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> AnimalEntity:
         raise NotImplemented
 
     @abstractmethod
