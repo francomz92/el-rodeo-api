@@ -6,10 +6,12 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
 from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalUpdateDTO
 from src.cattle.infrastructure.adapters.http.input.animal_schemas import AnimalCreationSchema, AnimalUpdateSchema
 from src.cattle.infrastructure.adapters.http.output.animal_schemas import AnimalSchema
-from src.cattle.infrastructure.presentation.dependencies.animals import GetAnimalRegisterCase, GetAnimalUpdateCase
+from src.cattle.infrastructure.presentation.dependencies.animals import GetAnimalDeleteCase, GetAnimalRegisterCase, GetAnimalUpdateCase
 
 
-animals_router = APIRouter()
+animals_router = APIRouter(
+    responses={401: {}, 403: {}},
+)
 
 
 @animals_router.post(
@@ -45,3 +47,18 @@ async def update_animal(
 ):
     payload = AnimalUpdateDTO(**data.model_dump(exclude_unset=True), user_id=current_user.id)
     return await animal_update_use_case.execute(id=id, data=payload)
+
+
+@animals_router.delete(
+    path="/animals/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an animal in the database",
+    responses={404: {}, 409: {}},
+)
+async def delete_animal(
+    id: UUID,
+    current_user: GetCurrentUser,
+    animal_delete_use_case: GetAnimalDeleteCase,
+):
+    await animal_delete_use_case.execute(id, current_user.id)
+    return None

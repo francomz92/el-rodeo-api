@@ -31,3 +31,6 @@ class AnimalEntity:
     def validate_initial_weight_date(self):
         if self.initial_weight_date < self.date_of_birth:
             raise ValueError("La fecha del pesaje inicial no debe ser anterior a la fecha de nacimiento")
+
+    def can_delete(self) -> bool:
+        return self.status != AnimalStatus.SOLD
