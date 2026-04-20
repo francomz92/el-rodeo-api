@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from src.common.domain.constants import pagination
 from src.cattle.domain.constants.animal import AnimalStatus
+from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
 
 
 class AnimalCreationSchema(BaseModel):
@@ -32,17 +33,8 @@ class AnimalUpdateSchema(BaseModel):
     status: Optional[AnimalStatus]
 
 
-class AnimalsListQueryParamsSchema(BaseModel):
+class AnimalsListQueryParamsSchema(StandardQueryParams):
     type_id: Optional[UUID]
     caravana: Optional[str] = Field(default=None, max_length=50, description="Identifier of animal")
     name: Optional[str] = Field(default=None, max_length=50, description="Name of animal")
     breed: Optional[str] = Field(default=None, max_length=50, description="Breed of animal")
-    limit: int = Field(
-        default=pagination.ROW_PER_PAGE,
-        max_digits=2,
-        ge=1,
-        le=100,
-        description="Records per page",
-    )
-    offset: int = Field(default=0, ge=0, description="Page number")
-    order_by: str = Field(default="id", max_length=50, description="Animal list ordering")

@@ -6,10 +6,8 @@ from src.common.application.ports.uow import IUoW
 
 
 class ObtainAnimalCase:
-
     def __init__(self, uow: IUoW) -> None:
         self.uow = uow
-    
 
     async def execute(self, id: UUID, user_id: UUID):
         async with self.uow as uow:

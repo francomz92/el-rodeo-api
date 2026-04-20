@@ -56,7 +56,10 @@ async def update_animal(
     current_user: GetCurrentUser,
     animal_update_use_case: GetAnimalUpdateCase,
 ):
-    payload = AnimalUpdateDTO(**data.model_dump(exclude_unset=True), user_id=current_user.id)
+    payload = AnimalUpdateDTO(
+        **data.model_dump(exclude_unset=True),
+        user_id=current_user.id,
+    )
     return await animal_update_use_case.execute(id=id, data=payload)
 
 

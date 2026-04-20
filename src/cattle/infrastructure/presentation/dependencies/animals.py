@@ -2,11 +2,11 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.cattle.application.uses_cases.delete_animal_case import DeleteAnimalCase
-from src.cattle.application.uses_cases.get_animal_case import ObtainAnimalCase
-from src.cattle.application.uses_cases.list_animals_case import ListAnimalsCase
-from src.cattle.application.uses_cases.register_animal_case import RegisterAnimalCase
-from src.cattle.application.uses_cases.update_animal_case import UpdateAnimalCase
+from src.cattle.application.uses_cases.animals_use_cases.delete_animal_case import DeleteAnimalCase
+from src.cattle.application.uses_cases.animals_use_cases.get_animal_case import ObtainAnimalCase
+from src.cattle.application.uses_cases.animals_use_cases.list_animals_case import ListAnimalsCase
+from src.cattle.application.uses_cases.animals_use_cases.register_animal_case import RegisterAnimalCase
+from src.cattle.application.uses_cases.animals_use_cases.update_animal_case import UpdateAnimalCase
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
