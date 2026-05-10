@@ -12,4 +12,4 @@ class ISecurityService(ABC):
 
     @abstractmethod
     def generate_random_str(self, length: int) -> str:
-        raise NotImplemented
+        raise NotImplementedError

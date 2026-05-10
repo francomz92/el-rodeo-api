@@ -2,16 +2,13 @@ from uuid import UUID
 
 from sqlalchemy import delete, insert, select, update
 
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.finance.application.ports.repositories.animal_supplie_types import ISupplyTypesRepository
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
+from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
 from src.finance.infrastructure.persistance.models import AnimalSupplieType
 
 
-class SupplyTypesRepository(ISupplyTypesRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
+class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
     async def get_by_id(self, id: UUID) -> SupplyTypeEntinty | None:
         query = select(AnimalSupplieType).where(AnimalSupplieType.id == id)
         result = await self.db.execute(query)
@@ -29,12 +26,24 @@ class SupplyTypesRepository(ISupplyTypesRepository):
         await self.db.execute(query)
 
     async def update_data(self, id: UUID, name: str) -> None:
-        query = update(AnimalSupplieType).where(AnimalSupplieType.id == id).values(name=name)
+        query = (
+            update(AnimalSupplieType)
+            .where(
+                AnimalSupplieType.id == id,
+            )
+            .values(name=name)
+        )
         await self.db.execute(query)
 
     async def delete(self, id: UUID) -> None:
         query = delete(AnimalSupplieType).where(AnimalSupplieType.id == id)
         await self.db.execute(query)
 
-    def _build_supply_type(self, supply_data: AnimalSupplieType) -> SupplyTypeEntinty:
-        return SupplyTypeEntinty(id=supply_data.id, name=supply_data.name)
+    def _build_supply_type(
+        self,
+        supply_data: AnimalSupplieType,
+    ) -> SupplyTypeEntinty:
+        return SupplyTypeEntinty(
+            id=supply_data.id,
+            name=supply_data.name,
+        )

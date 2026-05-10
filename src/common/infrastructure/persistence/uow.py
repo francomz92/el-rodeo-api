@@ -1,11 +1,11 @@
 from src.common.application.ports.uow import IRepository, IUoW
-from src.common.infrastructure.persistence.connections.db import async_sessionmaker, AsyncSession
+from src.common.infrastructure.persistence.connections.db import AsyncSession
 
 from .repositories import repositories_list
 
 
 class UnitOfWork(IUoW):
-    def __init__(self, session_maker: async_sessionmaker) -> None:
+    def __init__(self, session_maker: AsyncSession) -> None:
         self.session_maker = session_maker
 
     def get_repository(self, repository_type: type[IRepository]) -> IRepository:
@@ -15,10 +15,10 @@ class UnitOfWork(IUoW):
         return repository(self.db)  # type: ignore
 
     async def __aenter__(self):
-        self.db: AsyncSession = self.session_maker()
+        self.db: AsyncSession = self.session_maker
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type, *args, **kwargs):
         if exc_type:
             await self.rollback()
         await self.dispose()

@@ -2,18 +2,22 @@ from uuid import UUID
 
 from sqlalchemy import delete, insert, select, update
 
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.market.application.ports.repositoriyes.buyers import IBuyersRepository
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.market.domain.entities.buyers import BuyerEntity
+from src.market.domain.repositoriyes.buyers import IBuyersRepository
 from src.market.infrastructure.persistance.models import Buyer
 
 
-class BuyersRepository(IBuyersRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
-    async def get_by_id(self, id: UUID, user_id: UUID) -> BuyerEntity | None:
-        query = select(Buyer).where(Buyer.id == id, Buyer.user_id == user_id)
+class BuyersRepository(IBuyersRepository, SessionMixin):
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> BuyerEntity | None:
+        query = select(Buyer).where(
+            Buyer.id == id,
+            Buyer.user_id == user_id,
+        )
         result = await self.db.execute(query)
         buyer_db = result.scalar_one_or_none()
         return self._build_buyer(buyer_db) if buyer_db else None
@@ -52,7 +56,10 @@ class BuyersRepository(IBuyersRepository):
     ) -> None:
         query = (
             update(Buyer)
-            .where(Buyer.id == id, Buyer.user_id == user_id)
+            .where(
+                Buyer.id == id,
+                Buyer.user_id == user_id,
+            )
             .values(
                 name=name,
                 description=description,

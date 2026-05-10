@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from src.common.domain.constants import pagination
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
 
@@ -34,7 +33,7 @@ class AnimalUpdateSchema(BaseModel):
 
 
 class AnimalsListQueryParamsSchema(StandardQueryParams):
-    type_id: Optional[UUID]
+    type_id: Optional[UUID] = None
     caravana: Optional[str] = Field(default=None, max_length=50, description="Identifier of animal")
     name: Optional[str] = Field(default=None, max_length=50, description="Name of animal")
     breed: Optional[str] = Field(default=None, max_length=50, description="Breed of animal")

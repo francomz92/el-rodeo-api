@@ -3,7 +3,10 @@ from datetime import date
 from uuid import UUID
 
 from src.auth.domain.entities import UserEntity
-from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, UnitOfMeasurement
+from src.finance.domain.entities.animal_supplies import (
+    AnimalSupplyEntity,
+    UnitOfMeasurement,
+)
 
 
 @dataclass

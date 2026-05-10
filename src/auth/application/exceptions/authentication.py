@@ -1,11 +1,15 @@
 from src.common.application.exceptions import ApplicationError
+from src.common.domain.entities.errors import ErrorDetail
+from src.common.domain.exceptions import DomainError
 
 
-class InvalidCredentialError(ApplicationError):
+class InvalidCredentialError(DomainError):
     "For authentication errors (401)"
 
-    status_code = 401
     error_code = "invalid_credentials_error"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, [])
 
 
 class UnauthorizedError(ApplicationError):
@@ -13,3 +17,6 @@ class UnauthorizedError(ApplicationError):
 
     status_code = 401
     error_code = "unauthorized_error"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, [])

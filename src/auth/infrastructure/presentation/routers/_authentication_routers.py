@@ -1,7 +1,11 @@
 from fastapi import APIRouter, status
 
-from src.auth.application.ports.dtos.user_dtos import UserCreationDTO
-from src.auth.infrastructure.adapters.http.input.authentication_schemas import ChangePasswordSchema, LoginSchema, RegisterSchema
+from src.auth.domain.value_objects.user_value_object import UserCreationValueObject
+from src.auth.infrastructure.adapters.http.input.authentication_schemas import (
+    ChangePasswordSchema,
+    LoginSchema,
+    RegisterSchema,
+)
 from src.auth.infrastructure.adapters.http.oputput.authentication_schemas import LoginResponseSchema
 from src.auth.infrastructure.adapters.http.oputput.user_schemas import UserSchema
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
@@ -11,7 +15,6 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
     GetRegisterUserCase,
 )
 from src.common.infrastructure.adapters.http.output.messages import SimpleMessageSchema
-
 
 auth_router = APIRouter()
 
@@ -27,8 +30,11 @@ async def register_user(
     current_user: GetCurrentUser,
     register_user_case: GetRegisterUserCase,
 ):
-    payload = UserCreationDTO(**data.model_dump())
-    return await register_user_case.execute(data=payload, requesting_user=current_user)
+    payload = UserCreationValueObject(**data.model_dump())
+    return await register_user_case.execute(
+        data=payload,
+        requesting_user=current_user,
+    )
 
 
 @auth_router.post(
@@ -37,8 +43,14 @@ async def register_user(
     summary="Authenticate a registered user",
     response_model=LoginResponseSchema,
 )
-async def login_user(data: LoginSchema, login_user_case: GetLoginUserCase):
-    token = await login_user_case.execute(dni=data.dni, password=data.password)
+async def login_user(
+    data: LoginSchema,
+    login_user_case: GetLoginUserCase,
+):
+    token = await login_user_case.execute(
+        dni=data.dni,
+        password=data.password,
+    )
     return LoginResponseSchema(access_token=token)
 
 
@@ -58,4 +70,4 @@ async def change_password(
         new_password=data.new_password,
         confirmed_password=data.confirmed_password,
     )
-    return {"message": "Contraseña actualizada exitosamente"}
+    return SimpleMessageSchema(message="Contraseña actualizada exitosamente")

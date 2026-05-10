@@ -3,21 +3,25 @@ from uuid import UUID
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import joinedload
 
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.finance.application.ports.repositories.animal_supplies import IAnimalSuppliesRepository
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
-from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, SupplyTypeEntinty
+from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.infrastructure.persistance.models import AnimalSupplie
 
 
-class AnimalSuppliesRepository(IAnimalSuppliesRepository):
-    def __int__(self, db: AsyncSession):
-        self.db = db
-
-    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalSupplyEntity | None:
+class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> AnimalSupplyEntity | None:
         query = (
             select(AnimalSupplie)
-            .where(AnimalSupplie.id == id, AnimalSupplie.user_id == user_id)
+            .where(
+                AnimalSupplie.id == id,
+                AnimalSupplie.user_id == user_id,
+            )
             .options(
                 joinedload(AnimalSupplie.type),
             )
@@ -64,7 +68,10 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository):
         query = delete(AnimalSupplie).where(AnimalSupplie.id == id)
         await self.db.execute(query)
 
-    def _build_animal_supplie_with_type(self, supplie_data: AnimalSupplie) -> AnimalSupplyEntity:
+    def _build_animal_supplie_with_type(
+        self,
+        supplie_data: AnimalSupplie,
+    ) -> AnimalSupplyEntity:
         return AnimalSupplyEntity(
             id=supplie_data.id,
             created_at=supplie_data.created_at,
@@ -73,5 +80,8 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository):
             critical_amount=supplie_data.critical_amount,
             unit_of_measurement=supplie_data.unit_of_measurement,
             description=supplie_data.description,
-            type=supplie_data.type,
+            type=SupplyTypeEntinty(
+                id=supplie_data.type_id,
+                name=supplie_data.type.name,
+            ),
         )

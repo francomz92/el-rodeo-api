@@ -3,21 +3,32 @@ from uuid import UUID
 from fastapi import APIRouter, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
-from src.cattle.application.ports.dtos.schedule_event_dtos import ScheduleEventCreationDTO, ScheduleEventUpdateDTO, ScheduleEventsListQueryParamsDTO
-from src.cattle.infrastructure.adapters.http.input.schedule_event_schemas import ScheduleEventCreationSchema, ScheduleEventUpdateSchema, ScheduleEventsQueryParams
+from src.cattle.domain.value_objects.schedule_event_value_object import (
+    ScheduleEventCreationValueObject,
+    ScheduleEventsListQueryParamsValueObject,
+    ScheduleEventUpdateValueObject,
+)
+from src.cattle.infrastructure.adapters.http.input.schedule_event_schemas import (
+    ScheduleEventCreationSchema,
+    ScheduleEventsQueryParams,
+    ScheduleEventUpdateSchema,
+)
 from src.cattle.infrastructure.adapters.http.output.schedule_events_schemas import ScheduleEventSchema
-from src.cattle.infrastructure.presentation.dependencies.schedule_events import GetDeleteScheduleEventCase, GetListScheduleEventsCase, GetRegisterScheduleEventCase, GetUpdateScheduleEventCase
-
-
+from src.cattle.infrastructure.presentation.dependencies.schedule_events import (
+    GetDeleteScheduleEventCase,
+    GetListScheduleEventsCase,
+    GetRegisterScheduleEventCase,
+    GetUpdateScheduleEventCase,
+)
 
 events_router = APIRouter(
+    prefix="/schedule-events",
     responses={401: {}, 403: {}},
 )
 
 
-
 @events_router.post(
-    path="/schedule-events",
+    path="",
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user schedule event in the database",
     response_model=ScheduleEventSchema,
@@ -27,7 +38,7 @@ async def create_schedule_event(
     register_schedule_event_case: GetRegisterScheduleEventCase,
     data: ScheduleEventCreationSchema,
 ):
-    event_data = ScheduleEventCreationDTO(
+    event_data = ScheduleEventCreationValueObject(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
     )
@@ -35,7 +46,7 @@ async def create_schedule_event(
 
 
 @events_router.put(
-    path="/schedule-events/{id}",
+    path="/{id}",
     status_code=status.HTTP_200_OK,
     summary="Update an event data in the database",
     response_model=ScheduleEventSchema,
@@ -46,15 +57,18 @@ async def update_event(
     update_schedule_event_case: GetUpdateScheduleEventCase,
     data: ScheduleEventUpdateSchema,
 ):
-    payload = ScheduleEventUpdateDTO(
+    payload = ScheduleEventUpdateValueObject(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
     )
-    return await update_schedule_event_case.excecute(id=id, data=payload)
+    return await update_schedule_event_case.execute(
+        id=id,
+        data=payload,
+    )
 
 
 @events_router.delete(
-    path="/schedule-events/{id}",
+    path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a scheduled event in the database",
 )
@@ -63,11 +77,14 @@ async def delete_evetn(
     current_user: GetCurrentUser,
     delete_schedule_event_case: GetDeleteScheduleEventCase,
 ):
-    return delete_schedule_event_case.excecute(id=id, user_id=current_user.id)
+    return delete_schedule_event_case.execute(
+        id=id,
+        user_id=current_user.id,
+    )
 
 
 @events_router.get(
-    path="/schedule-events",
+    path="",
     status_code=status.HTTP_200_OK,
     summary="List all scheduled events for a user",
     response_model=list[ScheduleEventSchema],
@@ -77,13 +94,13 @@ async def list_schedule_events(
     list_schedule_events_case: GetListScheduleEventsCase,
     query_params: ScheduleEventsQueryParams,
 ):
-    filters = ScheduleEventsListQueryParamsDTO(
+    filters = ScheduleEventsListQueryParamsValueObject(
         **query_params.model_dump(
             exclude_unset=True,
             exclude={"limit", "offset", "order_by"},
         ),
     )
-    return await list_schedule_events_case.excecute(
+    return await list_schedule_events_case.execute(
         user_id=current_user.id,
         filters=filters,
         limit=query_params.limit,

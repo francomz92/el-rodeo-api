@@ -3,11 +3,11 @@ from uuid import UUID
 
 from sqlalchemy import (
     Date,
+    Enum as SQLEnum,
     Float,
     ForeignKey,
-    Enum as SQLEnum,
 )
-from sqlalchemy.orm import Mapped, Relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, Relationship
 
 from src.common.infrastructure.persistence.models import Model
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
@@ -24,5 +24,5 @@ class Purchase(Model):
     unit_price: Mapped[float] = mapped_column(Float)
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
 
-    user: Mapped["Users"] = Relationship(back_populates="purchases")  # type: ignore
-    supplie: Mapped["AnimalSupplies"] = Relationship(back_populates="purchases")  # type: ignore
+    user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821
+    supplie: Mapped["AnimalSupplie"] = Relationship()  # type: ignore  # noqa: F821

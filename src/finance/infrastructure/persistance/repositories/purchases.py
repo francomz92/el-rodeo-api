@@ -4,23 +4,30 @@ from uuid import UUID
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import joinedload
 
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.finance.application.ports.repositories.purchases import IPurchasesRepository
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
+from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.infrastructure.persistance.models import Purchase
 
 
-class PurchasesRepository(IPurchasesRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
-    async def get_by_id(self, id: UUID, user_id: UUID) -> PurchaseEntity | None:
+class PurchasesRepository(IPurchasesRepository, SessionMixin):
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> PurchaseEntity | None:
         query = (
             select(Purchase)
-            .where(Purchase.id == id, Purchase.user_id == user_id)
+            .where(
+                Purchase.id == id,
+                Purchase.user_id == user_id,
+            )
             .options(
-                joinedload(Purchase.user, Purchase.supplie),
+                joinedload(
+                    Purchase.user,
+                    Purchase.supplie,
+                ),
             )
         )
         result = await self.db.execute(query)
@@ -86,7 +93,10 @@ class PurchasesRepository(IPurchasesRepository):
         query = delete(Purchase).where(Purchase.id == id)
         await self.db.execute(query)
 
-    def _build_purchase_with_user_and_supplie(self, purchase_data: Purchase) -> PurchaseEntity:
+    def _build_purchase_with_user_and_supplie(
+        self,
+        purchase_data: Purchase,
+    ) -> PurchaseEntity:
         return PurchaseEntity(
             id=purchase_data.id,
             amount=purchase_data.amount,

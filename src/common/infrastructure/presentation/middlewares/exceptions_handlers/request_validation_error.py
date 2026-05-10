@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from src.common.infrastructure.adapters.http.output.errors import (
-    ErrorDetail,
-    ErrorPayload,
+    ErrorDetailSchema,
+    ErrorPayloadSchema,
     StandardErrorResponse,
     format_error_location,
 )
@@ -16,7 +16,7 @@ async def _request_validation_exception_handler(
     exc: RequestValidationError,
 ) -> JSONResponse:
     details = [
-        ErrorDetail(
+        ErrorDetailSchema(
             field=format_error_location(error.get("loc")),
             message=error.get("msg", "Error de validación"),
         )
@@ -24,7 +24,7 @@ async def _request_validation_exception_handler(
     ]
     error_response = StandardErrorResponse(
         success=False,
-        error=ErrorPayload(
+        error=ErrorPayloadSchema(
             code="validation_error",
             message="Error de validación",
             details=details,

@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TypeVar
 
-from .repository import IRepository
-
+from src.common.domain.repository import IRepository
 
 RepositoryType = TypeVar("RepositoryType", bound=IRepository)
 
@@ -22,20 +21,20 @@ class IUoW(ABC):
 
     @abstractmethod
     def get_repository(self, repository_type: type[RepositoryType]) -> RepositoryType:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def commit(self) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def refresh(self, entity) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def rollback(self) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     async def dispose(self) -> None:
-        raise NotImplemented
+        raise NotImplementedError

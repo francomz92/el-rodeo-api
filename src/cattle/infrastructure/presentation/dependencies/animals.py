@@ -7,27 +7,56 @@ from src.cattle.application.uses_cases.animals_use_cases.get_animal_case import 
 from src.cattle.application.uses_cases.animals_use_cases.list_animals_case import ListAnimalsCase
 from src.cattle.application.uses_cases.animals_use_cases.register_animal_case import RegisterAnimalCase
 from src.cattle.application.uses_cases.animals_use_cases.update_animal_case import UpdateAnimalCase
+from src.cattle.domain.services.animal_protocols.create_animal_protocol_service import CreateAnimalProtocolService
+from src.cattle.domain.services.animals.delete_animal_service import DeleteAnimalService
+from src.cattle.domain.services.animals.get_animal_service import GetAnimalService
+from src.cattle.domain.services.animals.list_animal_service import ListAnimalService
+from src.cattle.domain.services.animals.register_animal_service import RegisterAnimalService
+from src.cattle.domain.services.animals.update_animal_service import UpdateAnimalService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
-def _get_register_animals_case(uow: GetUnitOfWork):
-    return RegisterAnimalCase(uow=uow)
+def _get_register_animals_case(
+    uow: GetUnitOfWork,
+    service: Annotated[RegisterAnimalService, Depends()],
+    create_animal_protocol_service: Annotated[
+        CreateAnimalProtocolService,
+        Depends(),
+    ],
+):
+    return RegisterAnimalCase(
+        uow=uow,
+        service=service,
+        create_animal_protocol_service=create_animal_protocol_service,
+    )
 
 
-def _get_update_animal_case(uow: GetUnitOfWork):
-    return UpdateAnimalCase(uow=uow)
+def _get_update_animal_case(
+    uow: GetUnitOfWork,
+    service: Annotated[UpdateAnimalService, Depends()],
+):
+    return UpdateAnimalCase(uow, service)
 
 
-def _get_delete_animal_case(uow: GetUnitOfWork):
-    return DeleteAnimalCase(uow=uow)
+def _get_delete_animal_case(
+    uow: GetUnitOfWork,
+    service: Annotated[DeleteAnimalService, Depends()],
+):
+    return DeleteAnimalCase(uow=uow, service=service)
 
 
-def _get_list_animal_case(uow: GetUnitOfWork):
-    return ListAnimalsCase(uow=uow)
+def _get_list_animal_case(
+    uow: GetUnitOfWork,
+    service: Annotated[ListAnimalService, Depends()],
+):
+    return ListAnimalsCase(uow=uow, service=service)
 
 
-def _get_obtain_animal_case(uow: GetUnitOfWork):
-    return ObtainAnimalCase(uow=uow)
+def _get_obtain_animal_case(
+    uow: GetUnitOfWork,
+    service: Annotated[GetAnimalService, Depends()],
+):
+    return ObtainAnimalCase(uow, service)
 
 
 GetAnimalRegisterCase = Annotated[RegisterAnimalCase, Depends(_get_register_animals_case)]

@@ -1,33 +1,53 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select, insert, update, exists
+from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
-from src.common.application.types import UNSET
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.cattle.application.ports.dtos.animal_dtos import AnimalCreateDTO, AnimalIdentifierDTO, AnimalUpdateDTO, AnimalsListQueryParamsDTO
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
+from src.cattle.domain.repositories.animals_repository_port import (
+    AnimalCreateValueObject,
+    AnimalsListQueryParamsValueObject,
+    AnimalUpdateValueObject,
+    IAnimalsRepository,
+)
 from src.cattle.infrastructure.persistance.models import Animal
+from src.common.application.types import Sentinel
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
-class AnimalRepository(IAnimalsRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
-    async def exists(self, identifier: UUID | AnimalIdentifierDTO) -> bool:
-        if isinstance(identifier, UUID):
-            query = exists(Animal).where(Animal.id == identifier)
+class AnimalRepository(IAnimalsRepository, SessionMixin):
+    async def exists(
+        self,
+        id: UUID | None = None,
+        user_id: UUID | None = None,
+        type_id: UUID | None = None,
+        caravana: str | None = None,
+    ) -> bool:
+        if not id and not all([user_id, type_id, caravana]):
+            raise ValueError("Debe proporcionar un id o un conjunto de user_id, type_id y caravana para verificar la existencia")
+        if not id:
+            query = exists(Animal).where(
+                Animal.user_id == user_id,
+                Animal.caravana == caravana,
+                Animal.type_id == type_id,
+            )
         else:
-            query = exists(Animal).where(Animal.caravana == identifier.caravana, Animal.type_id == identifier.type_id)
+            query = exists(Animal).where(Animal.id == id)
         result = await self.db.execute(query.select())
         return result.scalar_one()
 
-    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalEntity | None:
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> AnimalEntity | None:
         query = (
             select(Animal)
-            .where(Animal.id == id, Animal.user_id == user_id)
+            .where(
+                Animal.id == id,
+                Animal.user_id == user_id,
+            )
             .options(
                 joinedload(Animal.type),
             )
@@ -51,16 +71,16 @@ class AnimalRepository(IAnimalsRepository):
     async def list_for_user(
         self,
         user_id: UUID,
-        filters: AnimalsListQueryParamsDTO,
+        filters: AnimalsListQueryParamsValueObject,
         limit: int,
         offset: int,
         order_by: str,
     ) -> list[AnimalEntity]:
-        kws = {k: v for k, v in vars(filters) if v != UNSET}
+        kws = {k: v for k, v in vars(filters).items() if v != Sentinel.UNSET}
         query = (
             select(Animal)
             .where(Animal.user_id == user_id)
-            .filter(**kws)
+            .filter_by(**kws)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
@@ -72,14 +92,20 @@ class AnimalRepository(IAnimalsRepository):
         animal_list_db = result.scalars().unique().all()
         return [self._build_animal_with_type(animal_data) for animal_data in animal_list_db]
 
-    async def create(self, data: AnimalCreateDTO) -> AnimalEntity:
-        query = insert(Animal).values(vars(data)).returning(Animal.id)
+    async def create(self, data: AnimalCreateValueObject) -> AnimalEntity:
+        query = (
+            insert(Animal)
+            .values(
+                **vars(data),
+            )
+            .returning(Animal.id)
+        )
         result = await self.db.execute(query)
         animal_id = result.scalar_one()
         return await self.get_by_id(id=animal_id, user_id=data.user_id)  # type: ignore
 
-    async def update_data(self, id: UUID, data: AnimalUpdateDTO) -> AnimalEntity:
-        kws = {k: v for k, v in vars(data).items() if v is not UNSET}
+    async def update_data(self, id: UUID, data: AnimalUpdateValueObject) -> AnimalEntity:
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = update(Animal).where(Animal.id == id).values(**kws)
         await self.db.execute(query)
         return await self.get_by_id(id=id, user_id=data.user_id)  # type: ignore

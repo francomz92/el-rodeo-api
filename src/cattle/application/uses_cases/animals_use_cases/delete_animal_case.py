@@ -1,21 +1,25 @@
 from uuid import UUID
 
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
-from src.common.application.exceptions import ConflictError, ResourceNotFoundError
+from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.services.animals.delete_animal_service import DeleteAnimalService
 from src.common.application.ports.uow import IUoW
 
 
 class DeleteAnimalCase:
-    def __init__(self, uow: IUoW) -> None:
+    def __init__(self, uow: IUoW, service: DeleteAnimalService) -> None:
         self.uow = uow
+        self.service = service
 
     async def execute(self, id: UUID, user_id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
-            animal = await repository.get_by_id(id, user_id)
-            if not animal:
-                raise ResourceNotFoundError(f"El registro que intenta eliminar no existe")
-            if not animal.can_delete():
-                raise ConflictError("No se puede eliminar porque se encuntra vendido")
-            await repository.delete(id)
+            await self.service.validate_animal_for_delete(
+                id=id,
+                user_id=user_id,
+                repository=repository,
+            )
+            await self.service.delete_animal(
+                id=id,
+                repository=repository,
+            )
             await uow.commit()

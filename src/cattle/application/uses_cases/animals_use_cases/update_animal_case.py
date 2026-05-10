@@ -1,23 +1,28 @@
 from uuid import UUID
 
-from src.cattle.application.ports.dtos.animal_dtos import AnimalUpdateDTO
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
-from src.common.application.exceptions import NotPermissionError, ResourceNotFoundError
+from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.services.animals.update_animal_service import UpdateAnimalService
+from src.cattle.domain.value_objects.animal_value_objenct import AnimalUpdateValueObject
 from src.common.application.ports.uow import IUoW
 
 
 class UpdateAnimalCase:
-    def __init__(self, uow: IUoW) -> None:
+    def __init__(self, uow: IUoW, service: UpdateAnimalService) -> None:
         self.uow = uow
+        self.service = service
 
-    async def execute(self, id: UUID, data: AnimalUpdateDTO):
+    async def execute(self, id: UUID, data: AnimalUpdateValueObject):
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
-            animal = await repository.get_by_id(id=id, user_id=data.user_id)
-            if not animal:
-                raise ResourceNotFoundError("El animal que intenta actualizar no existe")
-            if not animal.can_delete():
-                raise NotPermissionError("No se puede modificar un animal que ya ha sido vendido")
-            animal = await repository.update_data(id=id, data=data)
+            await self.service.validate_existence(
+                id=id,
+                user_id=data.user_id,
+                repository=repository,
+            )
+            animal = await self.service.update_animal(
+                id=id,
+                data=data,
+                repository=repository,
+            )
             await uow.commit()
         return animal

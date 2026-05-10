@@ -1,18 +1,20 @@
 from uuid import UUID
 
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
-from src.common.application.exceptions import ResourceNotFoundError
+from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.services.animals.get_animal_service import GetAnimalService
 from src.common.application.ports.uow import IUoW
 
 
 class ObtainAnimalCase:
-    def __init__(self, uow: IUoW) -> None:
+    def __init__(self, uow: IUoW, service: GetAnimalService) -> None:
         self.uow = uow
+        self.service = service
 
     async def execute(self, id: UUID, user_id: UUID):
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
-            animal = await repository.get_by_id(id=id, user_id=user_id)
-            if not animal:
-                raise ResourceNotFoundError("El animal que intenta ver no se encuentra registrado")
-            return animal
+            return await self.service.validate_existence_and_get_animal(
+                id=id,
+                user_id=user_id,
+                repository=repository,
+            )

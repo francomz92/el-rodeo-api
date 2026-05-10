@@ -1,20 +1,37 @@
 from uuid import UUID
 
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 
-from src.cattle.application.ports.dtos.schedule_event_dtos import ScheduleEventCreationDTO, ScheduleEventUpdateDTO, ScheduleEventsListQueryParamsDTO
-from src.cattle.application.ports.repositories.schedule_events_repository_port import IScheduleEventRepository
 from src.cattle.domain.entities.schedule_events_entity import ScheduleEventEntity
+from src.cattle.domain.repositories.schedule_events_repository_port import IScheduleEventRepository
+from src.cattle.domain.value_objects.schedule_event_value_object import (
+    ScheduleEventCreationValueObject,
+    ScheduleEventsListQueryParamsValueObject,
+    ScheduleEventUpdateValueObject,
+)
 from src.cattle.infrastructure.persistance.models import ScheduledEvent
-from src.common.application.types import UNSET
-from src.common.infrastructure.persistence.connections.db import AsyncSession
+from src.common.application.types import Sentinel
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
-class ScheduleEventRepository(IScheduleEventRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
+    async def exists(self, id: UUID, user_id: UUID) -> bool:
+        query = (
+            exists(ScheduledEvent)
+            .where(
+                ScheduledEvent.id == id,
+                ScheduledEvent.user_id == user_id,
+            )
+            .select()
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one()
 
-    async def get_by_id(self, id: UUID, user_id: UUID) -> ScheduleEventEntity | None:
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> ScheduleEventEntity | None:
         query = select(ScheduledEvent).where(
             ScheduledEvent.id == id,
             ScheduledEvent.user_id == user_id,
@@ -26,15 +43,18 @@ class ScheduleEventRepository(IScheduleEventRepository):
     async def list_for_user(
         self,
         user_id: UUID,
-        filters: ScheduleEventsListQueryParamsDTO,
+        filters: ScheduleEventsListQueryParamsValueObject,
         limit: int,
         offset: int,
         order_by: str,
     ) -> list[ScheduleEventEntity]:
+        kws = {k: v for k, v in vars(filters).items() if v != Sentinel.UNSET}
         query = (
             select(ScheduledEvent)
-            .where(ScheduledEvent.user_id == user_id)
-            .filter(**vars(filters))
+            .where(
+                ScheduledEvent.user_id == user_id,
+            )
+            .filter_by(**kws)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
@@ -43,23 +63,39 @@ class ScheduleEventRepository(IScheduleEventRepository):
         events = result.scalars().unique().all()
         return [self._build_schedule_event(event) for event in events]
 
-    async def get_pending_events(self, user_id: UUID) -> list[ScheduleEventEntity]:
+    async def get_pending_events(
+        self,
+        user_id: UUID,
+    ) -> list[ScheduleEventEntity]:
         query = select(ScheduledEvent).where(
             ScheduledEvent.user_id == user_id,
-            ScheduledEvent.pending == True,
+            ScheduledEvent.pending,  # == True
         )
         result = await self.db.execute(query)
         events = result.scalars().unique().all()
         return [self._build_schedule_event(event) for event in events]
 
-    async def create(self, data: ScheduleEventCreationDTO) -> ScheduleEventEntity:
-        query = insert(ScheduledEvent).values(vars(data)).returning(ScheduledEvent.id)
+    async def create(
+        self,
+        data: ScheduleEventCreationValueObject,
+    ) -> ScheduleEventEntity:
+        query = (
+            insert(ScheduledEvent)
+            .values(
+                **vars(data),
+            )
+            .returning(ScheduledEvent.id)
+        )
         result = await self.db.execute(query)
         event_id = result.scalar_one()
         return await self.get_by_id(event_id, data.user_id)  # type: ignore
 
-    async def update_data(self, id: UUID, data: ScheduleEventUpdateDTO) -> ScheduleEventEntity:
-        kws = {k: v for k, v in vars(data).items() if v != UNSET}
+    async def update_data(
+        self,
+        id: UUID,
+        data: ScheduleEventUpdateValueObject,
+    ) -> ScheduleEventEntity:
+        kws = {k: v for k, v in vars(data).items() if v != Sentinel.UNSET}
         query = update(ScheduledEvent).values(**kws)
         await self.db.execute(query)
         return await self.get_by_id(id, data.user_id)  # type: ignore

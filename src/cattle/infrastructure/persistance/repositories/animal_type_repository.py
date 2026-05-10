@@ -1,17 +1,14 @@
 from uuid import UUID
 
-from sqlalchemy import select, exists
+from sqlalchemy import exists, select
 
-from src.cattle.application.ports.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
+from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.infrastructure.persistance.models import AnimalType
-from src.common.infrastructure.presentation.dependencies.db import AsyncSession
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
-class AnimalTypeRepository(IAnimalTypesRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
+class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
     async def get_by_id(self, id: UUID) -> AnimalTypeEntinty | None:
         query = select(AnimalType).where(AnimalType.id == id)
         result = await self.db.execute(query)
@@ -30,4 +27,7 @@ class AnimalTypeRepository(IAnimalTypesRepository):
         return result.scalar_one()
 
     def _build_animal_type(self, type_data: AnimalType) -> AnimalTypeEntinty:
-        return AnimalTypeEntinty(id=type_data.id, name=type_data.name)
+        return AnimalTypeEntinty(
+            id=type_data.id,
+            name=type_data.name,
+        )

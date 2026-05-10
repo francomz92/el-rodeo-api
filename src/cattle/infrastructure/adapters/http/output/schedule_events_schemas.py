@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-
 class ScheduleEventSchema(BaseModel):
     id: UUID
     title: str

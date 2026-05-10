@@ -1,30 +1,31 @@
 from uuid import UUID
 
-from src.cattle.application.ports.dtos.animal_dtos import AnimalsListQueryParamsDTO
-from src.cattle.application.ports.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.services.animals.list_animal_service import ListAnimalService
+from src.cattle.domain.value_objects.animal_value_objenct import AnimalsListQueryParamsValueObject
 from src.common.application.ports.uow import IUoW
-from src.common.application.types import UNSET
 
 
 class ListAnimalsCase:
-    def __init__(self, uow: IUoW) -> None:
+    def __init__(self, uow: IUoW, service: ListAnimalService) -> None:
         self.uow = uow
+        self.service = service
 
     async def execute(
         self,
         user_id: UUID,
-        filters: AnimalsListQueryParamsDTO,
+        filters: AnimalsListQueryParamsValueObject,
         limit: int,
         offset: int,
         order_by: str,
     ):
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
-            animals_list = await repository.list_for_user(
+            return await self.service.get_animals(
                 user_id=user_id,
-                filters=filters,
+                repository=repository,
+                query=filters,
                 limit=limit,
                 offset=offset,
                 order_by=order_by,
             )
-            return animals_list

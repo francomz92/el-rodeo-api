@@ -3,11 +3,9 @@ from pydantic import BaseModel, Field
 from src.common.domain.constants import pagination
 
 
-
 class StandardQueryParams(BaseModel):
     limit: int = Field(
         default=pagination.ROW_PER_PAGE,
-        max_digits=2,
         ge=1,
         le=100,
         description="Records per page",

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, Relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, Relationship
 
 from src.common.infrastructure.persistence.models import Model
 
@@ -15,4 +15,4 @@ class Buyer(Model):
     contact_number: Mapped[str] = mapped_column(String(10), default=str)
     contact_address: Mapped[str] = mapped_column(String(100), default=str)
 
-    user: Mapped["User"] = Relationship(back_populates="buyers")  # type: ignore
+    user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821

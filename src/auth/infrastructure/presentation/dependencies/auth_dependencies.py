@@ -8,6 +8,9 @@ from src.auth.application.uses_cases.change_password_case import ChangePasswordC
 from src.auth.application.uses_cases.login_user_case import LoginUserCase
 from src.auth.application.uses_cases.register_user_case import RegisterUserCase
 from src.auth.domain.entities import UserEntity
+from src.auth.domain.services.change_password_service import ChangePasswordService
+from src.auth.domain.services.login_user_service import LoginUserService
+from src.auth.domain.services.register_user_service import RegisterUserService
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
@@ -18,20 +21,18 @@ oauth2_scheme = APIKeyHeader(name="Authorization")
 def _get_register_user_case(
     uow: GetUnitOfWork,
     security_service: GetSecurityService,
+    register_service: Annotated[RegisterUserService, Depends()],
 ) -> RegisterUserCase:
-    return RegisterUserCase(uow=uow, security_service=security_service)
+    return RegisterUserCase(uow, security_service, register_service)
 
 
 def _get_login_user_case(
     uow: GetUnitOfWork,
     security_service: GetSecurityService,
     token_service: GetTokenService,
+    login_service: Annotated[LoginUserService, Depends()],
 ) -> LoginUserCase:
-    return LoginUserCase(
-        uow=uow,
-        security_service=security_service,
-        token_service=token_service,
-    )
+    return LoginUserCase(uow, security_service, token_service, login_service)
 
 
 async def _get_auth_service(token_service: GetTokenService) -> AuthService:
@@ -42,11 +43,13 @@ async def _get_change_password_case(
     uow: GetUnitOfWork,
     security_service: GetSecurityService,
     auth_service: "GetAuthService",
+    change_password_service: Annotated[ChangePasswordService, Depends()],
 ):
     return ChangePasswordCase(
-        uow=uow,
-        security_service=security_service,
-        auth_service=auth_service,
+        uow,
+        security_service,
+        auth_service,
+        change_password_service,
     )
 
 

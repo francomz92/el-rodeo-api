@@ -1,7 +1,7 @@
 from src.auth.application.exceptions.authentication import UnauthorizedError
-from src.auth.application.ports.repositories.users_repository_port import IUserRepository
 from src.auth.application.ports.tokens_port import ITokenService
 from src.auth.domain.entities import UserEntity
+from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.common.application.ports.uow import IUoW
 
 

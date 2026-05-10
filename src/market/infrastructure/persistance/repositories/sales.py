@@ -4,17 +4,18 @@ from uuid import UUID
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import joinedload
 
-from src.common.infrastructure.persistence.connections.db import AsyncSession
-from src.market.application.ports.repositoriyes.sales import ISalesRepository
+from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.market.domain.entities.sales import SaleEntity
+from src.market.domain.repositoriyes.sales import ISalesRepository
 from src.market.infrastructure.persistance.models import Sale
 
 
-class SalesRepository(ISalesRepository):
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
-    async def get_by_id(self, id: UUID, user_id: UUID) -> SaleEntity | None:
+class SalesRepository(ISalesRepository, SessionMixin):
+    async def get_by_id(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> SaleEntity | None:
         query = (
             select(Sale)
             .where(Sale.id == id, Sale.user_id == user_id)

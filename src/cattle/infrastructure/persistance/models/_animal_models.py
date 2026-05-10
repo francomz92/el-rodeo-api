@@ -2,13 +2,14 @@ from datetime import date
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
+    Date,
+    Enum as SQLEnum,
     Float,
     ForeignKey,
     String,
-    Date,
-    Enum as SQLEnum,
 )
-from sqlalchemy.orm import Mapped, Relationship, mapped_column, DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column, Relationship
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.persistence.models import Model
@@ -37,5 +38,18 @@ class Animal(Model):
     breed: Mapped[str] = mapped_column(String(50))
     status: Mapped[AnimalStatus] = mapped_column(SQLEnum(AnimalStatus), index=True)
 
-    user: Mapped["User"] = Relationship(back_populates="animals")  # type: ignore
+    user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821
     type: Mapped["AnimalType"] = Relationship(back_populates="animals")
+
+
+class AnimalProtocols(Model):
+    __tablename__ = "animal_protocols"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"))
+    vaccinated: Mapped[bool] = mapped_column(Boolean, default=False)
+    vaccinated_date: Mapped[date] = mapped_column(Date, nullable=True)
+    sale_permission: Mapped[bool] = mapped_column(Boolean, default=False)
+    sale_permission_date: Mapped[date] = mapped_column(Date, nullable=True)
+
+    animal: Mapped[Animal] = Relationship()

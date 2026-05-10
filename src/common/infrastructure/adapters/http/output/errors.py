@@ -1,20 +1,20 @@
 from pydantic import BaseModel
 
 
-class ErrorDetail(BaseModel):
+class ErrorDetailSchema(BaseModel):
     field: str | None = None
     message: str
 
 
-class ErrorPayload(BaseModel):
+class ErrorPayloadSchema(BaseModel):
     code: str
     message: str
-    details: list[ErrorDetail] = []
+    details: list[ErrorDetailSchema] = []
 
 
 class StandardErrorResponse(BaseModel):
     success: bool = False
-    error: ErrorPayload
+    error: ErrorPayloadSchema
     timestamp: str
 
 
