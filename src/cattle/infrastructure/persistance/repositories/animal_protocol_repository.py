@@ -93,7 +93,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         id: UUID,
         data: AnimalProtocolUpdateValueObject,
     ) -> AnimalProtocolEntity:
-        kws = {k: v for k, v in vars(data) if v is not Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = (
             update(AnimalProtocols)
             .where(
