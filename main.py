@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.common.domain.types import EnvironmentType
 from src.common.infrastructure.adapters.http.output.errors import StandardErrorResponse
 from src.common.infrastructure.core import settings
 from src.common.infrastructure.core.app import configure_app
@@ -11,8 +12,9 @@ from src.common.infrastructure.persistence.models import Model
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Model.metadata.create_all)
+    if settings.ENVIRONMENT is EnvironmentType.DEVELOPMENT:
+        async with engine.begin() as conn:
+            await conn.run_sync(Model.metadata.create_all)
     yield
 
 

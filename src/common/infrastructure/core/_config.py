@@ -2,9 +2,11 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from src.common.domain.types import EnvironmentType
+
 
 class Settings(BaseSettings):
-    ENVIRONMENT: str = "development"  # development, staging, production
+    ENVIRONMENT: EnvironmentType = EnvironmentType.DEVELOPMENT  # development, staging, production
     TERM_OF_SERVICE_URL: str = "https://el-rodeo-api.com/terms-of-service"
     ALLOWED_ORIGINS: list[str] = ["*"]
     ALLOWED_HEADERS: list[str] = ["*"]

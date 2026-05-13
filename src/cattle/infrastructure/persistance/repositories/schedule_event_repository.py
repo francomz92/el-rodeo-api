@@ -15,7 +15,7 @@ from src.cattle.domain.value_objects.schedule_event_value_object import (
     ScheduleEventUpdateValueObject,
 )
 from src.cattle.infrastructure.persistance.models import ScheduledEvent
-from src.common.application.types import Sentinel
+from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.common.utils.date_utils import get_current_datetime
 

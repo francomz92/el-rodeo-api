@@ -12,7 +12,7 @@ from src.cattle.domain.value_objects.animal_protocol_value_object import (
     AnimalProtocolUpdateValueObject,
 )
 from src.cattle.infrastructure.persistance.models._animal_models import AnimalProtocols
-from src.common.application.types import Sentinel
+from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 

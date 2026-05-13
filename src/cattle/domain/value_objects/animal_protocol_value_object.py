@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from src.common.application.types import Sentinel
+from src.common.domain.types import Sentinel
 
 
 @dataclass

@@ -12,7 +12,7 @@ from src.cattle.domain.repositories.animals_repository_port import (
     IAnimalsRepository,
 )
 from src.cattle.infrastructure.persistance.models import Animal
-from src.common.application.types import Sentinel
+from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
