@@ -14,8 +14,15 @@ from src.common.infrastructure.persistence.repositories.mixins import SessionMix
 
 
 class UserRepository(IUserRepository, SessionMixin):
-    async def exists(self, dni: str) -> bool:
-        query = exists(User).where(User.dni == dni).select()
+    async def exists(self, dni: str, email: str) -> bool:
+        query = (
+            exists(User)
+            .where(
+                User.dni == dni,
+                User.email == email,
+            )
+            .select()
+        )
         result = await self.db.execute(query)
         return result.scalar_one()
 
@@ -62,6 +69,7 @@ class UserRepository(IUserRepository, SessionMixin):
             id=user_db.id,
             name=user_db.name,
             dni=user_db.dni,
+            email=user_db.email,
             created_at=user_db.created_at,
             is_admin=user_db.is_admin,
             _hashed_password=user_db.password,

@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,13 @@ class Settings(BaseSettings):
     DB_URL: str
     SECRET: str
     JWT_ALGORITHM: str
+    SMTP_SERVER: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    DOMAIN: str
+    BROKER_URL: str
+    RESULT_BACKEND_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

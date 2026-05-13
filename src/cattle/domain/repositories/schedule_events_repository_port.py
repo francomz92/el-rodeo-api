@@ -1,7 +1,10 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.cattle.domain.entities.schedule_events_entity import ScheduleEventEntity
+from src.cattle.domain.entities.schedule_events_entity import (
+    ScheduleEventEntity,
+    ScheduleEventRemindedEntity,
+)
 from src.cattle.domain.value_objects.schedule_event_value_object import (
     ScheduleEventCreationValueObject,
     ScheduleEventsListQueryParamsValueObject,
@@ -31,7 +34,7 @@ class IScheduleEventRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_pending_events(self, user_id: UUID) -> list[ScheduleEventEntity]:
+    async def get_pending_events(self) -> list[ScheduleEventRemindedEntity]:
         raise NotImplementedError
 
     @abstractmethod

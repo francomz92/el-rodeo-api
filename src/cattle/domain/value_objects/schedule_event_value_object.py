@@ -8,21 +8,21 @@ from src.common.application.types import Sentinel
 @dataclass
 class ScheduleEventCreationValueObject:
     user_id: UUID
-    title: str | Sentinel = Sentinel
-    description: str | Sentinel = Sentinel
-    event_date: date | Sentinel = Sentinel
+    title: str | Sentinel = Sentinel.UNSET
+    description: str | Sentinel = Sentinel.UNSET
+    event_date: date | Sentinel = Sentinel.UNSET
     pending: bool = True
 
 
 @dataclass
 class ScheduleEventUpdateValueObject:
     user_id: UUID
-    title: str | Sentinel = Sentinel
-    description: str | Sentinel = Sentinel
-    event_date: date | Sentinel = Sentinel
+    title: str | Sentinel = Sentinel.UNSET
+    description: str | Sentinel = Sentinel.UNSET
+    event_date: date | Sentinel = Sentinel.UNSET
 
 
 @dataclass
 class ScheduleEventsListQueryParamsValueObject:
-    title: str | Sentinel = Sentinel
-    event_date: date | Sentinel = Sentinel
+    title: str | Sentinel = Sentinel.UNSET
+    event_date: date | Sentinel = Sentinel.UNSET

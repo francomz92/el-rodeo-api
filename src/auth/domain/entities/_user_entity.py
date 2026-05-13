@@ -1,6 +1,6 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
-from dataclasses import dataclass, field
 
 from src.common.domain.services.security import ISecurityService
 
@@ -10,6 +10,7 @@ class UserEntity:
     id: UUID
     name: str
     dni: str
+    email: str
     created_at: datetime
     is_admin: bool
     _hashed_password: str = field(default_factory=str)

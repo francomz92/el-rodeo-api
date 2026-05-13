@@ -9,12 +9,13 @@ class RegisterUserService:
         if not user.is_admin:
             raise NotPermissionError("No tiene permisos para realizar esta acción")
 
-    async def validate_user_dni_uniqueness(
+    async def validate_duplicated(
         self,
         dni: str,
+        email: str,
         repository: IUserRepository,
     ) -> None:
-        user = await repository.exists(dni=dni)
+        user = await repository.exists(dni=dni, email=email)
         if user:
             raise DuplicatedError("Este usuario ya se encuentra registrado")
 

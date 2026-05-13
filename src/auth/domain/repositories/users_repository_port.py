@@ -11,7 +11,7 @@ from src.common.domain.repository import IRepository
 
 class IUserRepository(IRepository):
     @abstractmethod
-    async def exists(self, dni: str) -> bool:
+    async def exists(self, dni: str, email: str) -> bool:
         raise NotImplementedError
 
     @abstractmethod

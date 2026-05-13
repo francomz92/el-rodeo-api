@@ -7,6 +7,7 @@ from src.common.application.types import Sentinel
 class UserCreationValueObject:
     name: str
     dni: str
+    email: str
 
 
 @dataclass

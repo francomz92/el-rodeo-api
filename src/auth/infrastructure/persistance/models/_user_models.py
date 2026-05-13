@@ -9,5 +9,6 @@ class User(Model):
 
     name: Mapped[str] = mapped_column(String(50), index=True)
     dni: Mapped[str] = mapped_column(String(10), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)

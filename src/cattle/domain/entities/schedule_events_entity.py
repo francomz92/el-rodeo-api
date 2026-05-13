@@ -18,3 +18,13 @@ class ScheduleEventEntity:
 
     def can_delete(self) -> bool:
         return self.pending
+
+
+@dataclass
+class ScheduleEventRemindedEntity:
+    user_name: str
+    user_email: str
+    title: str
+    description: str
+    event_date: date
+    pending: bool

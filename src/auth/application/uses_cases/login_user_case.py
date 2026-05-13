@@ -1,5 +1,5 @@
-from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.application.ports.tokens_port import ITokenService
+from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.login_user_service import LoginUserService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService
@@ -24,4 +24,4 @@ class LoginUserCase:
             user = await self.login_service.validate_duplicate_and_get_user(dni, repository)
             await self.login_service.validate_credentials(user, password, self.security_service)
             expire_time = 60 * 24  # ? 24 hs
-            return self.token_service.generate({"user_id": user.id}, expire_time)
+            return self.token_service.generate({"user_id": str(user.id)}, expire_time)

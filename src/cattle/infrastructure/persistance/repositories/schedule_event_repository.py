@@ -1,8 +1,13 @@
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 
-from src.cattle.domain.entities.schedule_events_entity import ScheduleEventEntity
+from src.auth.infrastructure.persistance.models import User
+from src.cattle.domain.entities.schedule_events_entity import (
+    ScheduleEventEntity,
+    ScheduleEventRemindedEntity,
+)
 from src.cattle.domain.repositories.schedule_events_repository_port import IScheduleEventRepository
 from src.cattle.domain.value_objects.schedule_event_value_object import (
     ScheduleEventCreationValueObject,
@@ -12,6 +17,7 @@ from src.cattle.domain.value_objects.schedule_event_value_object import (
 from src.cattle.infrastructure.persistance.models import ScheduledEvent
 from src.common.application.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.utils.date_utils import get_current_datetime
 
 
 class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
@@ -48,7 +54,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[ScheduleEventEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v != Sentinel.UNSET}
+        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
         query = (
             select(ScheduledEvent)
             .where(
@@ -58,18 +64,6 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
-        )
-        result = await self.db.execute(query)
-        events = result.scalars().unique().all()
-        return [self._build_schedule_event(event) for event in events]
-
-    async def get_pending_events(
-        self,
-        user_id: UUID,
-    ) -> list[ScheduleEventEntity]:
-        query = select(ScheduledEvent).where(
-            ScheduledEvent.user_id == user_id,
-            ScheduledEvent.pending,  # == True
         )
         result = await self.db.execute(query)
         events = result.scalars().unique().all()
@@ -95,7 +89,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
         id: UUID,
         data: ScheduleEventUpdateValueObject,
     ) -> ScheduleEventEntity:
-        kws = {k: v for k, v in vars(data).items() if v != Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = update(ScheduledEvent).values(**kws)
         await self.db.execute(query)
         return await self.get_by_id(id, data.user_id)  # type: ignore
@@ -103,6 +97,40 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
     async def delete(self, id: UUID) -> None:
         query = delete(ScheduledEvent).where(ScheduledEvent.id == id)
         await self.db.execute(query)
+
+    async def get_pending_events(self) -> list[ScheduleEventRemindedEntity]:
+        current_date = get_current_datetime().date()
+        target_date = current_date + timedelta(days=3)
+        query = (
+            select(
+                ScheduledEvent.title,
+                ScheduledEvent.description,
+                ScheduledEvent.event_date,
+                User.name.label("user_name"),
+                User.email.label("user_email"),
+            )
+            .join(ScheduledEvent.user)
+            .where(
+                ScheduledEvent.pending,
+                and_(
+                    ScheduledEvent.event_date >= current_date,
+                    ScheduledEvent.event_date <= target_date,
+                ),
+            )
+        )
+        result = await self.db.execute(query)
+        events = result.unique().all()
+        return [
+            ScheduleEventRemindedEntity(
+                title=event.title,
+                description=event.description,
+                event_date=event.event_date,
+                pending=event.pending,
+                user_name=event.user_name,
+                user_email=event.user_email,
+            )
+            for event in events
+        ]
 
     def _build_schedule_event(self, data: ScheduledEvent) -> ScheduleEventEntity:
         return ScheduleEventEntity(

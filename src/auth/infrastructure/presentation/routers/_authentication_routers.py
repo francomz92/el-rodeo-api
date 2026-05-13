@@ -15,6 +15,7 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
     GetRegisterUserCase,
 )
 from src.common.infrastructure.adapters.http.output.messages import SimpleMessageSchema
+from src.common.infrastructure.core import settings
 
 auth_router = APIRouter()
 
@@ -34,6 +35,7 @@ async def register_user(
     return await register_user_case.execute(
         data=payload,
         requesting_user=current_user,
+        redirect_url=f"{settings.DOMAIN}/confirm-account",
     )
 
 
