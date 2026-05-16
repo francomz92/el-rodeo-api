@@ -4,6 +4,7 @@ line-length = 140
 quote-style = "double"
 docstring-code-format = true
 skip-magic-trailing-comma = false
+line-ending = "native"
 
 [lint.isort]
 force-wrap-aliases = true

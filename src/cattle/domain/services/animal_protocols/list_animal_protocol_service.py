@@ -3,7 +3,6 @@ from uuid import UUID
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolListQueryParamsValueObject
-from src.common.domain.types import Sentinel
 
 
 class ListAnimalProtocolService:

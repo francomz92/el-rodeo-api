@@ -7,6 +7,10 @@ from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
 
 class ISupplyTypesRepository(IRepository):
     @abstractmethod
+    async def exists(self, id: UUID) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     async def get_by_id(self, id: UUID) -> SupplyTypeEntinty | None:
         raise NotImplementedError
 

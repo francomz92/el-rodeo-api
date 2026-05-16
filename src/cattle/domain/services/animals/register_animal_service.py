@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
 from src.common.domain.exceptions import BusinessValidationError, DuplicatedError
@@ -33,5 +34,5 @@ class RegisterAnimalService:
                 details=[{"field": "type_id", "message": "Debe seleccionar un tipo válido"}],
             )
 
-    async def create_new(self, data, repository: IAnimalsRepository):
+    async def create_new(self, data, repository: IAnimalsRepository) -> AnimalEntity:
         return await repository.create(data=data)

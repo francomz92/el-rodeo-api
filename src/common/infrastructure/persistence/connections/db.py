@@ -12,7 +12,7 @@ engine = create_async_engine(
 )
 
 
-AsyncSessionMaker = async_sessionmaker(  # type: ignore
+AsyncSessionMaker = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     autoflush=False,

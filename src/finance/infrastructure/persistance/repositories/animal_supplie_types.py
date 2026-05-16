@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
@@ -9,6 +9,17 @@ from src.finance.infrastructure.persistance.models import AnimalSupplieType
 
 
 class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
+    async def exists(self, id: UUID) -> bool:
+        query = (
+            exists(AnimalSupplieType)
+            .where(
+                AnimalSupplieType.id == id,
+            )
+            .select()
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one()
+
     async def get_by_id(self, id: UUID) -> SupplyTypeEntinty | None:
         query = select(AnimalSupplieType).where(AnimalSupplieType.id == id)
         result = await self.db.execute(query)

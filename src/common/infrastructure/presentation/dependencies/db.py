@@ -3,7 +3,6 @@ from typing import Annotated, AsyncGenerator
 from fastapi import Depends
 
 from src.common.infrastructure.persistence.connections.db import (
-    async_sessionmaker,
     AsyncSession,
     AsyncSessionMaker,
 )
@@ -18,4 +17,4 @@ async def _get_db() -> AsyncGenerator[AsyncSession, None]:
         await db.close()
 
 
-GetSession = Annotated[async_sessionmaker, Depends(_get_db)]
+GetSession = Annotated[AsyncSession, Depends(_get_db)]
