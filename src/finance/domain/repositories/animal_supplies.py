@@ -51,5 +51,13 @@ class IAnimalSuppliesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def incrase_stock(
+        self,
+        id: UUID,
+        amount_to_incrase: float,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def delete(self, id: UUID) -> None:
         raise NotImplementedError

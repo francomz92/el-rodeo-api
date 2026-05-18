@@ -5,28 +5,35 @@ from uuid import UUID
 from src.common.domain.repository import IRepository
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
+from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseListQueryParamValueObject, PurchaseCreateValueObject
 
 
 class IPurchasesRepository(IRepository):
+    @abstractmethod
+    async def exists(self, id: UUID, user_id: UUID) -> bool:
+        raise NotImplementedError
+
     @abstractmethod
     async def get_by_id(self, id: UUID, user_id: UUID) -> PurchaseEntity | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_all(self, user_id: UUID) -> list[PurchaseEntity]:
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        filters: PurchaseListQueryParamValueObject,
+        limit: int,
+        offset: int,
+        order_by: str,
+    ) -> list[PurchaseEntity]:
         raise NotImplementedError
 
     @abstractmethod
     async def create(
         self,
         user_id: UUID,
-        supplie_id: UUID,
-        amount: float,
-        price: float,
-        purchase_date: date,
-        unit_price: float,
-        unit_of_measurement: UnitOfMeasurement,
-    ) -> None:
+        data: PurchaseCreateValueObject,
+    ) -> PurchaseEntity:
         raise NotImplementedError
 
     @abstractmethod

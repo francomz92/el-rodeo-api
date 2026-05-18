@@ -1,0 +1,13 @@
+{
+  "languages": {
+    "Python": {
+      "formatter": {
+        "external": {
+          "command": "D:\\Dev\\projects\\el-rodeo\\el-rodeo-api\\.venv\\Scripts\\ruff.exe",
+          "arguments": ["format", "-"],
+        },
+      },
+    },
+  },
+  "load_direnv": "shell_hook",
+}

@@ -101,6 +101,16 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
         updated_id = result.scalar_one()
         return await self.get_by_id(updated_id, data.user_id)  # type: ignore
 
+    async def incrase_stock(self, id: UUID, amount_to_incrase: float) -> None:
+        query = (
+            update(AnimalSupplie)
+            .where(
+                AnimalSupplie.id == id,
+            )
+            .values(amount=AnimalSupplie.amount - amount_to_incrase)
+        )
+        await self.db.execute(query)
+
     async def delete(self, id: UUID) -> None:
         query = delete(AnimalSupplie).where(AnimalSupplie.id == id)
         await self.db.execute(query)
