@@ -1,6 +1,5 @@
 from datetime import date
 from typing import Self
-from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -14,7 +13,6 @@ class ScheduleEventsQueryParams(StandardQueryParams):
 
 
 class ScheduleEventCreationSchema(BaseModel):
-    user_id: UUID
     title: str = Field(..., max_length=50, description="Title for the event")
     description: str = Field(..., max_length=255, description="Description about the event")
     event_date: date = Field(..., description="Date of event")

@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
 from src.cattle.domain.value_objects.animal_protocol_value_object import (
@@ -66,15 +67,16 @@ async def get_animal_protocol(
 async def list_animal_protocols(
     current_user: GetCurrentUser,
     list_protocol_case: GetListAnimalProtocolCase,
-    query_params: AnimalProtocolsListQueryParamsSchema,
+    query_params: Annotated[AnimalProtocolsListQueryParamsSchema, Query()],
 ):
     filters = AnimalProtocolListQueryParamsValueObject(
-        query_params.model_dump(
+        **query_params.model_dump(
+            exclude_unset=True,
             exclude={
                 "limit",
                 "offset",
                 "order_by",
-            }
+            },
         ),
     )
     return await list_protocol_case.execute(

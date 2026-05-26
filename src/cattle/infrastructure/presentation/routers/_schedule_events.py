@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
 from src.cattle.domain.value_objects.schedule_event_value_object import (
@@ -77,7 +78,7 @@ async def delete_evetn(
     current_user: GetCurrentUser,
     delete_schedule_event_case: GetDeleteScheduleEventCase,
 ):
-    return delete_schedule_event_case.execute(
+    return await delete_schedule_event_case.execute(
         id=id,
         user_id=current_user.id,
     )
@@ -92,7 +93,7 @@ async def delete_evetn(
 async def list_schedule_events(
     current_user: GetCurrentUser,
     list_schedule_events_case: GetListScheduleEventsCase,
-    query_params: ScheduleEventsQueryParams,
+    query_params: Annotated[ScheduleEventsQueryParams, Query()],
 ):
     filters = ScheduleEventsListQueryParamsValueObject(
         **query_params.model_dump(
