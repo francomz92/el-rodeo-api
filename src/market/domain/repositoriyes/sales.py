@@ -1,12 +1,19 @@
 from abc import abstractmethod
-from datetime import date
 from uuid import UUID
 
 from src.common.domain.repository import IRepository
 from src.market.domain.entities.sales import SaleEntity
+from src.market.domain.value_objects.sale_value_objects import (
+    SaleCreateValueObject,
+    SaleListQueryParamsValueObject,
+)
 
 
 class ISalesRepository(IRepository):
+    @abstractmethod
+    async def exists(self, id: UUID, user_id: UUID) -> bool:
+        raise NotImplementedError
+
     @abstractmethod
     async def get_by_id(
         self,
@@ -16,35 +23,18 @@ class ISalesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_all(self, user_id: UUID) -> list[SaleEntity]:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def create(
+    async def list_for_user(
         self,
         user_id: UUID,
-        buyer_id: UUID,
-        animal_id: UUID,
-        sale_date: date,
-        price: float,
-        price_per_kg: float,
-        weight: float,
-        description: str,
-    ) -> None:
+        filters: SaleListQueryParamsValueObject,
+        limit: int,
+        offset: int,
+        order_by: str,
+    ) -> list[SaleEntity]:
         raise NotImplementedError
 
     @abstractmethod
-    async def update_data(
-        self,
-        id: UUID,
-        buyer_id: UUID,
-        animal_id: UUID,
-        sale_date: date,
-        price: float,
-        price_per_kg: float,
-        weight: float,
-        description: str,
-    ) -> None:
+    async def create(self, data: SaleCreateValueObject) -> SaleEntity:
         raise NotImplementedError
 
     @abstractmethod

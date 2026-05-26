@@ -72,7 +72,6 @@ async def update_animal_supply(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an animal supply in data base",
-    response_model=AnimalSupplySchema,
 )
 async def delete_animal_supply(
     current_user: GetCurrentUser,

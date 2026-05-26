@@ -2,7 +2,7 @@ from enum import Enum, StrEnum
 
 
 class Sentinel(Enum):
-    UNSET = object()
+    UNSET = "unset"
 
     def __repr__(self):
         return "UNSET"

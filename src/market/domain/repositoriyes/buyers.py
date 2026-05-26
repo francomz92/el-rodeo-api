@@ -3,9 +3,18 @@ from uuid import UUID
 
 from src.common.domain.repository import IRepository
 from src.market.domain.entities.buyers import BuyerEntity
+from src.market.domain.value_objects.buyer_value_objects import (
+    BuyerCreateValueObject,
+    BuyerListQueryParamsValueObject,
+    BuyerUpdateValueObject,
+)
 
 
 class IBuyersRepository(IRepository):
+    @abstractmethod
+    async def exists(self, id: UUID, user_id: UUID) -> bool:
+        raise NotImplementedError
+
     @abstractmethod
     async def get_by_id(
         self,
@@ -15,18 +24,18 @@ class IBuyersRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_all(self, user_id: UUID) -> list[BuyerEntity]:
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        filters: BuyerListQueryParamsValueObject,
+        limit: int,
+        offset: int,
+        order_by: str,
+    ) -> list[BuyerEntity]:
         raise NotImplementedError
 
     @abstractmethod
-    async def create(
-        self,
-        user_id: UUID,
-        name: str,
-        description: str,
-        contact_number: str,
-        contact_address: str,
-    ) -> None:
+    async def create(self, data: BuyerCreateValueObject) -> BuyerEntity:
         raise NotImplementedError
 
     @abstractmethod
@@ -34,11 +43,8 @@ class IBuyersRepository(IRepository):
         self,
         id: UUID,
         user_id: UUID,
-        name: str,
-        description: str,
-        contact_number: str,
-        contact_address: str,
-    ) -> None:
+        data: BuyerUpdateValueObject,
+    ) -> BuyerEntity:
         raise NotImplementedError
 
     @abstractmethod

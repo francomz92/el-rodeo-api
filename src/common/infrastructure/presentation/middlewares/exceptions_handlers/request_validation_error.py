@@ -1,6 +1,6 @@
 from fastapi import Request
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from src.common.infrastructure.adapters.http.output.errors import (
     ErrorDetailSchema,

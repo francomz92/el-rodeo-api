@@ -5,7 +5,7 @@ from uuid import UUID
 from src.common.domain.repository import IRepository
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
-from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseListQueryParamValueObject, PurchaseCreateValueObject
+from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
 
 
 class IPurchasesRepository(IRepository):

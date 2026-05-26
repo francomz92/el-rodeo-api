@@ -1,0 +1,45 @@
+services:
+    celery:
+      container_name: celery
+      image: .
+      command: celery -A config worker -B --loglevel=DEBUG
+      volumes:
+        - .:/app
+      links:
+        - redis
+      env_file:
+        - .env
+      depends_on:
+        - backend
+        - redis
+      networks:
+        backend_net:
+          ipv4_address: 172.40.1.2
+
+    flower:
+      container_name: flower
+      image: backend
+      ports:
+        - 4444:5555
+      env_file:
+        - .env
+      command: celery -A config flower --loglevel=DEBUG
+      depends_on:
+        - celery
+      networks:
+        backend_net:
+          ipv4_address: 172.40.1.3
+
+    redis:
+      container_name: redis
+      image: redis:6.0.9
+      command: --port 6380
+      ports:
+        - 6380:6380
+      expose:
+        - 6380
+      volumes:
+        - redis_data:/data
+      networks:
+        backend_net:
+          ipv4_address: 172.40.1.6

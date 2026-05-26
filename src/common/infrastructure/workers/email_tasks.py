@@ -1,4 +1,4 @@
-from celery import shared_task, Task
+from celery import Task, shared_task
 
 from src.common.application.services.email_service import EmailService
 from src.common.infrastructure.adapters.clients.smtp_email_client import SMTPClient

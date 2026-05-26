@@ -1,17 +1,17 @@
-from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
 from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 
 
 class PurchaseListQueryParamsSchema(StandardQueryParams):
-    id: UUID
-    purchase_date: date
-    unit_of_measurement: UnitOfMeasurement
-    supply_id: UUID
+    id: UUID | None = None
+    purchase_date: date | None = None
+    unit_of_measurement: UnitOfMeasurement | None = None
+    supply_id: UUID | None = None
 
 
 class PurchaseCreateSchema(BaseModel):

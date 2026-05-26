@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends
-from fastapi.security.api_key import APIKeyHeader
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.auth.application.services.authentication_service import AuthService
 from src.auth.application.services.notifications.wellcome_email_service import WellcomeEmailService
@@ -12,12 +12,17 @@ from src.auth.domain.entities import UserEntity
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.auth.domain.services.login_user_service import LoginUserService
 from src.auth.domain.services.register_user_service import RegisterUserService
+from src.common.domain.exceptions import UnauthorizedError
 from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
-oauth2_scheme = APIKeyHeader(name="Authorization")
+oauth2_scheme = HTTPBearer(
+    scheme_name="Bearer",
+    description="Bearer token for authentication.",
+    auto_error=False,
+)
 
 
 def _get_wellcome_notifier_service(
@@ -75,13 +80,31 @@ async def _get_change_password_case(
 async def _get_current_user(
     uow: GetUnitOfWork,
     auth_service: "GetAuthService",
-    token: Annotated[str, Depends(oauth2_scheme)],
+    token: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
 ):
-    return await auth_service.get_authenticated_user(uow=uow, token=token)
+    if not token:
+        raise UnauthorizedError("No autorizado para realizar esta acción.")
+    return await auth_service.get_authenticated_user(
+        uow=uow,
+        token=token.credentials,
+    )
 
+
+async def _get_current_admin_user(
+    uow: GetUnitOfWork,
+    auth_service: "GetAuthService",
+    current_user: "GetCurrentUser",
+):
+    auth_service.validate_admin_user(current_user)
+    return current_user
+
+
+is_admin_user = Depends(_get_current_admin_user)
+is_authenticated_current_user = Depends(_get_current_user)
 
 GetAuthService = Annotated[AuthService, Depends(_get_auth_service)]
 GetCurrentUser = Annotated[UserEntity, Depends(_get_current_user)]
+# GetCurrentAdminUser = Annotated[UserEntity, Depends(_get_current_admin_user)]
 GetRegisterUserCase = Annotated[RegisterUserCase, Depends(_get_register_user_case)]
 GetLoginUserCase = Annotated[LoginUserCase, Depends(_get_login_user_case)]
 GetChangePasswordCase = Annotated[ChangePasswordCase, Depends(_get_change_password_case)]

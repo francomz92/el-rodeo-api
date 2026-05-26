@@ -8,6 +8,11 @@ from src.common.infrastructure.adapters.http.input.query_params import StandardQ
 from src.common.utils.date_utils import get_current_datetime
 
 
+class ScheduleEventsQueryParams(StandardQueryParams):
+    title: str | None = Field(None, max_length=50, description="Title for the event")
+    event_date: date | None = Field(None, description="Date of event")
+
+
 class ScheduleEventCreationSchema(BaseModel):
     user_id: UUID
     title: str = Field(..., max_length=50, description="Title for the event")
@@ -31,8 +36,3 @@ class ScheduleEventUpdateSchema(BaseModel):
         if self.event_date < get_current_datetime().date():
             raise ValueError("La fecha seleccionada no puede ser menor a hoy")
         return self
-
-
-class ScheduleEventsQueryParams(StandardQueryParams):
-    title: str = Field(..., max_length=50, description="Title for the event")
-    event_date: date = Field(..., description="Date of event")

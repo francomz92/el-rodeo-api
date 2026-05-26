@@ -6,7 +6,7 @@ from sqlalchemy import (
     ForeignKey,
     String,
 )
-from sqlalchemy.orm import Mapped, mapped_column, Relationship
+from sqlalchemy.orm import Mapped, Relationship, mapped_column
 
 from src.common.infrastructure.persistence.models import Model
 from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement

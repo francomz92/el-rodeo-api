@@ -1,6 +1,6 @@
 import asyncio
 
-from celery import shared_task, Task
+from celery import Task, shared_task
 
 from src.cattle.application.services.notifications.scheduled_events_reminder_service import ScheduledEventsReminderService
 from src.cattle.application.uses_cases.schedule_events_use_cases.norifi_upcoming_events_case import NotifyUpcomingEventsCase

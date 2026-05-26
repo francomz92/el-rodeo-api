@@ -25,10 +25,8 @@ class RegisterUserCase:
     async def execute(
         self,
         data: UserCreationValueObject,
-        requesting_user: UserEntity,
         redirect_url: str,
     ) -> UserEntity:
-        self.service.validate_user_admin_permissions(user=requesting_user)
         async with self.uow as uow:
             repository = uow.get_repository(IUserRepository)
             await self.service.validate_duplicated(
@@ -36,12 +34,11 @@ class RegisterUserCase:
                 email=data.email,
                 repository=repository,
             )
-            user = await self.service.create_new(
+            user, password = await self.service.create_new(
                 data=data,
                 security_service=self.security_service,
                 repository=repository,
             )
-            await uow.commit()
             token = self.token_service.generate(
                 data={"user_id": str(user.id)},
                 exp_minutes=30,
@@ -50,5 +47,7 @@ class RegisterUserCase:
                 to=[user.email],
                 subject="Bienvenido a El Rodeo",
                 redirect_url=f"{redirect_url}?token={token}",
+                password=password,
             )
+            await uow.commit()
         return user

@@ -17,8 +17,10 @@ dependencies = [
     "gunicorn>=25.3.0",
     "loguru>=0.7.3",
     "passlib>=1.7.4",
+    "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
     "pyjwt>=2.12.1",
+    "redis>=7.4.0",
     "sqlalchemy>=2.0.48",
     "uvicorn>=0.44.0",
 ]
@@ -26,5 +28,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.6.0",
-    "ruff>=0.15.0",
+    "ruff>=0.15.13",
 ]

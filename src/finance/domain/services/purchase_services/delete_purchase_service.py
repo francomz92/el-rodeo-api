@@ -1,6 +1,6 @@
-from src.common.domain.exceptions import NotFoundError
 from uuid import UUID
 
+from src.common.domain.exceptions import NotFoundError
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 
 

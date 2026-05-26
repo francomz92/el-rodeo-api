@@ -1,5 +1,5 @@
-from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.application.services.authentication_service import AuthService
+from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService

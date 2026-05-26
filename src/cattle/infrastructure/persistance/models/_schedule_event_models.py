@@ -2,7 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from sqlalchemy import Boolean, Date, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column, Relationship
+from sqlalchemy.orm import Mapped, Relationship, mapped_column
 
 from src.common.infrastructure.persistence.models import Model
 

@@ -10,9 +10,9 @@ from src.auth.infrastructure.adapters.http.oputput.authentication_schemas import
 from src.auth.infrastructure.adapters.http.oputput.user_schemas import UserSchema
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetChangePasswordCase,
-    GetCurrentUser,
     GetLoginUserCase,
     GetRegisterUserCase,
+    is_admin_user,
 )
 from src.common.infrastructure.adapters.http.output.messages import SimpleMessageSchema
 from src.common.infrastructure.core import settings
@@ -25,16 +25,15 @@ auth_router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user in the database",
     response_model=UserSchema,
+    dependencies=[is_admin_user],
 )
 async def register_user(
     data: RegisterSchema,
-    current_user: GetCurrentUser,
     register_user_case: GetRegisterUserCase,
 ):
     payload = UserCreationValueObject(**data.model_dump())
     return await register_user_case.execute(
         data=payload,
-        requesting_user=current_user,
         redirect_url=f"{settings.DOMAIN}/confirm-account",
     )
 

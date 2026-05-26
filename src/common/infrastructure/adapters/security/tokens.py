@@ -1,5 +1,6 @@
-import jwt
 from datetime import timedelta
+
+import jwt
 
 from src.auth.application.exceptions.authentication import InvalidCredentialError
 from src.auth.application.ports.tokens_port import ITokenService

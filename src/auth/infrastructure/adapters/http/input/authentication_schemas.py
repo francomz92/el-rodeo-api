@@ -9,6 +9,7 @@ class LoginSchema(BaseModel):
 class RegisterSchema(BaseModel):
     name: str = Field(..., max_length=50)
     dni: str = Field(..., alias="dni", max_length=10)
+    email: str = Field(..., alias="email", max_length=100)
 
 
 class ChangePasswordSchema(BaseModel):

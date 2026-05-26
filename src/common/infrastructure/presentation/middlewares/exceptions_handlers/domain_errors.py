@@ -5,8 +5,8 @@ from src.common.domain.exceptions import DomainError, ErrorCode
 from src.common.infrastructure.adapters.http.output.errors import (
     ErrorDetailSchema,
     ErrorPayloadSchema,
-    format_error_location,
     StandardErrorResponse,
+    format_error_location,
 )
 from src.common.utils.date_utils import get_current_datetime
 
@@ -16,6 +16,7 @@ _status_code_errors: dict[ErrorCode, int] = {
     "not_found_error": status.HTTP_404_NOT_FOUND,
     "permission_error": status.HTTP_403_FORBIDDEN,
     "invalid_credentials_error": status.HTTP_401_UNAUTHORIZED,
+    "unauthorized_error": status.HTTP_401_UNAUTHORIZED,
 }
 
 

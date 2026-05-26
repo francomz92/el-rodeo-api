@@ -1,11 +1,17 @@
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
+
+
+class AnimalsListQueryParamsSchema(StandardQueryParams):
+    type_id: UUID | None = None
+    caravana: str | None = Field(default=None, max_length=50, description="Identifier of animal")
+    name: str | None = Field(default=None, max_length=50, description="Name of animal")
+    breed: str | None = Field(default=None, max_length=50, description="Breed of animal")
 
 
 class AnimalCreationSchema(BaseModel):
@@ -21,19 +27,12 @@ class AnimalCreationSchema(BaseModel):
 
 class AnimalUpdateSchema(BaseModel):
     type_id: UUID
-    caravana: Optional[str]
-    name: Optional[str]
-    date_of_birth: Optional[date]
-    initial_weight: Optional[float]
-    initial_weight_date: Optional[date]
-    last_weight: Optional[float]
-    breed: Optional[str]
-    tag: Optional[str]
-    status: Optional[AnimalStatus]
-
-
-class AnimalsListQueryParamsSchema(StandardQueryParams):
-    type_id: Optional[UUID] = None
-    caravana: Optional[str] = Field(default=None, max_length=50, description="Identifier of animal")
-    name: Optional[str] = Field(default=None, max_length=50, description="Name of animal")
-    breed: Optional[str] = Field(default=None, max_length=50, description="Breed of animal")
+    caravana: str | None = None
+    name: str | None = None
+    date_of_birth: date | None = None
+    initial_weight: float | None = None
+    initial_weight_date: date | None = None
+    last_weight: float | None = None
+    breed: str | None = None
+    tag: str | None = None
+    status: AnimalStatus | None = None

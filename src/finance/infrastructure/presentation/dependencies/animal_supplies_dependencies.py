@@ -1,4 +1,3 @@
-from src.finance.domain.services.animal_supply_type_services.get_animal_supply_type_service import GetSupplyTypeService
 from typing import Annotated
 
 from fastapi import Depends
@@ -14,6 +13,7 @@ from src.finance.domain.services.animal_supplies_services.delete_animal_supplies
 from src.finance.domain.services.animal_supplies_services.get_animal_supplies_service import GetAnimalSuppliesService
 from src.finance.domain.services.animal_supplies_services.list_animal_supplies_service import ListAnimalSuppliesService
 from src.finance.domain.services.animal_supplies_services.update_animal_supplies_service import UpdateAnimalSuppliesService
+from src.finance.domain.services.animal_supply_type_services.get_animal_supply_type_service import GetSupplyTypeService
 
 
 def _get_create_animal_supplies_cases(

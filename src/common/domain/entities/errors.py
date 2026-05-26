@@ -1,5 +1,4 @@
-from typing import TypedDict, Literal
-
+from typing import Literal, TypedDict
 
 ErrorCode = Literal[
     "conflict_error",

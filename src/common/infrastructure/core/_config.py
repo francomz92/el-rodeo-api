@@ -40,6 +40,7 @@ class Settings(BaseSettings):
             "redirect_slashes": True,
             "terms_of_service": self.TERM_OF_SERVICE_URL,
             "openapi_url": "/openapi.json" if self.DEBUG else None,
+            "docs_url": "/docs",
         }
 
 

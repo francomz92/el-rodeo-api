@@ -1,8 +1,8 @@
-from src.auth.application.exceptions.authentication import UnauthorizedError
 from src.auth.application.ports.tokens_port import ITokenService
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.common.application.ports.uow import IUoW
+from src.common.domain.exceptions import NotPermissionError, UnauthorizedError
 
 
 class AuthService:
@@ -17,3 +17,7 @@ class AuthService:
             if not user:
                 raise UnauthorizedError("No autorizado para realizar esta acción")
         return user
+
+    def validate_admin_user(self, user: UserEntity) -> None:
+        if not user.is_admin:
+            raise NotPermissionError("No tiene permisos para realizar esta acción")

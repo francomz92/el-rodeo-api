@@ -1,6 +1,7 @@
 import sys
-from loguru import logger
 from functools import lru_cache
+
+from loguru import logger
 
 from src.common.infrastructure.core import settings
 

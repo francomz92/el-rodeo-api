@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,9 +7,9 @@ from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 
 
 class AnimalSuppliesListQueryParamsSchema(StandardQueryParams):
-    id: UUID
-    type_id: UUID
-    name: str
+    id: UUID | None = None
+    type_id: UUID | None = None
+    name: str | None = Field(None, max_length=50)
 
 
 class AnimalSuppliesCreateSchema(BaseModel):
@@ -29,4 +28,4 @@ class AnimalSuppliesUpdateSchema(BaseModel):
     amount: float = Field(..., gt=0)
     critical_amount: float = Field(..., gt=0)
     unit_of_measurement: UnitOfMeasurement
-    description: Optional[str] = Field("", max_length=500)
+    description: str | None = Field(None, max_length=500)

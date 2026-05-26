@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 
 from ._animal_supplies import animal_supplies_router as _animal_supplies_router
+from ._purchases import purchase_router as _purchase_router
 
 finance_routers = APIRouter()
 
 
-finance_routers.include_router(_animal_supplies_router, prefix="/animal-supplies", tags=["animal-supplies"])
+finance_routers.include_router(_animal_supplies_router, tags=["animal-supplies"])
+finance_routers.include_router(_purchase_router, tags=["purchases"])
 
 __all__ = ["finance_routers"]
