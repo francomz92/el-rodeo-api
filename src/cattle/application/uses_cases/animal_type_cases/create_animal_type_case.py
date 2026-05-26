@@ -6,7 +6,7 @@ from src.common.application.ports.uow import IUoW
 
 
 class CreateAnimalTypeCase:
-    async def __init__(
+    def __init__(
         self,
         uow: IUoW,
         service: CreateAnimalTypeService,

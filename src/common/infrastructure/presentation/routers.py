@@ -7,7 +7,7 @@ from src.market.infrastructure.presentation.routers import market_routers
 
 
 def configure_routers(app: FastAPI):
-    app.include_router(auth_routers, prefix="/auth", tags=["Authentication"])
-    app.include_router(cattle_routers, prefix="/cattle", tags=["Cattle"])
-    app.include_router(finance_routers, prefix="/finance", tags=["Finance"])
-    app.include_router(market_routers, prefix="/market", tags=["Market"])
+    app.include_router(auth_routers, prefix="/auth")
+    app.include_router(cattle_routers, prefix="/cattle")
+    app.include_router(finance_routers, prefix="/finance")
+    app.include_router(market_routers, prefix="/market")

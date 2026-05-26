@@ -6,7 +6,7 @@ from ._purchases import purchase_router as _purchase_router
 finance_routers = APIRouter()
 
 
-finance_routers.include_router(_animal_supplies_router, tags=["animal-supplies"])
-finance_routers.include_router(_purchase_router, tags=["purchases"])
+finance_routers.include_router(_animal_supplies_router, tags=["Finance / Supplies"])
+finance_routers.include_router(_purchase_router, tags=["Finance / Purchases"])
 
 __all__ = ["finance_routers"]

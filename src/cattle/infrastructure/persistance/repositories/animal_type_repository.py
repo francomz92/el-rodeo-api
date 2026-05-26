@@ -58,7 +58,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         self,
         data: AnimalTypeCreateValueObject,
     ) -> AnimalTypeEntinty:
-        kws = {k: v for k, v in vars(self).items() if v is not Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = insert(AnimalType).values(**kws).returning(AnimalType.id)
         result = await self.db.execute(query)
         animal_type_id = result.scalar_one()
@@ -69,7 +69,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         id: UUID,
         data: AnimalTypeUpdateValueObject,
     ) -> AnimalTypeEntinty:
-        kws = {k: v for k, v in vars(self).items() if v is not Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = (
             update(AnimalType)
             .where(
