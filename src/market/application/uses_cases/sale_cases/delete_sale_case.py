@@ -19,3 +19,4 @@ class DeleteSaleCase:
                 repository=repository,
             )
             await self.service.delete_sale(id, repository)
+            await uow.commit()

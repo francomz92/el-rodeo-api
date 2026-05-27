@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -58,7 +58,7 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
             select(Buyer)
             .where(
                 Buyer.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)

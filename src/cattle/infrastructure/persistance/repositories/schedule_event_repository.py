@@ -64,7 +64,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             select(ScheduledEvent)
             .where(
                 ScheduledEvent.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)

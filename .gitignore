@@ -16,3 +16,7 @@ backlog.md
 
 # Logs
 *.log
+
+.atl/
+.coverage
+tests/

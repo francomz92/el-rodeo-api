@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
@@ -68,7 +68,7 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             select(Purchase)
             .where(
                 Purchase.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)

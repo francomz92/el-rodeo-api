@@ -1,9 +1,10 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
+from src.cattle.infrastructure.persistance.models._animal_models import Animal
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.market.domain.entities.sales import SaleEntity
@@ -36,6 +37,7 @@ class SalesRepository(ISalesRepository, SessionMixin):
             .options(
                 joinedload(Sale.buyer),
                 joinedload(Sale.animal),
+                joinedload(Animal.type),
             )
         )
         result = await self.db.execute(query)
@@ -62,7 +64,7 @@ class SalesRepository(ISalesRepository, SessionMixin):
             select(Sale)
             .where(
                 Sale.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)
@@ -70,6 +72,7 @@ class SalesRepository(ISalesRepository, SessionMixin):
             .options(
                 joinedload(Sale.buyer),
                 joinedload(Sale.animal),
+                joinedload(Animal.type),
             )
         )
         result = await self.db.execute(query)
@@ -114,6 +117,41 @@ class SalesRepository(ISalesRepository, SessionMixin):
         await self.db.execute(query)
 
     def _build_sale(self, sale_data: Sale) -> SaleEntity:
+        # buyer_entity: BuyerEntity | None = None
+        # if sale_data.buyer is not None:
+        #     b = sale_data.buyer
+        #     buyer_entity = BuyerEntity(
+        #         id=b.id,
+        #         created_at=b.created_at,
+        #         name=b.name,
+        #         description=b.description,
+        #         contact_number=b.contact_number,
+        #         contact_address=b.contact_address,
+        #     )
+
+        # animal_entity: AnimalEntity | None = None
+        # if sale_data.animal is not None:
+        #     a = sale_data.animal
+        #     animal_type_entity: AnimalTypeEntinty | None = None
+        #     if a.type is not None:
+        #         animal_type_entity = AnimalTypeEntinty(
+        #             id=a.type.id,
+        #             name=a.type.name,
+        #         )
+        #     animal_entity = AnimalEntity(
+        #         id=a.id,
+        #         caravana=a.caravana,
+        #         name=a.name,
+        #         tag=a.tag,
+        #         date_of_birth=a.date_of_birth,
+        #         initial_weight=a.initial_weight,
+        #         initial_weight_date=a.initial_weight_date,
+        #         last_weight=a.last_weight,
+        #         breed=a.breed,
+        #         status=AnimalStatus(a.status),
+        #         type=animal_type_entity,
+        #     )
+
         return SaleEntity(
             id=sale_data.id,
             sale_date=sale_data.sale_date,

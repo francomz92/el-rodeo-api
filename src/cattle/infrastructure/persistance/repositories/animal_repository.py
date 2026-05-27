@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.cattle.domain.constants.animal import AnimalStatus
@@ -88,7 +88,7 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
             select(Animal)
             .where(
                 Animal.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)

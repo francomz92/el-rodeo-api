@@ -6,10 +6,10 @@ from src.market.domain.value_objects.sale_value_objects import SaleCreateValueOb
 
 class CreateSaleService:
     def validate_data(self, data: SaleCreateValueObject) -> None:
-        if data.price_per_kg < data.price:
+        if data.price_per_kg > data.price:
             raise BusinessValidationError(
                 message="Los precios son inconsistentes.",
-                details=[{"field": "price_per_kg", "message": "El precio por kilogramo no puede ser menor que el precio total."}],
+                details=[{"field": "price_per_kg", "message": "El precio por kilogramo no puede ser mayor que el precio total."}],
             )
 
     async def create_new(

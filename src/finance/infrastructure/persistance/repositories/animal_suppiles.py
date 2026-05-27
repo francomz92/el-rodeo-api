@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
@@ -67,7 +67,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
             select(AnimalSupplie)
             .where(
                 AnimalSupplie.user_id == user_id,
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)

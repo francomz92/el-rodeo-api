@@ -19,4 +19,4 @@ class SaleCreateSchema(BaseModel):
     price: float
     price_per_kg: float
     weight: float
-    description: str | None = Field(None, max_length=500)
+    description: str = Field("", max_length=500)

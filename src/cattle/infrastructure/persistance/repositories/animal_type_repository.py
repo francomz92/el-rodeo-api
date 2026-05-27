@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import and_, exists, insert, select, update
+from sqlalchemy import exists, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
@@ -44,7 +44,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         query = (
             select(AnimalType)
             .where(
-                and_(*conditions),
+                *conditions,
             )
             .limit(limit)
             .offset(offset)
