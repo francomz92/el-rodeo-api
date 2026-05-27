@@ -59,7 +59,8 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             .where(Purchase.user_id == user_id)
             .filter_by(**kws)
             .options(
-                joinedload(Purchase.user, Purchase.supplie),
+                joinedload(Purchase.user),
+                joinedload(Purchase.supplie),
             )
         )
         result = await self.db.execute(query)

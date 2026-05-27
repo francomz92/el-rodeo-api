@@ -2,9 +2,15 @@ from uuid import UUID
 
 from sqlalchemy import delete, exists, insert, select, update
 
+from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
 from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
+from src.finance.domain.value_objetcts.animal_supply_type_value_objects import (
+    AnimalSupplyTypeCreateValueObject,
+    AnimalSupplyTypeListQueryParamsValueObject,
+    AnimalSupplyTypeUpdateValueObject,
+)
 from src.finance.infrastructure.persistance.models import AnimalSupplieType
 
 
@@ -26,25 +32,48 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
         supply_db = result.scalar_one_or_none()
         return self._build_supply_type(supply_db) if supply_db else None
 
-    async def list_all(self) -> list[SupplyTypeEntinty]:
-        query = select(AnimalSupplieType)
+    async def get_by_name(self, name: str) -> SupplyTypeEntinty | None:
+        query = select(AnimalSupplieType).where(AnimalSupplieType.name == name)
+        result = await self.db.execute(query)
+        supply_db = result.scalar_one_or_none()
+        return self._build_supply_type(supply_db) if supply_db else None
+
+    async def list(
+        self,
+        filters: AnimalSupplyTypeListQueryParamsValueObject,
+        limit: int | None = None,
+        offset: int | None = None,
+        order_by: str | None = None,
+    ) -> list[SupplyTypeEntinty]:
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            if k == "name":
+                conditions.append(AnimalSupplieType.name.ilike(f"%{v}%"))
+        query = select(AnimalSupplieType).where(*conditions)
         result = await self.db.execute(query)
         supplies_list = result.scalars().all()
         return [self._build_supply_type(supply_data) for supply_data in supplies_list]
 
-    async def create(self, name: str) -> None:
-        query = insert(AnimalSupplieType).values(name=name)
-        await self.db.execute(query)
+    async def create(self, data: AnimalSupplyTypeCreateValueObject) -> SupplyTypeEntinty:
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
+        query = insert(AnimalSupplieType).values(**kws).returning(AnimalSupplieType.id)
+        result = await self.db.execute(query)
+        supply_type_id = result.scalar_one()
+        return await self.get_by_id(supply_type_id)  # type: ignore
 
-    async def update_data(self, id: UUID, name: str) -> None:
+    async def update(self, id: UUID, data: AnimalSupplyTypeUpdateValueObject) -> SupplyTypeEntinty:
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = (
             update(AnimalSupplieType)
             .where(
                 AnimalSupplieType.id == id,
             )
-            .values(name=name)
+            .values(**kws)
         )
         await self.db.execute(query)
+        return await self.get_by_id(id)  # type: ignore
 
     async def delete(self, id: UUID) -> None:
         query = delete(AnimalSupplieType).where(AnimalSupplieType.id == id)

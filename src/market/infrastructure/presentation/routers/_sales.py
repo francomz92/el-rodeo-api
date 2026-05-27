@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
 from src.market.domain.value_objects.sale_value_objects import (
@@ -80,11 +81,11 @@ async def get_sale(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List all sales of a user from the database",
-    response_model=SaleSchema,
+    response_model=list[SaleSchema],
 )
 async def list_sale(
     current_user: GetCurrentUser,
-    filters: SaleListQueryParamsSchema,
+    filters: Annotated[SaleListQueryParamsSchema, Query()],
     list_use_case: GetListSaleCase,
 ):
     params = SaleListQueryParamsValueObject(

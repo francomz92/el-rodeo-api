@@ -34,7 +34,8 @@ class SalesRepository(ISalesRepository, SessionMixin):
             select(Sale)
             .where(Sale.id == id, Sale.user_id == user_id)
             .options(
-                joinedload(Sale.buyer, Sale.animal),
+                joinedload(Sale.buyer),
+                joinedload(Sale.animal),
             )
         )
         result = await self.db.execute(query)
@@ -55,7 +56,8 @@ class SalesRepository(ISalesRepository, SessionMixin):
             .where(Sale.user_id == user_id)
             .filter_by(**kws)
             .options(
-                joinedload(Sale.buyer, Sale.animal),
+                joinedload(Sale.buyer),
+                joinedload(Sale.animal),
             )
         )
         result = await self.db.execute(query)

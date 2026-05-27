@@ -13,7 +13,6 @@ class AnimalSuppliesListQueryParamsSchema(StandardQueryParams):
 
 
 class AnimalSuppliesCreateSchema(BaseModel):
-    user_id: UUID
     type_id: UUID
     name: str
     amount: float

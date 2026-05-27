@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
 from src.market.domain.value_objects.buyer_value_objects import (
@@ -99,11 +100,11 @@ async def get_buyer(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List all buyers of a user from the database",
-    response_model=BuyerSchema,
+    response_model=list[BuyerSchema],
 )
-async def list_buyer(
+async def list_buyers(
     current_user: GetCurrentUser,
-    filters: BuyerListQueryParamsSchema,
+    filters: Annotated[BuyerListQueryParamsSchema, Query()],
     list_use_case: GetListBuyersCase,
 ):
     params = BuyerListQueryParamsValueObject(
