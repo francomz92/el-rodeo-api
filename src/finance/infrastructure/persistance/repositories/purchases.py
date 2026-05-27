@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
@@ -53,11 +53,26 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[PurchaseEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k in (
+                "id",
+                "supply_id",
+                "purchase_date",
+                "unit_of_measurement",
+            ):
+                conditions.append(getattr(Purchase, k) == v)
         query = (
             select(Purchase)
-            .where(Purchase.user_id == user_id)
-            .filter_by(**kws)
+            .where(
+                Purchase.user_id == user_id,
+                and_(*conditions),
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(order_by)
             .options(
                 joinedload(Purchase.user),
                 joinedload(Purchase.supplie),

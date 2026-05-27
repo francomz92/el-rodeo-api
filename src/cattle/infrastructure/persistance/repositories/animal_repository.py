@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.cattle.domain.constants.animal import AnimalStatus
@@ -76,11 +76,20 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[AnimalEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v != Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k == "type_id":
+                conditions.append(Animal.type_id == v)
+            elif k in ("caravana", "name", "breed"):
+                conditions.append(getattr(Animal, k).icontains(v))
         query = (
             select(Animal)
-            .where(Animal.user_id == user_id)
-            .filter_by(**kws)
+            .where(
+                Animal.user_id == user_id,
+                and_(*conditions),
+            )
             .limit(limit)
             .offset(offset)
             .order_by(order_by)

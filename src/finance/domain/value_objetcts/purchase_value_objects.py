@@ -9,9 +9,9 @@ from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
 @dataclass
 class PurchaseListQueryParamValueObject:
     id: UUID | Sentinel = Sentinel.UNSET
+    supply_id: UUID | Sentinel = Sentinel.UNSET
     purchase_date: date | Sentinel = Sentinel.UNSET
     unit_of_measurement: UnitOfMeasurement | Sentinel = Sentinel.UNSET
-    supply_id: UUID | Sentinel = Sentinel.UNSET
 
 
 @dataclass

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -49,9 +49,17 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
                 continue
-            if k == "name":
-                conditions.append(AnimalSupplieType.name.ilike(f"%{v}%"))
-        query = select(AnimalSupplieType).where(*conditions)
+            elif k == "name":
+                conditions.append(AnimalSupplieType.name.icontains(v))
+        query = (
+            select(AnimalSupplieType)
+            .where(
+                and_(*conditions),
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(order_by)
+        )
         result = await self.db.execute(query)
         supplies_list = result.scalars().all()
         return [self._build_supply_type(supply_data) for supply_data in supplies_list]

@@ -7,9 +7,9 @@ from src.common.domain.types import Sentinel
 
 @dataclass
 class SaleListQueryParamsValueObject:
-    sale_date: date | Sentinel = Sentinel.UNSET
-    price: str | Sentinel = Sentinel.UNSET
     buyer_id: UUID | Sentinel = Sentinel.UNSET
+    sale_date: date | Sentinel = Sentinel.UNSET
+    price: float | Sentinel = Sentinel.UNSET
 
 
 @dataclass

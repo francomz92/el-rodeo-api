@@ -54,13 +54,18 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[ScheduleEventEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k in ("title", "event_date"):
+                conditions.append(getattr(ScheduledEvent, k) == v)
         query = (
             select(ScheduledEvent)
             .where(
                 ScheduledEvent.user_id == user_id,
+                and_(*conditions),
             )
-            .filter_by(**kws)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)

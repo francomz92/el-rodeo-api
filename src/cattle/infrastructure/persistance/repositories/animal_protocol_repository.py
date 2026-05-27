@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
@@ -56,11 +56,18 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[AnimalProtocolEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k in ("id", "vaccinated", "sale_permission"):
+                conditions.append(getattr(AnimalProtocols, k) == v)
         query = (
             select(AnimalProtocols)
-            .where(AnimalProtocols.user_id == user_id)
-            .filter_by(**kws)
+            .where(
+                AnimalProtocols.user_id == user_id,
+                and_(*conditions),
+            )
             .order_by(order_by)
             .limit(limit)
             .offset(offset)

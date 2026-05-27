@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -48,13 +48,18 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[BuyerEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k in ("name", "contact_number"):
+                conditions.append(getattr(Buyer, k).icontains(v))
         query = (
             select(Buyer)
             .where(
                 Buyer.user_id == user_id,
+                and_(*conditions),
             )
-            .filter_by(**kws)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)

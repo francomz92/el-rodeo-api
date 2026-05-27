@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
@@ -50,11 +50,23 @@ class SalesRepository(ISalesRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[SaleEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k == "price":
+                conditions.append(Sale.price <= v)
+            elif k in ("buyer_id", "sale_date"):
+                conditions.append(getattr(Sale, k) == v)
         query = (
             select(Sale)
-            .where(Sale.user_id == user_id)
-            .filter_by(**kws)
+            .where(
+                Sale.user_id == user_id,
+                and_(*conditions),
+            )
+            .limit(limit)
+            .offset(offset)
+            .order_by(order_by)
             .options(
                 joinedload(Sale.buyer),
                 joinedload(Sale.animal),

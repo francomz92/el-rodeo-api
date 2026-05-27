@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import and_, delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
@@ -55,11 +55,20 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[AnimalSupplyEntity]:
-        kws = {k: v for k, v in vars(filters).items() if v is not Sentinel.UNSET}
+        conditions = []
+        for k, v in vars(filters).items():
+            if v is Sentinel.UNSET:
+                continue
+            elif k == "name":
+                conditions.append(AnimalSupplie.name.icontains(v))
+            elif k == ("id", "type_id"):
+                conditions.append(AnimalSupplie.id == v)
         query = (
             select(AnimalSupplie)
-            .where(AnimalSupplie.user_id == user_id)
-            .filter_by(**kws)
+            .where(
+                AnimalSupplie.user_id == user_id,
+                and_(*conditions),
+            )
             .limit(limit)
             .offset(offset)
             .order_by(order_by)

@@ -9,7 +9,7 @@ from src.common.infrastructure.adapters.http.input.query_params import StandardQ
 class SaleListQueryParamsSchema(StandardQueryParams):
     buyer_id: UUID | None = None
     sale_date: date | None = None
-    price: str | None = None
+    price: float | None = None
 
 
 class SaleCreateSchema(BaseModel):

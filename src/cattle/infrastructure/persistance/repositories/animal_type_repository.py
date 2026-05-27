@@ -37,7 +37,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
                 continue
-            if k == "id":
+            elif k == "id":
                 conditions.append(AnimalType.id == v)
             elif k == "name":
                 conditions.append(AnimalType.name.icontains(v))
