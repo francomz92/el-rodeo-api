@@ -4,12 +4,12 @@ from src.cattle.domain.repositories.protocol_animals_repository_port import IAni
 from src.cattle.domain.services.animal_protocols.create_animal_protocol_service import CreateAnimalProtocolService
 from src.cattle.domain.services.animals.register_animal_service import RegisterAnimalService
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolCreateValueObject
-from src.cattle.domain.value_objects.animal_value_objenct import AnimalCreateValueObject
+from src.cattle.domain.value_objects.animal_value_object import AnimalCreateValueObject
 from src.common.application.ports.uow import IUoW
 
 
 class RegisterAnimalCase:
-    async def __init__(
+    def __init__(
         self,
         uow: IUoW,
         service: RegisterAnimalService,

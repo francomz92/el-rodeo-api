@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from src.common.domain.exceptions import ConflictError, NotFoundError
-from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
-from src.finance.domain.value_objetcts.animal_supply_type_value_objects import (
+from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
+from src.finance.domain.value_objects.animal_supply_type_value_objects import (
     AnimalSupplyTypeUpdateValueObject,
 )
 
@@ -32,5 +32,5 @@ class UpdateAnimalSupplyTypeService:
         id: UUID,
         data: AnimalSupplyTypeUpdateValueObject,
         repository: ISupplyTypesRepository,
-    ) -> SupplyTypeEntinty:
+    ) -> SupplyTypeEntity:
         return await repository.update(id, data)

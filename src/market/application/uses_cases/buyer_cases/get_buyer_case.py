@@ -2,7 +2,7 @@ from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.buyers import BuyerEntity
-from src.market.domain.repositoriyes.buyers import IBuyersRepository
+from src.market.domain.repositories.buyers import IBuyersRepository
 from src.market.domain.services.buyer_services.get_buyer_service import GetBuyerService
 
 

@@ -6,11 +6,11 @@ from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
-from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
-from src.finance.infrastructure.persistance.models import Purchase
+from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
+from src.finance.infrastructure.persistence.models import Purchase
 
 
 class PurchasesRepository(IPurchasesRepository, SessionMixin):
@@ -38,12 +38,12 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
                 Purchase.user_id == user_id,
             )
             .options(
-                joinedload(Purchase.supplie),
+                joinedload(Purchase.supply),
             )
         )
         result = await self.db.execute(query)
         purchase_db = result.scalar_one_or_none()
-        return self._build_purchase_with_user_and_supplie(purchase_db) if purchase_db else None
+        return self._build_purchase_with_user_and_supply(purchase_db) if purchase_db else None
 
     async def list_for_user(
         self,
@@ -75,12 +75,12 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             .order_by(order_by)
             .options(
                 joinedload(Purchase.user),
-                joinedload(Purchase.supplie),
+                joinedload(Purchase.supply),
             )
         )
         result = await self.db.execute(query)
         purchases_list = result.scalars().unique().all()
-        return [self._build_purchase_with_user_and_supplie(purchase_data) for purchase_data in purchases_list]
+        return [self._build_purchase_with_user_and_supply(purchase_data) for purchase_data in purchases_list]
 
     async def create(
         self,
@@ -126,7 +126,7 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
         query = delete(Purchase).where(Purchase.id == id)
         await self.db.execute(query)
 
-    def _build_purchase_with_user_and_supplie(
+    def _build_purchase_with_user_and_supply(
         self,
         purchase_data: Purchase,
     ) -> PurchaseEntity:
@@ -138,5 +138,5 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             unit_price=purchase_data.unit_price,
             unit_of_measurement=purchase_data.unit_of_measurement,
             user=purchase_data.user,
-            supplie=purchase_data.supplie,
+            supply=purchase_data.supply,
         )

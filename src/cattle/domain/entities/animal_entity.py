@@ -7,7 +7,7 @@ from src.cattle.domain.constants.animal import AnimalStatus
 
 
 @dataclass
-class AnimalTypeEntinty:
+class AnimalTypeEntity:
     id: UUID
     name: str
 
@@ -26,7 +26,7 @@ class AnimalEntity:
     status: AnimalStatus
 
     user: UserEntity | None = None
-    type: AnimalTypeEntinty | None = None
+    type: AnimalTypeEntity | None = None
 
     def validate_initial_weight_date(self):
         if self.initial_weight_date < self.date_of_birth:

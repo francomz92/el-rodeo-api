@@ -43,7 +43,7 @@ async def create_schedule_event(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
     )
-    return await register_schedule_event_case.excecue(data=event_data)
+    return await register_schedule_event_case.execute(data=event_data)
 
 
 @events_router.put(

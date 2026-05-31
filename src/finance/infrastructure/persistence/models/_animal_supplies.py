@@ -9,20 +9,20 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, Relationship, mapped_column
 
 from src.common.infrastructure.persistence.models import Model
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
-class AnimalSupplieType(Model):
-    __tablename__ = "animal_supplie_types"
+class AnimalSupplyType(Model):
+    __tablename__ = "animal_supply_types"
 
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False, unique=True)
 
 
-class AnimalSupplie(Model):
+class AnimalSupply(Model):
     __tablename__ = "animal_supplies"
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supplie_types.id", ondelete="SET NULL"))
+    type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supply_types.id", ondelete="SET NULL"))
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), default=str)
     amount: Mapped[float] = mapped_column(Float)
@@ -30,4 +30,4 @@ class AnimalSupplie(Model):
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
 
     user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821
-    type: Mapped["AnimalSupplieType"] = Relationship()
+    type: Mapped["AnimalSupplyType"] = Relationship()

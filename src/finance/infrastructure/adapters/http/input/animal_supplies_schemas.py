@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
 class AnimalSuppliesListQueryParamsSchema(StandardQueryParams):

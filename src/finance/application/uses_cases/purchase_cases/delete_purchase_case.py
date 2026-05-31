@@ -27,3 +27,4 @@ class DeletePurchaseCase:
                 user_id=user_id,
                 repository=repository,
             )
+            await uow.commit()

@@ -1,6 +1,6 @@
-from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
-from src.finance.domain.value_objetcts.animal_supply_type_value_objects import AnimalSupplyTypeListQueryParamsValueObject
+from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
+from src.finance.domain.value_objects.animal_supply_type_value_objects import AnimalSupplyTypeListQueryParamsValueObject
 
 
 class ListAnimalSupplyTypeService:
@@ -11,7 +11,7 @@ class ListAnimalSupplyTypeService:
         offset: int,
         order_by: str,
         repository: ISupplyTypesRepository,
-    ) -> list[SupplyTypeEntinty]:
+    ) -> list[SupplyTypeEntity]:
         return await repository.list(
             filters=filters,
             limit=limit,

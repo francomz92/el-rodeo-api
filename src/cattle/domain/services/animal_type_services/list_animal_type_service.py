@@ -1,4 +1,4 @@
-from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.value_objects.animal_type_value_object import AnimalTypeListQueryParamsValueObject
 
@@ -11,7 +11,7 @@ class ListAnimalTypeService:
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalTypeEntinty]:
+    ) -> list[AnimalTypeEntity]:
         return await repository.list(
             filters,
             limit=limit,

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import and_, delete, exists, insert, select, update
 
-from src.auth.infrastructure.persistance.models import User
+from src.auth.infrastructure.persistence.models import User
 from src.cattle.domain.entities.schedule_events_entity import (
     ScheduleEventEntity,
     ScheduleEventRemindedEntity,
@@ -14,7 +14,7 @@ from src.cattle.domain.value_objects.schedule_event_value_object import (
     ScheduleEventsListQueryParamsValueObject,
     ScheduleEventUpdateValueObject,
 )
-from src.cattle.infrastructure.persistance.models import ScheduledEvent
+from src.cattle.infrastructure.persistence.models import ScheduledEvent
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.common.utils.date_utils import get_current_datetime

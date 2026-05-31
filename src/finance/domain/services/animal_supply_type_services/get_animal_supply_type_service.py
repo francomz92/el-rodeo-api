@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.common.domain.exceptions import BusinessValidationError
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 
 
 class GetSupplyTypeService:

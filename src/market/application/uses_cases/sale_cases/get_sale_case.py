@@ -2,7 +2,7 @@ from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.sales import SaleEntity
-from src.market.domain.repositoriyes.sales import ISalesRepository
+from src.market.domain.repositories.sales import ISalesRepository
 from src.market.domain.services.sale_services.get_sale_service import GetSaleService
 
 

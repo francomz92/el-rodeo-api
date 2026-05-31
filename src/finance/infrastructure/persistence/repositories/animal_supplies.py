@@ -5,23 +5,23 @@ from sqlalchemy.orm import joinedload
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
-from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, SupplyTypeEntinty
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, SupplyTypeEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
-from src.finance.domain.value_objetcts.animal_supplies_value_objects import (
+from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesCreateValueObject,
     AnimalSuppliesListQueryParamsValueObject,
     AnimalSuppliesUpdateValueObject,
 )
-from src.finance.infrastructure.persistance.models import AnimalSupplie
+from src.finance.infrastructure.persistence.models import AnimalSupply
 
 
 class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
     async def exists(self, id: UUID, user_id: UUID) -> bool:
         query = (
-            exists(AnimalSupplie)
+            exists(AnimalSupply)
             .where(
-                AnimalSupplie.id == id,
-                AnimalSupplie.user_id == user_id,
+                AnimalSupply.id == id,
+                AnimalSupply.user_id == user_id,
             )
             .select()
         )
@@ -34,18 +34,18 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
         user_id: UUID,
     ) -> AnimalSupplyEntity | None:
         query = (
-            select(AnimalSupplie)
+            select(AnimalSupply)
             .where(
-                AnimalSupplie.id == id,
-                AnimalSupplie.user_id == user_id,
+                AnimalSupply.id == id,
+                AnimalSupply.user_id == user_id,
             )
             .options(
-                joinedload(AnimalSupplie.type),
+                joinedload(AnimalSupply.type),
             )
         )
         result = await self.db.execute(query)
-        supplie_db = result.scalar_one_or_none()
-        return self._build_animal_supplie_with_type(supplie_db) if supplie_db else None
+        supply_db = result.scalar_one_or_none()
+        return self._build_animal_supply_with_type(supply_db) if supply_db else None
 
     async def list_for_user(
         self,
@@ -60,32 +60,32 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
             if v is Sentinel.UNSET:
                 continue
             elif k == "name":
-                conditions.append(AnimalSupplie.name.icontains(v))
+                conditions.append(AnimalSupply.name.icontains(v))
             elif k == ("id", "type_id"):
-                conditions.append(AnimalSupplie.id == v)
+                conditions.append(AnimalSupply.id == v)
         query = (
-            select(AnimalSupplie)
+            select(AnimalSupply)
             .where(
-                AnimalSupplie.user_id == user_id,
+                AnimalSupply.user_id == user_id,
                 *conditions,
             )
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
             .options(
-                joinedload(AnimalSupplie.type),
+                joinedload(AnimalSupply.type),
             )
         )
         result = await self.db.execute(query)
         supplies_list = result.scalars().unique().all()
-        return [self._build_animal_supplie_with_type(supplie_data) for supplie_data in supplies_list]
+        return [self._build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
 
     async def create(
         self,
         data: AnimalSuppliesCreateValueObject,
     ) -> AnimalSupplyEntity:
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
-        query = insert(AnimalSupplie).values(**kws).returning(AnimalSupplie.id)
+        query = insert(AnimalSupply).values(**kws).returning(AnimalSupply.id)
         result = await self.db.execute(query)
         suplie_id = result.scalar_one()
         return await self.get_by_id(suplie_id, data.user_id)  # type: ignore
@@ -98,46 +98,46 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
     ) -> AnimalSupplyEntity:
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = (
-            update(AnimalSupplie)
+            update(AnimalSupply)
             .where(
-                AnimalSupplie.id == id,
-                AnimalSupplie.user_id == user_id,
+                AnimalSupply.id == id,
+                AnimalSupply.user_id == user_id,
             )
             .values(**kws)
-            .returning(AnimalSupplie.id)
+            .returning(AnimalSupply.id)
         )
         result = await self.db.execute(query)
         updated_id = result.scalar_one()
         return await self.get_by_id(updated_id, data.user_id)  # type: ignore
 
-    async def incrase_stock(self, id: UUID, amount_to_incrase: float) -> None:
+    async def increase_stock(self, id: UUID, amount_to_increase: float) -> None:
         query = (
-            update(AnimalSupplie)
+            update(AnimalSupply)
             .where(
-                AnimalSupplie.id == id,
+                AnimalSupply.id == id,
             )
-            .values(amount=AnimalSupplie.amount - amount_to_incrase)
+            .values(amount=AnimalSupply.amount - amount_to_increase)
         )
         await self.db.execute(query)
 
     async def delete(self, id: UUID) -> None:
-        query = delete(AnimalSupplie).where(AnimalSupplie.id == id)
+        query = delete(AnimalSupply).where(AnimalSupply.id == id)
         await self.db.execute(query)
 
-    def _build_animal_supplie_with_type(
+    def _build_animal_supply_with_type(
         self,
-        supplie_data: AnimalSupplie,
+        supply_data: AnimalSupply,
     ) -> AnimalSupplyEntity:
         return AnimalSupplyEntity(
-            id=supplie_data.id,
-            created_at=supplie_data.created_at,
-            name=supplie_data.name,
-            amount=supplie_data.amount,
-            critical_amount=supplie_data.critical_amount,
-            unit_of_measurement=supplie_data.unit_of_measurement,
-            description=supplie_data.description,
-            type=SupplyTypeEntinty(
-                id=supplie_data.type_id,
-                name=supplie_data.type.name,
+            id=supply_data.id,
+            created_at=supply_data.created_at,
+            name=supply_data.name,
+            amount=supply_data.amount,
+            critical_amount=supply_data.critical_amount,
+            unit_of_measurement=supply_data.unit_of_measurement,
+            description=supply_data.description,
+            type=SupplyTypeEntity(
+                id=supply_data.type_id,
+                name=supply_data.type.name,
             ),
         )

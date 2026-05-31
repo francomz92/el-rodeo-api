@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
-from src.market.domain.repositoriyes.buyers import IBuyersRepository
+from src.market.domain.repositories.buyers import IBuyersRepository
 from src.market.domain.services.buyer_services.delete_buyer_service import DeleteBuyerService
 
 
@@ -19,3 +19,4 @@ class DeleteBuyerCase:
                 repository=repository,
             )
             await self.service.delete_buyer(id, repository)
+            await uow.commit()

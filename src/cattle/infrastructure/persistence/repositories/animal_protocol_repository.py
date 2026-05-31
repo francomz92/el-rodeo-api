@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
-from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
 from src.cattle.domain.value_objects.animal_protocol_value_object import (
@@ -11,7 +11,7 @@ from src.cattle.domain.value_objects.animal_protocol_value_object import (
     AnimalProtocolListQueryParamsValueObject,
     AnimalProtocolUpdateValueObject,
 )
-from src.cattle.infrastructure.persistance.models._animal_models import AnimalProtocols
+from src.cattle.infrastructure.persistence.models._animal_models import Animal, AnimalProtocols
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
@@ -41,7 +41,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
                 AnimalProtocols.user_id == user_id,
             )
             .options(
-                joinedload(AnimalProtocols.animal),
+                joinedload(AnimalProtocols.animal).joinedload(Animal.type),
             )
         )
         result = await self.db.execute(query)
@@ -72,7 +72,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
             .limit(limit)
             .offset(offset)
             .options(
-                joinedload(AnimalProtocols.animal),
+                joinedload(AnimalProtocols.animal).joinedload(Animal.type),
             )
         )
         result = await self.db.execute(query)
@@ -87,13 +87,14 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         query = (
             insert(AnimalProtocols)
             .values(
+                user_id=user_id,
                 **vars(data),
             )
             .returning(AnimalProtocols.id)
         )
         result = await self.db.execute(query)
         protocol_id = result.scalar_one()
-        return self.get_by_id(protocol_id, user_id)  # type: ignore
+        return await self.get_by_id(protocol_id, user_id)  # type: ignore
 
     async def update_data(
         self,
@@ -109,7 +110,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
             .values(**kws)
         )
         await self.db.execute(query)
-        return self.get_by_id(id, data.user_id)  # type: ignore
+        return await self.get_by_id(id, data.user_id)  # type: ignore
 
     async def delete(self, id: UUID) -> None:
         query = delete(AnimalProtocols).where(AnimalProtocols.id == id)
@@ -126,7 +127,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
                 name=protocol.animal.name,
                 date_of_birth=protocol.animal.date_of_birth,
                 initial_weight=protocol.animal.initial_weight,
-                type=AnimalTypeEntinty(
+                type=AnimalTypeEntity(
                     id=protocol.animal.type.id,
                     name=protocol.animal.type.name,
                 ),

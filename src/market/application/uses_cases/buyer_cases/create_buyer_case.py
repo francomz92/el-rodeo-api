@@ -1,6 +1,6 @@
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.buyers import BuyerEntity
-from src.market.domain.repositoriyes.buyers import IBuyersRepository
+from src.market.domain.repositories.buyers import IBuyersRepository
 from src.market.domain.services.buyer_services.create_buyer_service import CreateBuyerService
 from src.market.domain.value_objects.buyer_value_objects import BuyerCreateValueObject
 
@@ -13,4 +13,6 @@ class CreateBuyerCase:
     async def execute(self, data: BuyerCreateValueObject) -> BuyerEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
-            return await self.service.create_new(data, repository)
+            result = await self.service.create_new(data, repository)
+            await uow.commit()
+            return result

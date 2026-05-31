@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
-from src.market.domain.repositoriyes.sales import ISalesRepository
+from src.market.domain.repositories.sales import ISalesRepository
 from src.market.domain.services.sale_services.delete_sale_service import DeleteSaleService
 
 

@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 from src.finance.application.uses_cases.animal_supplies_cases.create_animal_supplies_cases import CreateAnimalSuppliesCase
-from src.finance.application.uses_cases.animal_supplies_cases.delete_animal_supples_case import DeleteAnimalSuppliesCase
+from src.finance.application.uses_cases.animal_supplies_cases.delete_animal_supplies_case import DeleteAnimalSuppliesCase
 from src.finance.application.uses_cases.animal_supplies_cases.get_animal_supplies_cases import GetAnimalSuppliesCase
 from src.finance.application.uses_cases.animal_supplies_cases.list_animal_supplies_case import ListAnimalSuppliesCase
 from src.finance.application.uses_cases.animal_supplies_cases.update_animal_supplies_case import UpdateAnimalSuppliesCase

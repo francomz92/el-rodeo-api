@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
-from src.cattle.domain.value_objects.animal_value_objenct import (
+from src.cattle.domain.value_objects.animal_value_object import (
     AnimalCreateValueObject,
     AnimalsListQueryParamsValueObject,
     AnimalUpdateValueObject,

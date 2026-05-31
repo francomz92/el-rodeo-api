@@ -2,8 +2,8 @@ from abc import abstractmethod
 from uuid import UUID
 
 from src.common.domain.repository import IRepository
-from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
-from src.finance.domain.value_objetcts.animal_supply_type_value_objects import (
+from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
+from src.finance.domain.value_objects.animal_supply_type_value_objects import (
     AnimalSupplyTypeCreateValueObject,
     AnimalSupplyTypeListQueryParamsValueObject,
     AnimalSupplyTypeUpdateValueObject,
@@ -16,11 +16,11 @@ class ISupplyTypesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID) -> SupplyTypeEntinty | None:
+    async def get_by_id(self, id: UUID) -> SupplyTypeEntity | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_name(self, name: str) -> SupplyTypeEntinty | None:
+    async def get_by_name(self, name: str) -> SupplyTypeEntity | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -30,14 +30,14 @@ class ISupplyTypesRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[SupplyTypeEntinty]:
+    ) -> list[SupplyTypeEntity]:
         raise NotImplementedError
 
     @abstractmethod
     async def create(
         self,
         data: AnimalSupplyTypeCreateValueObject,
-    ) -> SupplyTypeEntinty:
+    ) -> SupplyTypeEntity:
         raise NotImplementedError
 
     @abstractmethod
@@ -45,7 +45,7 @@ class ISupplyTypesRepository(IRepository):
         self,
         id: UUID,
         data: AnimalSupplyTypeUpdateValueObject,
-    ) -> SupplyTypeEntinty:
+    ) -> SupplyTypeEntity:
         raise NotImplementedError
 
     @abstractmethod

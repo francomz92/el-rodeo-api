@@ -5,7 +5,7 @@ from src.common.utils.date_utils import get_current_datetime
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.repositories.purchases import IPurchasesRepository
-from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseCreateValueObject
+from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject
 
 
 class CreatePurchaseService:
@@ -78,11 +78,11 @@ class CreatePurchaseService:
     ) -> PurchaseEntity:
         return await repository.create(user_id, data)
 
-    async def incrase_supply_stock(
+    async def increase_supply_stock(
         self,
         supply_id: UUID,
-        amount_to_incrase: float,
+        amount_to_increase: float,
         supply_repository: IAnimalSuppliesRepository,
     ):
 
-        await supply_repository.incrase_stock(supply_id, amount_to_incrase)
+        await supply_repository.increase_stock(supply_id, amount_to_increase)

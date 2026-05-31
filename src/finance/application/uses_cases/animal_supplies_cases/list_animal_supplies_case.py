@@ -4,7 +4,7 @@ from src.common.application.ports.uow import IUoW
 from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.services.animal_supplies_services.list_animal_supplies_service import ListAnimalSuppliesService
-from src.finance.domain.value_objetcts.animal_supplies_value_objects import AnimalSuppliesListQueryParamsValueObject
+from src.finance.domain.value_objects.animal_supplies_value_objects import AnimalSuppliesListQueryParamsValueObject
 
 
 class ListAnimalSuppliesCase:

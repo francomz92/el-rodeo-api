@@ -1,4 +1,4 @@
-from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.value_objects.animal_type_value_object import AnimalTypeCreateValueObject, AnimalTypeListQueryParamsValueObject
 from src.common.domain.exceptions import ConflictError
@@ -23,5 +23,5 @@ class CreateAnimalTypeService:
         self,
         data: AnimalTypeCreateValueObject,
         repository: IAnimalTypesRepository,
-    ) -> AnimalTypeEntinty:
+    ) -> AnimalTypeEntity:
         return await repository.create(data=data)

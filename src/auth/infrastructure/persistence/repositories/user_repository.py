@@ -8,7 +8,7 @@ from src.auth.domain.value_objects.user_value_object import (
     UserCreationValueObject,
     UserUpdateValueObject,
 )
-from src.auth.infrastructure.persistance.models import User
+from src.auth.infrastructure.persistence.models import User
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 

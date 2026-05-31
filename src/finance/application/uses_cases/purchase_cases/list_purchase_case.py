@@ -4,7 +4,7 @@ from src.common.application.ports.uow import IUoW
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.services.purchase_services.list_purchase_service import ListPurchaseService
-from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseListQueryParamValueObject
+from src.finance.domain.value_objects.purchase_value_objects import PurchaseListQueryParamValueObject
 
 
 class ListPurchaseCase:

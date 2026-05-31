@@ -1,6 +1,6 @@
 from src.common.domain.exceptions import BusinessValidationError
 from src.market.domain.entities.sales import SaleEntity
-from src.market.domain.repositoriyes.sales import ISalesRepository
+from src.market.domain.repositories.sales import ISalesRepository
 from src.market.domain.value_objects.sale_value_objects import SaleCreateValueObject
 
 

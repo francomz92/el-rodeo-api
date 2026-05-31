@@ -5,13 +5,13 @@ from sqlalchemy import delete, exists, insert, select, update
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.market.domain.entities.buyers import BuyerEntity
-from src.market.domain.repositoriyes.buyers import IBuyersRepository
+from src.market.domain.repositories.buyers import IBuyersRepository
 from src.market.domain.value_objects.buyer_value_objects import (
     BuyerCreateValueObject,
     BuyerListQueryParamsValueObject,
     BuyerUpdateValueObject,
 )
-from src.market.infrastructure.persistance.models import Buyer
+from src.market.infrastructure.persistence.models import Buyer
 
 
 class BuyersRepository(IBuyersRepository, SessionMixin):

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.cattle.domain.entities.animal_entity import AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.value_objects.animal_type_value_object import AnimalTypeListQueryParamsValueObject
 from src.common.domain.exceptions import ConflictError, NotFoundError
@@ -35,5 +35,5 @@ class UpdateAnimalTypeService:
         id: UUID,
         data,
         repository: IAnimalTypesRepository,
-    ) -> AnimalTypeEntinty:
+    ) -> AnimalTypeEntity:
         return await repository.update(id, data)

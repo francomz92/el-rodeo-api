@@ -3,9 +3,9 @@ from datetime import date
 from uuid import UUID
 
 from src.common.domain.repository import IRepository
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
-from src.finance.domain.value_objetcts.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
+from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
 
 
 class IPurchasesRepository(IRepository):

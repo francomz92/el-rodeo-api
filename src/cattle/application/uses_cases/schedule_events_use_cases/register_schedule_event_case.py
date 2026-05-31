@@ -13,7 +13,7 @@ class RegisterScheduleEventCase:
         self.uow = uow
         self.service = service
 
-    async def excecue(self, data: ScheduleEventCreationValueObject):
+    async def execute(self, data: ScheduleEventCreationValueObject):
         async with self.uow as uow:
             self.service.validate_event_date(data.event_date)
             repository = uow.get_repository(IScheduleEventRepository)

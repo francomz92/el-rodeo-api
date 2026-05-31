@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity
-from src.cattle.domain.value_objects.animal_value_objenct import (
+from src.cattle.domain.value_objects.animal_value_object import (
     AnimalCreateValueObject,
     AnimalsListQueryParamsValueObject,
     AnimalUpdateValueObject,

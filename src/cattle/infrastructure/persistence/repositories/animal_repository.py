@@ -4,14 +4,14 @@ from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.orm import joinedload
 
 from src.cattle.domain.constants.animal import AnimalStatus
-from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntinty
+from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
 from src.cattle.domain.repositories.animals_repository_port import (
     AnimalCreateValueObject,
     AnimalsListQueryParamsValueObject,
     AnimalUpdateValueObject,
     IAnimalsRepository,
 )
-from src.cattle.infrastructure.persistance.models import Animal
+from src.cattle.infrastructure.persistence.models import Animal
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
@@ -139,7 +139,7 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
             last_weight=animal_data.last_weight,
             breed=animal_data.breed,
             status=animal_data.status,
-            type=AnimalTypeEntinty(
+            type=AnimalTypeEntity(
                 id=animal_data.type.id,
                 name=animal_data.type.name,
             ),

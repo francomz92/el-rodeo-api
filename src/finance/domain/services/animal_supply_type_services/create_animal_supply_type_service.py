@@ -1,7 +1,7 @@
 from src.common.domain.exceptions import ConflictError
-from src.finance.domain.entities.animal_supplies import SupplyTypeEntinty
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
-from src.finance.domain.value_objetcts.animal_supply_type_value_objects import AnimalSupplyTypeCreateValueObject
+from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
+from src.finance.domain.value_objects.animal_supply_type_value_objects import AnimalSupplyTypeCreateValueObject
 
 
 class CreateAnimalSupplyTypeService:
@@ -18,5 +18,5 @@ class CreateAnimalSupplyTypeService:
         self,
         data: AnimalSupplyTypeCreateValueObject,
         repository: ISupplyTypesRepository,
-    ) -> SupplyTypeEntinty:
+    ) -> SupplyTypeEntity:
         return await repository.create(data)

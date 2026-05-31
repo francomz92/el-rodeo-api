@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
 class BuyerSchema(BaseModel):
-    id: str
+    id: UUID
     name: str
     description: str
     contact_number: str

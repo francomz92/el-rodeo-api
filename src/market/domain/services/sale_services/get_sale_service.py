@@ -2,7 +2,7 @@ from uuid import UUID
 
 from src.common.domain.exceptions import NotFoundError
 from src.market.domain.entities.sales import SaleEntity
-from src.market.domain.repositoriyes.sales import ISalesRepository
+from src.market.domain.repositories.sales import ISalesRepository
 
 
 class GetSaleService:

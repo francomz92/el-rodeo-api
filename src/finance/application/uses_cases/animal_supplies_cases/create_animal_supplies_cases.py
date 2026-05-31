@@ -1,10 +1,10 @@
 from src.common.application.ports.uow import IUoW
 from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 from src.finance.domain.services.animal_supplies_services.create_animal_supplies_service import CreateAnimalSuppliesService
 from src.finance.domain.services.animal_supply_type_services.get_animal_supply_type_service import GetSupplyTypeService
-from src.finance.domain.value_objetcts.animal_supplies_value_objects import AnimalSuppliesCreateValueObject
+from src.finance.domain.value_objects.animal_supplies_value_objects import AnimalSuppliesCreateValueObject
 
 
 class CreateAnimalSuppliesCase:
@@ -27,6 +27,6 @@ class CreateAnimalSuppliesCase:
                 repository=supply_type_repository,
             )
             repository = uow.get_repository(IAnimalSuppliesRepository)
-            supplie = await self.service.create_new(data, repository)
+            supply = await self.service.create_new(data, repository)
             await uow.commit()
-        return supplie
+        return supply

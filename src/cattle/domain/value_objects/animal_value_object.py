@@ -41,3 +41,4 @@ class AnimalUpdateValueObject:
     last_weight: float | None | Sentinel = Sentinel.UNSET
     breed: str | None | Sentinel = Sentinel.UNSET
     tag: str | None | Sentinel = Sentinel.UNSET
+    status: AnimalStatus | None | Sentinel = Sentinel.UNSET

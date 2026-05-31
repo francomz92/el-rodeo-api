@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import is_admin_user
-from src.finance.domain.value_objetcts.animal_supply_type_value_objects import (
+from src.finance.domain.value_objects.animal_supply_type_value_objects import (
     AnimalSupplyTypeCreateValueObject,
     AnimalSupplyTypeListQueryParamsValueObject,
     AnimalSupplyTypeUpdateValueObject,
@@ -14,7 +14,7 @@ from src.finance.infrastructure.adapters.http.input.animal_supply_type_schemas i
     AnimalSupplyTypeListQueryParamsSchema,
     AnimalSupplyTypeUpdateSchema,
 )
-from src.finance.infrastructure.adapters.http.output.animal_suply_type_schemas import SupplyTypeSchema
+from src.finance.infrastructure.adapters.http.output.animal_supply_type_schemas import SupplyTypeSchema
 from src.finance.infrastructure.presentation.dependencies.animal_supply_type_dependencies import (
     GetCreateAnimalSupplyTypeCase,
     GetDeleteAnimalSupplyTypeCase,

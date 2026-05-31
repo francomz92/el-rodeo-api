@@ -5,7 +5,7 @@ from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepos
 
 
 class DeleteAnimalSuppliesService:
-    async def vaidate_exists(
+    async def validate_exists(
         self,
         id: UUID,
         user_id: UUID,

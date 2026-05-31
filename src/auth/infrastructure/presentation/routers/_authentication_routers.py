@@ -6,8 +6,8 @@ from src.auth.infrastructure.adapters.http.input.authentication_schemas import (
     LoginSchema,
     RegisterSchema,
 )
-from src.auth.infrastructure.adapters.http.oputput.authentication_schemas import LoginResponseSchema
-from src.auth.infrastructure.adapters.http.oputput.user_schemas import UserSchema
+from src.auth.infrastructure.adapters.http.output.authentication_schemas import LoginResponseSchema
+from src.auth.infrastructure.adapters.http.output.user_schemas import UserSchema
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetChangePasswordCase,
     GetLoginUserCase,

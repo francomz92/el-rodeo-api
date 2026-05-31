@@ -3,7 +3,7 @@ from datetime import date
 from uuid import UUID
 
 from src.common.domain.types import Sentinel
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
 @dataclass

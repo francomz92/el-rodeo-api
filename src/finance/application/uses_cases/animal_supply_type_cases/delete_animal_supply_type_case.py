@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
-from src.finance.domain.repositories.animal_supplie_types import ISupplyTypesRepository
+from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 from src.finance.domain.services.animal_supply_type_services.delete_animal_supply_type_service import DeleteAnimalSupplyTypeService
 
 

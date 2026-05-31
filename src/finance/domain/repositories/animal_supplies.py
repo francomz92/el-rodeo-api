@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.common.domain.repository import IRepository
 from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
-from src.finance.domain.value_objetcts.animal_supplies_value_objects import (
+from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesCreateValueObject,
     AnimalSuppliesListQueryParamsValueObject,
     AnimalSuppliesUpdateValueObject,
@@ -51,10 +51,10 @@ class IAnimalSuppliesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def incrase_stock(
+    async def increase_stock(
         self,
         id: UUID,
-        amount_to_incrase: float,
+        amount_to_increase: float,
     ) -> None:
         raise NotImplementedError
 

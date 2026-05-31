@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.common.domain.exceptions import NotFoundError
-from src.market.domain.repositoriyes.buyers import IBuyersRepository
+from src.market.domain.repositories.buyers import IBuyersRepository
 
 
 class DeleteBuyerService:

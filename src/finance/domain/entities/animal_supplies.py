@@ -4,11 +4,11 @@ from uuid import UUID
 
 from src.auth.domain.entities import UserEntity
 from src.common.utils.date_utils import get_current_datetime
-from src.finance.domain.constatns.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
 @dataclass
-class SupplyTypeEntinty:
+class SupplyTypeEntity:
     id: UUID
     name: str
 
@@ -24,7 +24,7 @@ class AnimalSupplyEntity:
     description: str = field(default_factory=str)
 
     user: UserEntity | None = None
-    type: SupplyTypeEntinty | None = None
+    type: SupplyTypeEntity | None = None
 
     def validate_critical_amount(self):
         if self.critical_amount < self.amount:
