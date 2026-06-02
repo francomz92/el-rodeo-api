@@ -11,9 +11,12 @@ from src.auth.infrastructure.adapters.http.output.user_schemas import UserSchema
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetChangePasswordCase,
     GetLoginUserCase,
+    GetLogoutUserCase,
+    GetOauthToken,
     GetRegisterUserCase,
     is_admin_user,
 )
+from src.common.domain.exceptions import UnauthorizedError
 from src.common.infrastructure.adapters.http.output.messages import SimpleMessageSchema
 from src.common.infrastructure.core import settings
 
@@ -72,3 +75,20 @@ async def change_password(
         confirmed_password=data.confirmed_password,
     )
     return SimpleMessageSchema(message="Contraseña actualizada exitosamente")
+
+
+@auth_router.post(
+    path="/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Invalidate the current token (logout)",
+    response_model=SimpleMessageSchema,
+)
+async def logout_user(
+    token: GetOauthToken,
+    logout_user_case: GetLogoutUserCase,
+):
+    if not token:
+        raise UnauthorizedError("No autorizado para realizar esta acción")
+
+    await logout_user_case.execute(token.credentials)
+    return SimpleMessageSchema(message="Sesión cerrada exitosamente")

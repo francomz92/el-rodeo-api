@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     DOMAIN: str
     BROKER_URL: str
     RESULT_BACKEND_URL: str
+    REDIS_URL: str = "redis://localhost:6380/0"
 
     model_config = SettingsConfigDict(
         env_file=".env",

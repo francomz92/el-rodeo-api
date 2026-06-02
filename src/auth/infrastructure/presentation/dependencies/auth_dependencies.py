@@ -7,6 +7,7 @@ from src.auth.application.services.authentication_service import AuthService
 from src.auth.application.services.notifications.wellcome_email_service import WellcomeEmailService
 from src.auth.application.uses_cases.change_password_case import ChangePasswordCase
 from src.auth.application.uses_cases.login_user_case import LoginUserCase
+from src.auth.application.uses_cases.logout_user_case import LogoutUserCase
 from src.auth.application.uses_cases.register_user_case import RegisterUserCase
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.services.change_password_service import ChangePasswordService
@@ -14,6 +15,7 @@ from src.auth.domain.services.login_user_service import LoginUserService
 from src.auth.domain.services.register_user_service import RegisterUserService
 from src.common.domain.exceptions import UnauthorizedError
 from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
+from src.common.infrastructure.presentation.dependencies.redis import GetTokenBlacklistService
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
@@ -59,8 +61,24 @@ def _get_login_user_case(
     return LoginUserCase(uow, security_service, token_service, login_service)
 
 
-async def _get_auth_service(token_service: GetTokenService) -> AuthService:
-    return AuthService(token_service=token_service)
+async def _get_auth_service(
+    token_service: GetTokenService,
+    blacklist_service: GetTokenBlacklistService,
+) -> AuthService:
+    return AuthService(
+        token_service=token_service,
+        blacklist_service=blacklist_service,
+    )
+
+
+def _get_logout_user_case(
+    token_service: GetTokenService,
+    blacklist_service: GetTokenBlacklistService,
+) -> LogoutUserCase:
+    return LogoutUserCase(
+        token_service=token_service,
+        blacklist_service=blacklist_service,
+    )
 
 
 async def _get_change_password_case(
@@ -80,7 +98,7 @@ async def _get_change_password_case(
 async def _get_current_user(
     uow: GetUnitOfWork,
     auth_service: "GetAuthService",
-    token: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+    token: "GetOauthToken",
 ):
     if not token:
         raise UnauthorizedError("No autorizado para realizar esta acción.")
@@ -102,9 +120,11 @@ async def _get_current_admin_user(
 is_admin_user = Depends(_get_current_admin_user)
 is_authenticated_current_user = Depends(_get_current_user)
 
+GetOauthToken = Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
 GetAuthService = Annotated[AuthService, Depends(_get_auth_service)]
 GetCurrentUser = Annotated[UserEntity, Depends(_get_current_user)]
 # GetCurrentAdminUser = Annotated[UserEntity, Depends(_get_current_admin_user)]
 GetRegisterUserCase = Annotated[RegisterUserCase, Depends(_get_register_user_case)]
 GetLoginUserCase = Annotated[LoginUserCase, Depends(_get_login_user_case)]
 GetChangePasswordCase = Annotated[ChangePasswordCase, Depends(_get_change_password_case)]
+GetLogoutUserCase = Annotated[LogoutUserCase, Depends(_get_logout_user_case)]

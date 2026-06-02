@@ -1,4 +1,5 @@
 from datetime import timedelta
+from uuid import uuid4
 
 import jwt
 
@@ -18,6 +19,7 @@ class TokenService(ITokenService):
         expire_datetime = current_datetime + timedelta(minutes=exp_minutes)
         payload.update(
             {
+                "jti": str(uuid4()),
                 "exp": expire_datetime,
                 "iat": current_datetime,
             }
