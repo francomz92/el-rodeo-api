@@ -1,0 +1,50 @@
+services:
+    api:
+      container_name: api
+      image: api
+      build:
+        context: ..
+        dockerfile: dockers_files/Dockerfile
+      ports:
+        - :8000
+      command: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+      env_file:
+        - .env
+
+    redis:
+      container_name: redis
+      image: redis
+      command: --port 6380
+      ports:
+        - :6380
+      volumes:
+        - redis_data:/data
+      depends_on:
+        - api
+
+    celery:
+      container_name: celery
+      image: api
+      command: celery -A src.common.infrastructure.workers.app worker -B --loglevel=DEBUG
+      ports:
+        - :5555
+      volumes:
+        - .:/app
+      env_file:
+        - .env
+      links:
+        - redis
+      depends_on:
+        - api
+        - redis
+
+    flower:
+      container_name: flower
+      image: api
+      ports:
+        - :4444
+      env_file:
+        - .env
+      command: celery -A src.common.infrastructure.workers.app flower -B --loglevel=DEBUG
+      depends_on:
+        - celery
