@@ -131,7 +131,6 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
         return AnimalEntity(
             id=animal_data.id,
             caravana=animal_data.caravana,
-            name=animal_data.name,
             tag=animal_data.tag,
             date_of_birth=animal_data.date_of_birth,
             initial_weight=animal_data.initial_weight,

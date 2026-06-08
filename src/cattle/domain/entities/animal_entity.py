@@ -16,7 +16,6 @@ class AnimalTypeEntity:
 class AnimalEntity:
     id: UUID
     caravana: str
-    name: str
     tag: str
     date_of_birth: date
     initial_weight: float

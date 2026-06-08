@@ -10,7 +10,6 @@ class AnimalSchema(BaseModel):
     id: UUID
     type: AnimalTypeSchema
     caravana: str
-    name: str
     tag: str
     date_of_birth: date
     initial_weight: float
