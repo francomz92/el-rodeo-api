@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.auth.domain.entities import UserEntity
 from src.cattle.domain.entities.animal_entity import AnimalEntity
@@ -19,3 +19,5 @@ class SaleSchema(BaseModel):
     user: UserEntity | None = None
     buyer: BuyerEntity | None = None
     animal: AnimalEntity | None = None
+
+    model_config = ConfigDict(from_attributes=True)

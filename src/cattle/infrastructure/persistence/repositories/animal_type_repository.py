@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import exists, insert, select, update
+from sqlalchemy import RowMapping, exists, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
@@ -21,9 +21,12 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         return result.scalar_one()
 
     async def get_by_id(self, id: UUID) -> AnimalTypeEntity | None:
-        query = select(AnimalType).where(AnimalType.id == id)
+        query = select(
+            AnimalType.id,
+            AnimalType.name,
+        ).where(AnimalType.id == id)
         result = await self.db.execute(query)
-        animal_type_db = result.scalar_one_or_none()
+        animal_type_db = result.mappings().one_or_none()
         return self._build_animal_type(animal_type_db) if animal_type_db else None
 
     async def list(
@@ -42,7 +45,10 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
             elif k == "name":
                 conditions.append(AnimalType.name.icontains(v))
         query = (
-            select(AnimalType)
+            select(
+                AnimalType.id,
+                AnimalType.name,
+            )
             .where(
                 *conditions,
             )
@@ -51,7 +57,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
             .order_by(order_by)
         )
         result = await self.db.execute(query)
-        animal_types_list = result.scalars().unique().all()
+        animal_types_list = result.mappings().all()
         return [self._build_animal_type(type_data) for type_data in animal_types_list]
 
     async def create(
@@ -82,8 +88,8 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         animal_type_id = result.scalar_one_or_none()
         return await self.get_by_id(animal_type_id)  # type: ignore
 
-    def _build_animal_type(self, type_data: AnimalType) -> AnimalTypeEntity:
+    def _build_animal_type(self, type_data: RowMapping) -> AnimalTypeEntity:
         return AnimalTypeEntity(
-            id=type_data.id,
-            name=type_data.name,
+            id=type_data["id"],
+            name=type_data["name"],
         )

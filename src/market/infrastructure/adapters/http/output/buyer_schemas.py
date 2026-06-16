@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BuyerSchema(BaseModel):
@@ -9,3 +9,5 @@ class BuyerSchema(BaseModel):
     description: str
     contact_number: str
     contact_address: str
+
+    model_config = ConfigDict(from_attributes=True)

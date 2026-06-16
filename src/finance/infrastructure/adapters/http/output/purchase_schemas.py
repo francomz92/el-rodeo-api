@@ -1,10 +1,9 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
-from src.finance.infrastructure.adapters.http.output.animal_supplies_schemas import AnimalSupplySchema
 
 
 class PurchaseSchema(BaseModel):
@@ -14,4 +13,9 @@ class PurchaseSchema(BaseModel):
     purchase_date: date
     unit_price: float
     unit_of_measurement: UnitOfMeasurement
-    supply: AnimalSupplySchema
+    user_id: UUID
+    user_name: str
+    supply_id: UUID
+    supply_name: str
+
+    model_config = ConfigDict(from_attributes=True)

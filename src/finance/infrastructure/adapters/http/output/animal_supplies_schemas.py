@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 from src.finance.infrastructure.adapters.http.output.animal_supply_type_schemas import SupplyTypeSchema
@@ -16,3 +16,5 @@ class AnimalSupplySchema(BaseModel):
     created_at: datetime
     description: str
     type: SupplyTypeSchema
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
@@ -11,6 +10,7 @@ from src.cattle.domain.value_objects.animal_protocol_value_object import (
     AnimalProtocolListQueryParamsValueObject,
     AnimalProtocolUpdateValueObject,
 )
+from src.cattle.infrastructure.persistence.models import AnimalType
 from src.cattle.infrastructure.persistence.models._animal_models import Animal, AnimalProtocols
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -35,17 +35,32 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         user_id: UUID,
     ) -> AnimalProtocolEntity | None:
         query = (
-            select(AnimalProtocols)
+            select(
+                *AnimalProtocols.__table__.columns,
+                Animal.id.label("animal_id"),
+                Animal.date_of_birth.label("animal_date_of_birth"),
+                Animal.initial_weight.label("animal_initial_weight"),
+                Animal.status.label("animal_status"),
+                Animal.breed.label("animal_breed"),
+                Animal.caravana.label("animal_caravana"),
+                Animal.initial_weight_date.label("animal_initial_weight_date"),
+                Animal.last_weight.label("animal_last_weight"),
+                Animal.tag.label("animal_tag"),
+                AnimalType.id.label("animal_type_id"),
+                AnimalType.name.label("animal_type_name"),
+            )
             .where(
                 AnimalProtocols.id == id,
                 AnimalProtocols.user_id == user_id,
             )
-            .options(
-                joinedload(AnimalProtocols.animal).joinedload(Animal.type),
-            )
+            .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
+            # .options(
+            #     joinedload(AnimalProtocols.animal).joinedload(Animal.type),
+            # )
         )
         result = await self.db.execute(query)
-        protocol = result.scalar_one_or_none()
+        protocol = result.mappings().one_or_none()
         return self._build_animal_protocol_entity(protocol) if protocol else None
 
     async def list_for_user(
@@ -63,7 +78,19 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
             elif k in ("id", "vaccinated", "sale_permission"):
                 conditions.append(getattr(AnimalProtocols, k) == v)
         query = (
-            select(AnimalProtocols)
+            select(
+                *AnimalProtocols.__table__.columns,
+                Animal.date_of_birth.label("animal_date_of_birth"),
+                Animal.initial_weight.label("animal_initial_weight"),
+                Animal.status.label("animal_status"),
+                Animal.breed.label("animal_breed"),
+                Animal.caravana.label("animal_caravana"),
+                Animal.initial_weight_date.label("animal_initial_weight_date"),
+                Animal.last_weight.label("animal_last_weight"),
+                Animal.tag.label("animal_tag"),
+                AnimalType.id.label("animal_type_id"),
+                AnimalType.name.label("animal_type_name"),
+            )
             .where(
                 AnimalProtocols.user_id == user_id,
                 *conditions,
@@ -71,12 +98,14 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
             .order_by(order_by)
             .limit(limit)
             .offset(offset)
-            .options(
-                joinedload(AnimalProtocols.animal).joinedload(Animal.type),
-            )
+            .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
+            # .options(
+            #     joinedload(AnimalProtocols.animal).joinedload(Animal.type),
+            # )
         )
         result = await self.db.execute(query)
-        protocols = result.scalars().unique().all()
+        protocols = result.mappings().all()
         return [self._build_animal_protocol_entity(protocol) for protocol in protocols]
 
     async def create(
@@ -116,30 +145,31 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         query = delete(AnimalProtocols).where(AnimalProtocols.id == id)
         await self.db.execute(query)
 
-    def _build_animal_protocol_entity(
-        self,
-        protocol: AnimalProtocols,
-    ) -> AnimalProtocolEntity:
+    def _build_animal_protocol_entity(self, protocol: RowMapping) -> AnimalProtocolEntity:
+        animal_type = (
+            AnimalTypeEntity(
+                id=protocol["animal_type_id"],
+                name=protocol["animal_type_name"],
+            )
+            if protocol["animal_type_id"]
+            else None
+        )
         return AnimalProtocolEntity(
-            id=protocol.id,
+            id=protocol["id"],
             animal=AnimalEntity(
-                id=protocol.animal.id,
-                name=protocol.animal.name,
-                date_of_birth=protocol.animal.date_of_birth,
-                initial_weight=protocol.animal.initial_weight,
-                type=AnimalTypeEntity(
-                    id=protocol.animal.type.id,
-                    name=protocol.animal.type.name,
-                ),
-                status=protocol.animal.status,
-                breed=protocol.animal.breed,
-                caravana=protocol.animal.caravana,
-                initial_weight_date=protocol.animal.initial_weight_date,
-                last_weight=protocol.animal.last_weight,
-                tag=protocol.animal.tag,
+                id=protocol["animal_id"],
+                date_of_birth=protocol["animal_date_of_birth"],
+                initial_weight=protocol["animal_initial_weight"],
+                type=animal_type,
+                status=protocol["animal_status"],
+                breed=protocol["animal_breed"],
+                caravana=protocol["animal_caravana"],
+                initial_weight_date=protocol["animal_initial_weight_date"],
+                last_weight=protocol["animal_last_weight"],
+                tag=protocol["animal_tag"],
             ),
-            vaccinated=protocol.vaccinated,
-            vaccinated_date=protocol.vaccinated_date,
-            sale_permission=protocol.sale_permission,
-            sale_permission_date=protocol.sale_permission_date,
+            vaccinated=protocol["vaccinated"],
+            vaccinated_date=protocol["vaccinated_date"],
+            sale_permission=protocol["sale_permission"],
+            sale_permission_date=protocol["sale_permission_date"],
         )

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import exists, insert, select, update
+from sqlalchemy import RowMapping, exists, insert, select, update
 
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.repositories.users_repository_port import IUserRepository
@@ -27,15 +27,19 @@ class UserRepository(IUserRepository, SessionMixin):
         return result.scalar_one()
 
     async def get_by_id(self, id: UUID) -> UserEntity | None:
-        query = select(User).where(User.id == id)
+        query = select(
+            *User.__table__.columns,
+        ).where(User.id == id)
         result = await self.db.execute(query)
-        user_db = result.scalar_one_or_none()
+        user_db = result.mappings().one_or_none()
         return self._build_user(user_db) if user_db else None
 
     async def get_by_dni(self, dni: str) -> UserEntity | None:
-        query = select(User).where(User.dni == dni)
+        query = select(
+            *User.__table__.columns,
+        ).where(User.dni == dni)
         result = await self.db.execute(query)
-        user_db = result.scalar_one_or_none()
+        user_db = result.mappings().one_or_none()
         return self._build_user(user_db) if user_db else None
 
     async def create(
@@ -64,13 +68,13 @@ class UserRepository(IUserRepository, SessionMixin):
         query = update(User).where(User.id == id).values(password=password)
         await self.db.execute(query)
 
-    def _build_user(self, user_db: User) -> UserEntity:
+    def _build_user(self, user_db: RowMapping) -> UserEntity:
         return UserEntity(
-            id=user_db.id,
-            name=user_db.name,
-            dni=user_db.dni,
-            email=user_db.email,
-            created_at=user_db.created_at,
-            is_admin=user_db.is_admin,
-            _hashed_password=user_db.password,
+            id=user_db["id"],
+            name=user_db["name"],
+            dni=user_db["dni"],
+            email=user_db["email"],
+            created_at=user_db["created_at"],
+            is_admin=user_db["is_admin"],
+            _hashed_password=user_db["password"],
         )

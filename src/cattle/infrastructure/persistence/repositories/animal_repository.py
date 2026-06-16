@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
@@ -11,7 +10,7 @@ from src.cattle.domain.repositories.animals_repository_port import (
     AnimalUpdateValueObject,
     IAnimalsRepository,
 )
-from src.cattle.infrastructure.persistence.models import Animal
+from src.cattle.infrastructure.persistence.models import Animal, AnimalType
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
@@ -43,29 +42,39 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
         user_id: UUID,
     ) -> AnimalEntity | None:
         query = (
-            select(Animal)
+            select(
+                *Animal.__table__.columns,
+                AnimalType.name.label("type_name"),
+            )
             .where(
                 Animal.id == id,
                 Animal.user_id == user_id,
             )
-            .options(
-                joinedload(Animal.type),
-            )
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
+            # .options(
+            #     joinedload(Animal.type),
+            # )
         )
         result = await self.db.execute(query)
-        animal_db = result.scalar_one_or_none()
+        animal_db = result.mappings().one_or_none()
         return self._build_animal_with_type(animal_db) if animal_db else None
 
     async def get_by_caravana(self, caravana: str) -> AnimalEntity | None:
         query = (
-            select(Animal)
-            .where(Animal.caravana == caravana)
-            .options(
-                joinedload(Animal.type),
+            select(
+                *Animal.__table__.columns,
+                AnimalType.name.label("type_name"),
             )
+            .where(
+                Animal.caravana == caravana,
+            )
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
+            # .options(
+            #     joinedload(Animal.type),
+            # )
         )
         result = await self.db.execute(query)
-        animal_db = result.scalar_one_or_none()
+        animal_db = result.mappings().one_or_none()
         return self._build_animal_with_type(animal_db) if animal_db else None
 
     async def list_for_user(
@@ -76,16 +85,24 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
         offset: int,
         order_by: str,
     ) -> list[AnimalEntity]:
+        kws = {
+            "type_id": Animal.type_id,
+            "caravana": Animal.caravana,
+            "breed": Animal.breed,
+        }
         conditions = []
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
                 continue
             elif k == "type_id":
                 conditions.append(Animal.type_id == v)
-            elif k in ("caravana", "name", "breed"):
-                conditions.append(getattr(Animal, k).icontains(v))
+            elif k in ("caravana", "breed"):
+                conditions.append(kws[k].icontains(v))
         query = (
-            select(Animal)
+            select(
+                *Animal.__table__.columns,
+                AnimalType.name.label("type_name"),
+            )
             .where(
                 Animal.user_id == user_id,
                 *conditions,
@@ -93,12 +110,10 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
-            .options(
-                joinedload(Animal.type),
-            )
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
         )
         result = await self.db.execute(query)
-        animal_list_db = result.scalars().unique().all()
+        animal_list_db = result.mappings().all()
         return [self._build_animal_with_type(animal_data) for animal_data in animal_list_db]
 
     async def create(self, data: AnimalCreateValueObject) -> AnimalEntity:
@@ -127,19 +142,21 @@ class AnimalRepository(IAnimalsRepository, SessionMixin):
         query = delete(Animal).where(Animal.id == id)
         await self.db.execute(query)
 
-    def _build_animal_with_type(self, animal_data: Animal) -> AnimalEntity:
+    def _build_animal_with_type(self, animal_data: RowMapping) -> AnimalEntity:
         return AnimalEntity(
-            id=animal_data.id,
-            caravana=animal_data.caravana,
-            tag=animal_data.tag,
-            date_of_birth=animal_data.date_of_birth,
-            initial_weight=animal_data.initial_weight,
-            initial_weight_date=animal_data.initial_weight_date,
-            last_weight=animal_data.last_weight,
-            breed=animal_data.breed,
-            status=animal_data.status,
+            id=animal_data["id"],
+            caravana=animal_data["caravana"],
+            tag=animal_data["tag"],
+            date_of_birth=animal_data["date_of_birth"],
+            initial_weight=animal_data["initial_weight"],
+            initial_weight_date=animal_data["initial_weight_date"],
+            last_weight=animal_data["last_weight"],
+            breed=animal_data["breed"],
+            status=animal_data["status"],
             type=AnimalTypeEntity(
-                id=animal_data.type.id,
-                name=animal_data.type.name,
-            ),
+                id=animal_data["type_id"],
+                name=animal_data["type_name"],
+            )
+            if animal_data["type_id"]
+            else None,
         )

@@ -2,7 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from sqlalchemy import DateTime, Float, ForeignKey, String
-from sqlalchemy.orm import Mapped, Relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.infrastructure.persistence.models import Model
 
@@ -19,6 +19,6 @@ class Sale(Model):
     weight: Mapped[float] = mapped_column(Float)
     description: Mapped[str] = mapped_column(String(500), default=str)
 
-    user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821
-    buyer: Mapped["Buyer"] = Relationship()  # type: ignore  # noqa: F821
-    animal: Mapped["Animal"] = Relationship()  # type: ignore # noqa: F821
+    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821
+    buyer: Mapped["Buyer"] = relationship()  # type: ignore  # noqa: F821
+    animal: Mapped["Animal"] = relationship()  # type: ignore # noqa: F821

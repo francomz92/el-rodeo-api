@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -32,12 +32,12 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
         id: UUID,
         user_id: UUID,
     ) -> BuyerEntity | None:
-        query = select(Buyer).where(
+        query = select(*Buyer.__table__.columns).where(
             Buyer.id == id,
             Buyer.user_id == user_id,
         )
         result = await self.db.execute(query)
-        buyer_db = result.scalar_one_or_none()
+        buyer_db = result.mappings().one_or_none()
         return self._build_buyer(buyer_db) if buyer_db else None
 
     async def list_for_user(
@@ -55,7 +55,7 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
             elif k in ("name", "contact_number"):
                 conditions.append(getattr(Buyer, k).icontains(v))
         query = (
-            select(Buyer)
+            select(*Buyer.__table__.columns)
             .where(
                 Buyer.user_id == user_id,
                 *conditions,
@@ -65,7 +65,7 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
             .order_by(order_by)
         )
         result = await self.db.execute(query)
-        buyers_list = result.scalars().unique().all()
+        buyers_list = result.mappings().all()
         return [self._build_buyer(buyer_data) for buyer_data in buyers_list]
 
     async def create(self, data: BuyerCreateValueObject) -> BuyerEntity:
@@ -108,12 +108,12 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
         query = delete(Buyer).where(Buyer.id == id)
         await self.db.execute(query)
 
-    def _build_buyer(self, buyer_data: Buyer) -> BuyerEntity:
+    def _build_buyer(self, buyer_data: RowMapping) -> BuyerEntity:
         return BuyerEntity(
-            id=buyer_data.id,
-            created_at=buyer_data.created_at,
-            name=buyer_data.name,
-            description=buyer_data.description,
-            contact_number=buyer_data.contact_number,
-            contact_address=buyer_data.contact_address,
+            id=buyer_data["id"],
+            created_at=buyer_data["created_at"],
+            name=buyer_data["name"],
+            description=buyer_data["description"],
+            contact_number=buyer_data["contact_number"],
+            contact_address=buyer_data["contact_address"],
         )

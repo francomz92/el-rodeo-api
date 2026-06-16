@@ -2,7 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from sqlalchemy import Boolean, Date, ForeignKey, String
-from sqlalchemy.orm import Mapped, Relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.infrastructure.persistence.models import Model
 
@@ -16,4 +16,4 @@ class ScheduledEvent(Model):
     event_date: Mapped[date] = mapped_column(Date, index=True)
     pending: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    user: Mapped["User"] = Relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821

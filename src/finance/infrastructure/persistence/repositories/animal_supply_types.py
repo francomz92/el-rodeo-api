@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -27,15 +27,23 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
         return result.scalar_one()
 
     async def get_by_id(self, id: UUID) -> SupplyTypeEntity | None:
-        query = select(AnimalSupplyType).where(AnimalSupplyType.id == id)
+        query = select(
+            *AnimalSupplyType.__table__.columns,
+        ).where(
+            AnimalSupplyType.id == id,
+        )
         result = await self.db.execute(query)
-        supply_db = result.scalar_one_or_none()
+        supply_db = result.mappings().one_or_none()
         return self._build_supply_type(supply_db) if supply_db else None
 
     async def get_by_name(self, name: str) -> SupplyTypeEntity | None:
-        query = select(AnimalSupplyType).where(AnimalSupplyType.name == name)
+        query = select(
+            *AnimalSupplyType.__table__.columns,
+        ).where(
+            AnimalSupplyType.name == name,
+        )
         result = await self.db.execute(query)
-        supply_db = result.scalar_one_or_none()
+        supply_db = result.mappings().one_or_none()
         return self._build_supply_type(supply_db) if supply_db else None
 
     async def list(
@@ -52,7 +60,9 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
             elif k == "name":
                 conditions.append(AnimalSupplyType.name.icontains(v))
         query = (
-            select(AnimalSupplyType)
+            select(
+                *AnimalSupplyType.__table__.columns,
+            )
             .where(
                 *conditions,
             )
@@ -61,7 +71,7 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
             .order_by(order_by)
         )
         result = await self.db.execute(query)
-        supplies_list = result.scalars().all()
+        supplies_list = result.mappings().all()
         return [self._build_supply_type(supply_data) for supply_data in supplies_list]
 
     async def create(self, data: AnimalSupplyTypeCreateValueObject) -> SupplyTypeEntity:
@@ -87,11 +97,8 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
         query = delete(AnimalSupplyType).where(AnimalSupplyType.id == id)
         await self.db.execute(query)
 
-    def _build_supply_type(
-        self,
-        supply_data: AnimalSupplyType,
-    ) -> SupplyTypeEntity:
+    def _build_supply_type(self, supply_data: RowMapping) -> SupplyTypeEntity:
         return SupplyTypeEntity(
-            id=supply_data.id,
-            name=supply_data.name,
+            id=supply_data["id"],
+            name=supply_data["name"],
         )

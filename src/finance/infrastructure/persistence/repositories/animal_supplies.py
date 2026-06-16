@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
@@ -12,7 +11,7 @@ from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesListQueryParamsValueObject,
     AnimalSuppliesUpdateValueObject,
 )
-from src.finance.infrastructure.persistence.models import AnimalSupply
+from src.finance.infrastructure.persistence.models import AnimalSupply, AnimalSupplyType
 
 
 class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
@@ -34,17 +33,21 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
         user_id: UUID,
     ) -> AnimalSupplyEntity | None:
         query = (
-            select(AnimalSupply)
+            select(
+                *AnimalSupply.__table__.columns,
+                AnimalSupplyType.name.label("type_name"),
+            )
             .where(
                 AnimalSupply.id == id,
                 AnimalSupply.user_id == user_id,
             )
-            .options(
-                joinedload(AnimalSupply.type),
+            .outerjoin(
+                AnimalSupplyType,
+                AnimalSupply.type_id == AnimalSupplyType.id,
             )
         )
         result = await self.db.execute(query)
-        supply_db = result.scalar_one_or_none()
+        supply_db = result.mappings().one_or_none()
         return self._build_animal_supply_with_type(supply_db) if supply_db else None
 
     async def list_for_user(
@@ -64,7 +67,10 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
             elif k == ("id", "type_id"):
                 conditions.append(AnimalSupply.id == v)
         query = (
-            select(AnimalSupply)
+            select(
+                *AnimalSupply.__table__.columns,
+                AnimalSupplyType.name.label("type_name"),
+            )
             .where(
                 AnimalSupply.user_id == user_id,
                 *conditions,
@@ -72,12 +78,13 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
-            .options(
-                joinedload(AnimalSupply.type),
+            .outerjoin(
+                AnimalSupplyType,
+                AnimalSupply.type_id == AnimalSupplyType.id,
             )
         )
         result = await self.db.execute(query)
-        supplies_list = result.scalars().unique().all()
+        supplies_list = result.mappings().all()
         return [self._build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
 
     async def create(
@@ -124,20 +131,17 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, SessionMixin):
         query = delete(AnimalSupply).where(AnimalSupply.id == id)
         await self.db.execute(query)
 
-    def _build_animal_supply_with_type(
-        self,
-        supply_data: AnimalSupply,
-    ) -> AnimalSupplyEntity:
+    def _build_animal_supply_with_type(self, supply_data: RowMapping) -> AnimalSupplyEntity:
         return AnimalSupplyEntity(
-            id=supply_data.id,
-            created_at=supply_data.created_at,
-            name=supply_data.name,
-            amount=supply_data.amount,
-            critical_amount=supply_data.critical_amount,
-            unit_of_measurement=supply_data.unit_of_measurement,
-            description=supply_data.description,
+            id=supply_data["id"],
+            created_at=supply_data["created_at"],
+            name=supply_data["name"],
+            amount=supply_data["amount"],
+            critical_amount=supply_data["critical_amount"],
+            unit_of_measurement=supply_data["unit_of_measurement"],
+            description=supply_data["description"],
             type=SupplyTypeEntity(
-                id=supply_data.type_id,
-                name=supply_data.type.name,
+                id=supply_data["type_id"],
+                name=supply_data["type_name"],
             ),
         )

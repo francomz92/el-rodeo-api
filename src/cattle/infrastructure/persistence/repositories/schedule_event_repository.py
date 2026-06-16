@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import and_, delete, exists, insert, select, update
+from sqlalchemy import RowMapping, and_, delete, exists, insert, select, update
 
 from src.auth.infrastructure.persistence.models import User
 from src.cattle.domain.entities.schedule_events_entity import (
@@ -38,12 +38,14 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
         id: UUID,
         user_id: UUID,
     ) -> ScheduleEventEntity | None:
-        query = select(ScheduledEvent).where(
+        query = select(
+            *ScheduledEvent.__table__.columns,
+        ).where(
             ScheduledEvent.id == id,
             ScheduledEvent.user_id == user_id,
         )
         result = await self.db.execute(query)
-        event = result.scalar_one_or_none()
+        event = result.mappings().one_or_none()
         return self._build_schedule_event(event) if event else None
 
     async def list_for_user(
@@ -61,7 +63,9 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             elif k in ("title", "event_date"):
                 conditions.append(getattr(ScheduledEvent, k) == v)
         query = (
-            select(ScheduledEvent)
+            select(
+                *ScheduledEvent.__table__.columns,
+            )
             .where(
                 ScheduledEvent.user_id == user_id,
                 *conditions,
@@ -71,7 +75,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             .order_by(order_by)
         )
         result = await self.db.execute(query)
-        events = result.scalars().unique().all()
+        events = result.mappings().all()
         return [self._build_schedule_event(event) for event in events]
 
     async def create(
@@ -111,6 +115,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
                 ScheduledEvent.title,
                 ScheduledEvent.description,
                 ScheduledEvent.event_date,
+                ScheduledEvent.pending,
                 User.name.label("user_name"),
                 User.email.label("user_email"),
             )
@@ -124,26 +129,26 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             )
         )
         result = await self.db.execute(query)
-        events = result.unique().all()
+        events = result.mappings().all()
         return [
             ScheduleEventRemindedEntity(
-                title=event.title,
-                description=event.description,
-                event_date=event.event_date,
-                pending=event.pending,
-                user_name=event.user_name,
-                user_email=event.user_email,
+                title=event["title"],
+                description=event["description"],
+                event_date=event["event_date"],
+                pending=event["pending"],
+                user_name=event["user_name"],
+                user_email=event["user_email"],
             )
             for event in events
         ]
 
-    def _build_schedule_event(self, data: ScheduledEvent) -> ScheduleEventEntity:
+    def _build_schedule_event(self, data: RowMapping) -> ScheduleEventEntity:
         return ScheduleEventEntity(
-            id=data.id,
-            user_id=data.user_id,
-            created_at=data.created_at,
-            title=data.title,
-            description=data.description,
-            event_date=data.event_date,
-            pending=data.pending,
+            id=data["id"],
+            user_id=data["user_id"],
+            created_at=data["created_at"],
+            title=data["title"],
+            description=data["description"],
+            event_date=data["event_date"],
+            pending=data["pending"],
         )

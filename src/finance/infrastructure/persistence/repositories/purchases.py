@@ -1,16 +1,16 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import delete, exists, insert, select, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
+from src.auth.infrastructure.persistence.models import User
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
-from src.finance.infrastructure.persistence.models import Purchase
+from src.finance.infrastructure.persistence.models import AnimalSupply, Purchase
 
 
 class PurchasesRepository(IPurchasesRepository, SessionMixin):
@@ -32,17 +32,20 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
         user_id: UUID,
     ) -> PurchaseEntity | None:
         query = (
-            select(Purchase)
+            select(
+                *Purchase.__table__.columns,
+                User.name.label("user_name"),
+                AnimalSupply.name.label("supply_name"),
+            )
             .where(
                 Purchase.id == id,
                 Purchase.user_id == user_id,
             )
-            .options(
-                joinedload(Purchase.supply),
-            )
+            .outerjoin(AnimalSupply, Purchase.supply_id == AnimalSupply.id)
+            .outerjoin(User, Purchase.user_id == User.id)
         )
         result = await self.db.execute(query)
-        purchase_db = result.scalar_one_or_none()
+        purchase_db = result.mappings().one_or_none()
         return self._build_purchase_with_user_and_supply(purchase_db) if purchase_db else None
 
     async def list_for_user(
@@ -65,7 +68,11 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             ):
                 conditions.append(getattr(Purchase, k) == v)
         query = (
-            select(Purchase)
+            select(
+                *Purchase.__table__.columns,
+                User.name.label("user_name"),
+                AnimalSupply.name.label("supply_name"),
+            )
             .where(
                 Purchase.user_id == user_id,
                 *conditions,
@@ -73,10 +80,8 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
-            .options(
-                joinedload(Purchase.user),
-                joinedload(Purchase.supply),
-            )
+            .outerjoin(User, Purchase.user_id == User.id)
+            .outerjoin(AnimalSupply, Purchase.supply_id == AnimalSupply.id)
         )
         result = await self.db.execute(query)
         purchases_list = result.scalars().unique().all()
@@ -126,10 +131,7 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
         query = delete(Purchase).where(Purchase.id == id)
         await self.db.execute(query)
 
-    def _build_purchase_with_user_and_supply(
-        self,
-        purchase_data: Purchase,
-    ) -> PurchaseEntity:
+    def _build_purchase_with_user_and_supply(self, purchase_data: RowMapping) -> PurchaseEntity:
         return PurchaseEntity(
             id=purchase_data.id,
             amount=purchase_data.amount,
@@ -137,6 +139,8 @@ class PurchasesRepository(IPurchasesRepository, SessionMixin):
             purchase_date=purchase_data.purchase_date,
             unit_price=purchase_data.unit_price,
             unit_of_measurement=purchase_data.unit_of_measurement,
-            user=purchase_data.user,
-            supply=purchase_data.supply,
+            user_id=purchase_data["user_id"],
+            user_name=purchase_data["user_name"],
+            supply_id=purchase_data["supply_id"],
+            supply_name=purchase_data["supply_name"],
         )
