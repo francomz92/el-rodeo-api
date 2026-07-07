@@ -52,14 +52,13 @@ class CreatePurchaseService:
                 ],
             )
 
-    async def validate_supply_exists(
+    async def validate_supply(
         self,
         supply_id: UUID,
-        user_id: UUID,
         supply_repository: IAnimalSuppliesRepository,
     ) -> None:
-        supply_exists = await supply_repository.exists(supply_id, user_id)
-        if not supply_exists:
+        supply = await supply_repository.get_by_id(id=supply_id)
+        if not supply:
             raise BusinessValidationError(
                 message="Verifique el suministro seleccionado",
                 details=[
@@ -70,19 +69,10 @@ class CreatePurchaseService:
                 ],
             )
 
-    async def create_new(
+    async def create_new_purchase(
         self,
         user_id: UUID,
         data: PurchaseCreateValueObject,
         repository: IPurchasesRepository,
     ) -> PurchaseEntity:
-        return await repository.create(user_id, data)
-
-    async def increase_supply_stock(
-        self,
-        supply_id: UUID,
-        amount_to_increase: float,
-        supply_repository: IAnimalSuppliesRepository,
-    ):
-
-        await supply_repository.increase_stock(supply_id, amount_to_increase)
+        return await repository.create(user_id=user_id, data=data)

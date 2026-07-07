@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.cattle.domain.value_objects.animal_protocol_value_object import (
     AnimalProtocolListQueryParamsValueObject,
     AnimalProtocolUpdateValueObject,
@@ -23,6 +27,7 @@ from src.cattle.infrastructure.presentation.dependencies.animal_protocols import
 protocols_router = APIRouter(
     prefix="/animal-protocols",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -31,6 +36,7 @@ protocols_router = APIRouter(
     response_model=AnimalProtocolSchema,
     summary="Update animal protocol by id",
     responses={404: {}},
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def update_animal_protocol(
     id: UUID,
@@ -56,7 +62,7 @@ async def get_animal_protocol(
     current_user: GetCurrentUser,
     get_protocol_case: GetObtainAnimalProtocolCase,
 ):
-    return await get_protocol_case.execute(id, current_user.id)
+    return await get_protocol_case.execute(id)
 
 
 @protocols_router.get(
@@ -80,7 +86,6 @@ async def list_animal_protocols(
         ),
     )
     return await list_protocol_case.execute(
-        current_user.id,
         filters,
         query_params.limit,
         query_params.offset,
@@ -93,10 +98,11 @@ async def list_animal_protocols(
     summary="Delete animal protocol by id",
     responses={404: {}},
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_animal_protocol(
     id: UUID,
     current_user: GetCurrentUser,
     delete_protocol_case: GetDeleteAnimalProtocolCase,
 ):
-    return await delete_protocol_case.execute(id, current_user.id)
+    return await delete_protocol_case.execute(id)

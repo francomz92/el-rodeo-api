@@ -48,15 +48,14 @@ class TestGetAnimalProtocolCase:
 
     async def test_execute_returns_protocol(self) -> None:
         protocol_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected = make_animal_protocol_entity(id=protocol_id)
         repo = self.uow.get_repository(IAnimalProtocolsRepository)
         repo.get_by_id.return_value = expected
 
-        result = await self.case.execute(protocol_id, user_id)
+        result = await self.case.execute(protocol_id)
 
         assert result == expected
-        repo.get_by_id.assert_awaited_once_with(protocol_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(protocol_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         repo = self.uow.get_repository(IAnimalProtocolsRepository)
@@ -65,7 +64,6 @@ class TestGetAnimalProtocolCase:
         with pytest.raises(NotFoundError):
             await self.case.execute(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
             )
 
 
@@ -78,16 +76,15 @@ class TestListAnimalProtocolsCase:
         self.case = ListAnimalProtocolsCase(uow=self.uow, service=self.service)
 
     async def test_execute_returns_protocol_list(self) -> None:
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         expected = [make_animal_protocol_entity(), make_animal_protocol_entity()]
         filters = make_animal_protocol_list_params()
         repo = self.uow.get_repository(IAnimalProtocolsRepository)
         repo.list_for_user.return_value = expected
 
-        result = await self.case.execute(user_id, filters, limit=10, offset=0, order_by="id")
+        result = await self.case.execute(filters, limit=10, offset=0, order_by="id")
 
         assert result == expected
-        repo.list_for_user.assert_awaited_once_with(user_id, filters, limit=10, offset=0, order_by="id")
+        repo.list_for_user.assert_awaited_once_with(filters, limit=10, offset=0, order_by="id")
 
 
 class TestUpdateAnimalProtocolsCase:
@@ -123,11 +120,10 @@ class TestDeleteAnimalProtocolCase:
 
     async def test_execute_deletes_protocol(self) -> None:
         protocol_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(IAnimalProtocolsRepository)
         repo.get_by_id.return_value = make_animal_protocol_entity(id=protocol_id)
 
-        await self.case.execute(protocol_id, user_id)
+        await self.case.execute(protocol_id)
 
         repo.delete.assert_awaited_once_with(protocol_id)
         self.uow.commit.assert_awaited_once()

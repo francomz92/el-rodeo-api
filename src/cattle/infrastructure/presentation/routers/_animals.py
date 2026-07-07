@@ -1,9 +1,14 @@
 from typing import Annotated
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import APIRouter, Query, status
+from fastapi.responses import JSONResponse
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.cattle.domain.value_objects.animal_value_object import (
     AnimalCreateValueObject,
     AnimalsListQueryParamsValueObject,
@@ -22,10 +27,15 @@ from src.cattle.infrastructure.presentation.dependencies.animals import (
     GetAnimalUpdateCase,
     GetObtainAnimalCase,
 )
+from src.common.infrastructure.adapters.http.output.cursor_page import (
+    CursorPage,
+    encode_cursor,
+)
 
 animals_router = APIRouter(
     prefix="/animals",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -34,6 +44,7 @@ animals_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Creates a new animal in the database",
     response_model=AnimalSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def register_animal(
     data: AnimalCreationSchema,
@@ -53,6 +64,7 @@ async def register_animal(
     status_code=status.HTTP_200_OK,
     summary="Update an animal in the database",
     response_model=AnimalSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def update_animal(
     id: UUID,
@@ -75,6 +87,7 @@ async def update_animal(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an animal in the database",
     responses={404: {}, 409: {}},
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_animal(
     id: UUID,
@@ -83,7 +96,6 @@ async def delete_animal(
 ):
     return await animal_delete_use_case.execute(
         id,
-        current_user.id,
     )
 
 
@@ -94,23 +106,40 @@ async def delete_animal(
     response_model=list[AnimalSchema],
 )
 async def list_animals_user(
-    # current_user: GetCurrentUser,
+    current_user: GetCurrentUser,
     animal_list_use_case: GetAnimalListCase,
     query_params: Annotated[AnimalsListQueryParamsSchema, Query()],
 ):
     filters = AnimalsListQueryParamsValueObject(
         **query_params.model_dump(
             exclude_unset=True,
-            exclude={"limit", "offset", "order_by"},
+            exclude={"limit", "offset", "order_by", "cursor"},
         ),
     )
-    return await animal_list_use_case.execute(
-        user_id=uuid4(),
+    items, total, next_cursor = await animal_list_use_case.execute(
         filters=filters,
         limit=query_params.limit,
         offset=query_params.offset,
         order_by=query_params.order_by,
+        cursor=query_params.cursor,
     )
+
+    if query_params.cursor is not None:
+        # Return cursor-paginated response (bypasses response_model validation)
+        validated = [AnimalSchema.model_validate(a) for a in items]
+        page = CursorPage[AnimalSchema](
+            items=validated,
+            cursor=encode_cursor(str(validated[0].id)) if validated else None,
+            next_cursor=next_cursor,
+            total=total,
+        )
+        return JSONResponse(
+            content=page.model_dump(mode="json"),
+            status_code=status.HTTP_200_OK,
+        )
+
+    # Legacy offset/limit response — validated against response_model
+    return [AnimalSchema.model_validate(a) for a in items]
 
 
 @animals_router.get(
@@ -126,5 +155,4 @@ async def get_animal(
 ):
     return await obtain_animal_case.execute(
         id=id,
-        user_id=current_user.id,
     )

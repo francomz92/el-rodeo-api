@@ -73,14 +73,12 @@ class TestListScheduleEventService:
     async def test_get_events_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_schedule_event_list_params()
         expected = [make_schedule_event_entity(), make_schedule_event_entity()]
         repo = AsyncMock()
         repo.list_for_user.return_value = expected
 
         result = await self.service.get_events(
-            user_id=user_id,
             query=filters,
             limit=10,
             offset=0,
@@ -90,7 +88,6 @@ class TestListScheduleEventService:
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -122,7 +119,6 @@ class TestUpdateScheduleEventService:
 
         await self.service.validate_event_exists(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -135,7 +131,6 @@ class TestUpdateScheduleEventService:
         with pytest.raises(NotFoundError):
             await self.service.validate_event_exists(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -149,7 +144,6 @@ class TestUpdateScheduleEventService:
         with pytest.raises(ConflictError):
             await self.service.validate_event_exists(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -183,7 +177,6 @@ class TestDeleteScheduleEventService:
 
         await self.service.validate_for_delete(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -196,7 +189,6 @@ class TestDeleteScheduleEventService:
         with pytest.raises(NotFoundError):
             await self.service.validate_for_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -210,7 +202,6 @@ class TestDeleteScheduleEventService:
         with pytest.raises(ConflictError):
             await self.service.validate_for_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 

@@ -8,10 +8,9 @@ class DeleteAnimalService:
     async def validate_animal_for_delete(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IAnimalsRepository,
     ):
-        animal = await repository.get_by_id(id=id, user_id=user_id)
+        animal = await repository.get_by_id(id=id)
         if not animal:
             raise NotFoundError("El animal que intenta eliminar no existe")
         if not animal.can_delete():

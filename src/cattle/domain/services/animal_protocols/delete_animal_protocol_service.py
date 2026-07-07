@@ -8,10 +8,9 @@ class DeleteAnimalProtocolService:
     async def validate_can_delete(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IAnimalProtocolsRepository,
     ) -> None:
-        protocol = await repository.get_by_id(id, user_id)
+        protocol = await repository.get_by_id(id)
         if protocol is None:
             raise NotFoundError("La información que intenta eliminar no existe.")
         if not protocol.can_delete():

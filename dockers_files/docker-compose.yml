@@ -6,7 +6,7 @@ services:
         context: ..
         dockerfile: dockers_files/Dockerfile
       ports:
-        - :8000
+        - 8000:8000
       command: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
       env_file:
         - .env
@@ -15,8 +15,6 @@ services:
       container_name: redis
       image: redis
       command: --port 6380
-      ports:
-        - :6380
       volumes:
         - redis_data:/data
       depends_on:
@@ -26,10 +24,6 @@ services:
       container_name: celery
       image: api
       command: celery -A src.common.infrastructure.workers.app worker -B --loglevel=DEBUG
-      ports:
-        - :5555
-      volumes:
-        - .:/app
       env_file:
         - .env
       links:
@@ -40,11 +34,32 @@ services:
 
     flower:
       container_name: flower
-      image: api
+      image: mher/flower:latest
+      command: ["flower", "--broker=redis://redis:6380/0", "--port=5555"]
       ports:
-        - :4444
-      env_file:
-        - .env
-      command: celery -A src.common.infrastructure.workers.app flower -B --loglevel=DEBUG
+        - "127.0.0.1:5555:5555"
       depends_on:
-        - celery
+        - redis
+
+    prometheus:
+      container_name: prometheus
+      image: prom/prometheus:latest
+      volumes:
+        - ./dockers_files/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      ports:
+        - "127.0.0.1:9090:9090"
+      depends_on:
+        - api
+
+    grafana:
+      container_name: grafana
+      image: grafana/grafana:latest
+      volumes:
+        - ./dockers_files/grafana/datasources:/etc/grafana/provisioning/datasources
+      ports:
+        - "127.0.0.1:3000:3000"
+      depends_on:
+        - prometheus
+
+volumes:
+  redis_data:

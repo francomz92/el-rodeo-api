@@ -18,12 +18,10 @@ class GetPurchaseCase:
     async def execute(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> PurchaseEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IPurchasesRepository)
-            return await self.service.get_purchase(
+            return await self.service.validate_existence(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )

@@ -9,10 +9,9 @@ class GetSaleService:
     async def get_sale(
         self,
         id: UUID,
-        user_id: UUID,
         repository: ISalesRepository,
     ) -> SaleEntity:
-        sale = await repository.get_by_id(id, user_id)
+        sale = await repository.get_by_id(id)
         if sale is None:
             raise NotFoundError("No se encontró la venta.")
         return sale

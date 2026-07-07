@@ -6,6 +6,7 @@ from uuid import UUID
 @dataclass
 class ScheduleEventEntity:
     id: UUID
+    tenant_id: UUID
     user_id: UUID
     created_at: datetime
     title: str

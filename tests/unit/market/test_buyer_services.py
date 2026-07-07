@@ -58,19 +58,17 @@ class TestGetBuyerService:
         from unittest.mock import AsyncMock
 
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_buyer_entity(id=buyer_id)
         repo = AsyncMock()
         repo.get_by_id = AsyncMock(return_value=expected_entity)
 
         result = await self.service.get_buyer(
             id=buyer_id,
-            user_id=user_id,
             repository=repo,
         )
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(buyer_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(buyer_id)
 
     async def test_get_buyer_raises_not_found(self) -> None:
         """Raises NotFoundError when buyer does not exist."""
@@ -82,7 +80,6 @@ class TestGetBuyerService:
         with pytest.raises(NotFoundError):
             await self.service.get_buyer(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
                 repository=repo,
             )
 
@@ -97,14 +94,12 @@ class TestListBuyerService:
         """get_buyers passes filters and pagination to the repository."""
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_buyer_update()
         expected = [make_buyer_entity(), make_buyer_entity()]
         repo = AsyncMock()
         repo.list_for_user = AsyncMock(return_value=expected)
 
         result = await self.service.get_buyers(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -114,7 +109,6 @@ class TestListBuyerService:
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -132,12 +126,12 @@ class TestUpdateBuyerService:
         """Does not raise when buyer exists."""
         from unittest.mock import AsyncMock
 
+        buyer = make_buyer_entity()
         repo = AsyncMock()
-        repo.exists = AsyncMock(return_value=True)
+        repo.get_by_id = AsyncMock(return_value=buyer)
 
         await self.service.validate_buyer_exists(
             id=UUID("00000000-0000-0000-0000-000000000001"),
-            user_id=UUID("00000000-0000-0000-0000-000000000002"),
             repository=repo,
         )
 
@@ -146,12 +140,11 @@ class TestUpdateBuyerService:
         from unittest.mock import AsyncMock
 
         repo = AsyncMock()
-        repo.exists = AsyncMock(return_value=False)
+        repo.get_by_id = AsyncMock(return_value=None)
 
         with pytest.raises(NotFoundError):
             await self.service.validate_buyer_exists(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
                 repository=repo,
             )
 
@@ -160,7 +153,6 @@ class TestUpdateBuyerService:
         from unittest.mock import AsyncMock
 
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         data = make_buyer_update(name="Updated Name")
         expected_entity = make_buyer_entity(id=buyer_id, name="Updated Name")
         repo = AsyncMock()
@@ -168,13 +160,12 @@ class TestUpdateBuyerService:
 
         result = await self.service.update_buyer(
             id=buyer_id,
-            user_id=user_id,
             data=data,
             repository=repo,
         )
 
         assert result == expected_entity
-        repo.update_data.assert_awaited_once_with(buyer_id, user_id, data)
+        repo.update_data.assert_awaited_once_with(buyer_id, data)
 
 
 class TestDeleteBuyerService:
@@ -187,12 +178,12 @@ class TestDeleteBuyerService:
         """Does not raise when buyer exists."""
         from unittest.mock import AsyncMock
 
+        buyer = make_buyer_entity()
         repo = AsyncMock()
-        repo.exists = AsyncMock(return_value=True)
+        repo.get_by_id = AsyncMock(return_value=buyer)
 
         await self.service.validate_buyer_exists(
             id=UUID("00000000-0000-0000-0000-000000000001"),
-            user_id=UUID("00000000-0000-0000-0000-000000000002"),
             repository=repo,
         )
 
@@ -201,12 +192,11 @@ class TestDeleteBuyerService:
         from unittest.mock import AsyncMock
 
         repo = AsyncMock()
-        repo.exists = AsyncMock(return_value=False)
+        repo.get_by_id = AsyncMock(return_value=None)
 
         with pytest.raises(NotFoundError):
             await self.service.validate_buyer_exists(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
                 repository=repo,
             )
 

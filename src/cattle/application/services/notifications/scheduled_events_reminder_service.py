@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.cattle.domain.entities.schedule_events_entity import ScheduleEventRemindedEntity
 from src.cattle.domain.repositories.schedule_events_repository_port import IScheduleEventRepository
 from src.common.application.ports.email_notifier import IEmailNotifier
@@ -7,8 +9,9 @@ class ScheduledEventsReminderService:
     async def get_pending_events(
         self,
         repository: IScheduleEventRepository,
+        tenant_id: UUID | None = None,
     ) -> list[ScheduleEventRemindedEntity]:
-        return await repository.get_pending_events()
+        return await repository.get_pending_events(tenant_id=tenant_id)
 
     def send_reminder(
         self,

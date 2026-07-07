@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import RowMapping, and_, delete, exists, insert, select, update
+from sqlalchemy import RowMapping, and_, delete, exists, func, insert, select, update
 
 from src.auth.infrastructure.persistence.models import User
 from src.cattle.domain.entities.schedule_events_entity import (
@@ -16,33 +16,31 @@ from src.cattle.domain.value_objects.schedule_event_value_object import (
 )
 from src.cattle.infrastructure.persistence.models import ScheduledEvent
 from src.common.domain.types import Sentinel
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories._auditable_mixin import (
+    AuditableRepositoryMixin,
+)
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 from src.common.utils.date_utils import get_current_datetime
 
 
-class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
-        query = (
-            exists(ScheduledEvent)
-            .where(
-                ScheduledEvent.id == id,
-                ScheduledEvent.user_id == user_id,
-            )
-            .select()
-        )
+class ScheduleEventRepository(IScheduleEventRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    _model: type[ScheduledEvent] = ScheduledEvent
+
+    async def exists(self, id: UUID) -> bool:
+        query = self._filter_tenant(exists(ScheduledEvent).where(ScheduledEvent.id == id).select())
         result = await self.db.execute(query)
         return result.scalar_one()
 
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> ScheduleEventEntity | None:
-        query = select(
-            *ScheduledEvent.__table__.columns,
-        ).where(
-            ScheduledEvent.id == id,
-            ScheduledEvent.user_id == user_id,
+        query = self._filter_tenant(
+            select(
+                *ScheduledEvent.__table__.columns,
+            ).where(ScheduledEvent.id == id)
         )
         result = await self.db.execute(query)
         event = result.mappings().one_or_none()
@@ -50,7 +48,6 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
 
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: ScheduleEventsListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -62,14 +59,11 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
                 continue
             elif k in ("title", "event_date"):
                 conditions.append(getattr(ScheduledEvent, k) == v)
-        query = (
+        query = self._filter_tenant(
             select(
                 *ScheduledEvent.__table__.columns,
             )
-            .where(
-                ScheduledEvent.user_id == user_id,
-                *conditions,
-            )
+            .where(*conditions)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
@@ -86,28 +80,41 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
             insert(ScheduledEvent)
             .values(
                 **vars(data),
+                tenant_id=self._tenant_id,
             )
             .returning(ScheduledEvent.id)
         )
         result = await self.db.execute(query)
         event_id = result.scalar_one()
-        return await self.get_by_id(event_id, data.user_id)  # type: ignore
+        new_entity = await self.get_by_id(event_id)
+        self._audit_create("schedule_event", event_id, vars(data))
+        return new_entity  # type: ignore[return-value]
 
     async def update_data(
         self,
         id: UUID,
         data: ScheduleEventUpdateValueObject,
     ) -> ScheduleEventEntity:
+        # Capture old values before update
+        old_row = await self.db.execute(self._filter_tenant(select(ScheduledEvent.__table__).where(ScheduledEvent.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
-        query = update(ScheduledEvent).values(**kws)
+        kws["updated_at"] = func.now()
+        query = self._filter_tenant(update(ScheduledEvent).values(**kws).where(ScheduledEvent.id == id))
         await self.db.execute(query)
-        return await self.get_by_id(id, data.user_id)  # type: ignore
+        new_entity = await self.get_by_id(id)
+        self._audit_update("schedule_event", id, old_values, vars(data))
+        return new_entity  # type: ignore[return-value]
 
     async def delete(self, id: UUID) -> None:
-        query = delete(ScheduledEvent).where(ScheduledEvent.id == id)
+        # Capture old values before delete
+        old_row = await self.db.execute(self._filter_tenant(select(ScheduledEvent.__table__).where(ScheduledEvent.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        query = self._filter_tenant(delete(ScheduledEvent).where(ScheduledEvent.id == id))
         await self.db.execute(query)
+        self._audit_delete("schedule_event", id, old_values)
 
-    async def get_pending_events(self) -> list[ScheduleEventRemindedEntity]:
+    async def get_pending_events(self, tenant_id: UUID | None = None) -> list[ScheduleEventRemindedEntity]:
         current_date = get_current_datetime().date()
         target_date = current_date + timedelta(days=3)
         query = (
@@ -116,6 +123,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
                 ScheduledEvent.description,
                 ScheduledEvent.event_date,
                 ScheduledEvent.pending,
+                ScheduledEvent.tenant_id,
                 User.name.label("user_name"),
                 User.email.label("user_email"),
             )
@@ -128,6 +136,8 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
                 ),
             )
         )
+        if tenant_id is not None:
+            query = query.where(ScheduledEvent.tenant_id == tenant_id)
         result = await self.db.execute(query)
         events = result.mappings().all()
         return [
@@ -145,6 +155,7 @@ class ScheduleEventRepository(IScheduleEventRepository, SessionMixin):
     def _build_schedule_event(self, data: RowMapping) -> ScheduleEventEntity:
         return ScheduleEventEntity(
             id=data["id"],
+            tenant_id=data["tenant_id"],
             user_id=data["user_id"],
             created_at=data["created_at"],
             title=data["title"],

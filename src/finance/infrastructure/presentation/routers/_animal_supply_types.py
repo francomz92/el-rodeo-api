@@ -3,7 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import is_admin_user
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import require_role
 from src.finance.domain.value_objects.animal_supply_type_value_objects import (
     AnimalSupplyTypeCreateValueObject,
     AnimalSupplyTypeListQueryParamsValueObject,
@@ -33,7 +34,7 @@ supply_type_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new supply type in the database",
     response_model=SupplyTypeSchema,
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def create_supply_type(
     data: AnimalSupplyTypeCreateSchema,
@@ -50,7 +51,7 @@ async def create_supply_type(
     status_code=status.HTTP_200_OK,
     summary="Update a supply type in the database",
     response_model=SupplyTypeSchema,
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def update_supply_type(
     id: UUID,
@@ -67,7 +68,7 @@ async def update_supply_type(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a supply type from the database",
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_supply_type(
     id: UUID,
@@ -81,7 +82,7 @@ async def delete_supply_type(
     status_code=status.HTTP_200_OK,
     summary="List supply types from the database",
     response_model=list[SupplyTypeSchema],
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def get_supply_types(
     query_params: Annotated[AnimalSupplyTypeListQueryParamsSchema, Query()],

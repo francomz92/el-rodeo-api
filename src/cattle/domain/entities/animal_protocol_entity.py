@@ -12,6 +12,7 @@ from .animal_entity import AnimalEntity
 @dataclass
 class AnimalProtocolEntity:
     id: UUID
+    tenant_id: UUID
     animal: AnimalEntity
     vaccinated: bool
     vaccinated_date: date | None

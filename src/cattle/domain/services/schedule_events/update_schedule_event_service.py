@@ -36,10 +36,9 @@ class UpdateScheduleEventService:
     async def validate_event_exists(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IScheduleEventRepository,
     ):
-        event = await repository.get_by_id(id, user_id)
+        event = await repository.get_by_id(id)
         if not event:
             raise NotFoundError("El evento que intenta actualizar no existe.")
         if not event.can_update():

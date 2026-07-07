@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.buyers import BuyerEntity
 from src.market.domain.repositories.buyers import IBuyersRepository
@@ -14,7 +12,6 @@ class ListBuyerCase:
 
     async def execute(
         self,
-        user_id: UUID,
         filters: BuyerListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -23,7 +20,6 @@ class ListBuyerCase:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
             return await self.service.get_buyers(
-                user_id=user_id,
                 filters=filters,
                 limit=limit,
                 offset=offset,

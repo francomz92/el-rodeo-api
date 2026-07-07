@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.sales import SaleEntity
 from src.market.domain.repositories.sales import ISalesRepository
@@ -14,7 +12,6 @@ class ListSaleCase:
 
     async def execute(
         self,
-        user_id: UUID,
         filters: SaleListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -23,7 +20,6 @@ class ListSaleCase:
         async with self.uow as uow:
             repository = uow.get_repository(ISalesRepository)
             return await self.service.get_sales(
-                user_id=user_id,
                 filters=filters,
                 limit=limit,
                 offset=offset,

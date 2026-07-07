@@ -57,12 +57,12 @@ class TestCreatePurchaseService:
     async def test_validate_supply_exists_passes(self) -> None:
         from unittest.mock import AsyncMock
 
+        supply = make_purchase_entity()
         repo = AsyncMock()
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = supply
 
-        await self.service.validate_supply_exists(
+        await self.service.validate_supply(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -70,12 +70,11 @@ class TestCreatePurchaseService:
         from unittest.mock import AsyncMock
 
         repo = AsyncMock()
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(BusinessValidationError):
-            await self.service.validate_supply_exists(
+            await self.service.validate_supply(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -88,20 +87,10 @@ class TestCreatePurchaseService:
         repo = AsyncMock()
         repo.create.return_value = expected_entity
 
-        result = await self.service.create_new(user_id, data, repo)
+        result = await self.service.create_new_purchase(user_id, data, repo)
 
         assert result == expected_entity
-        repo.create.assert_awaited_once_with(user_id, data)
-
-    async def test_increase_supply_stock_delegates_to_repo(self) -> None:
-        from unittest.mock import AsyncMock
-
-        supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        repo = AsyncMock()
-
-        await self.service.increase_supply_stock(supply_id, 10.0, repo)
-
-        repo.increase_stock.assert_awaited_once_with(supply_id, 10.0)
+        repo.create.assert_awaited_once_with(user_id=user_id, data=data)
 
 
 class TestGetPurchaseService:
@@ -114,15 +103,14 @@ class TestGetPurchaseService:
         from unittest.mock import AsyncMock
 
         purchase_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_purchase_entity(id=purchase_id)
         repo = AsyncMock()
         repo.get_by_id.return_value = expected_entity
 
-        result = await self.service.get_purchase(purchase_id, user_id, repo)
+        result = await self.service.validate_existence(purchase_id, repo)
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(purchase_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(id=purchase_id)
 
     async def test_get_purchase_raises_not_found(self) -> None:
         from unittest.mock import AsyncMock
@@ -131,9 +119,8 @@ class TestGetPurchaseService:
         repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.service.get_purchase(
+            await self.service.validate_existence(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -147,24 +134,21 @@ class TestListPurchaseService:
     async def test_list_purchases_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_purchase_list_params()
         expected = [make_purchase_entity(), make_purchase_entity()]
         repo = AsyncMock()
         repo.list_for_user.return_value = expected
 
-        result = await self.service.list_purchases(
-            user_id=user_id,
-            filters=filters,
+        result = await self.service.get_purchases(
+            repository=repo,
+            query=filters,
             limit=10,
             offset=0,
             order_by="purchase_date",
-            repository=repo,
         )
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -181,12 +165,12 @@ class TestDeletePurchaseService:
     async def test_validate_purchase_exists_passes(self) -> None:
         from unittest.mock import AsyncMock
 
+        purchase = make_purchase_entity()
         repo = AsyncMock()
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = purchase
 
-        await self.service.validate_purchase_exists(
+        await self.service.validate_existence(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -194,12 +178,11 @@ class TestDeletePurchaseService:
         from unittest.mock import AsyncMock
 
         repo = AsyncMock()
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.service.validate_purchase_exists(
+            await self.service.validate_existence(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -207,9 +190,8 @@ class TestDeletePurchaseService:
         from unittest.mock import AsyncMock
 
         purchase_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = AsyncMock()
 
-        await self.service.delete_purchase(purchase_id, user_id, repo)
+        await self.service.delete_purchase(purchase_id, repo)
 
-        repo.delete.assert_awaited_once_with(purchase_id)
+        repo.delete.assert_awaited_once_with(id=purchase_id)

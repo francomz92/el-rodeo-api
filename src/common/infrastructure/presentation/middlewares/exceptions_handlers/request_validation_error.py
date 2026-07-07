@@ -2,12 +2,14 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from src.common.infrastructure.adapters.correlation import get_correlation_id
 from src.common.infrastructure.adapters.http.output.errors import (
     ErrorDetailSchema,
     ErrorPayloadSchema,
     StandardErrorResponse,
     format_error_location,
 )
+from src.common.utils import log
 from src.common.utils.date_utils import get_current_datetime
 
 
@@ -15,6 +17,13 @@ async def _request_validation_exception_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
+    cid = get_correlation_id()
+    log.warning(
+        "Validation error: {errors}",
+        errors=exc.errors(),
+        correlation_id=cid,
+        path=str(request.url.path),
+    )
     details = [
         ErrorDetailSchema(
             field=format_error_location(error.get("loc")),

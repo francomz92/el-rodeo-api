@@ -1,29 +1,25 @@
 from uuid import UUID
 
-from src.common.domain.exceptions import BusinessValidationError
-from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
+from src.common.domain.exceptions import ConflictError, NotFoundError
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
-from src.finance.domain.value_objects.animal_supplies_value_objects import AnimalSuppliesUpdateValueObject
 
 
 class UpdateAnimalSuppliesService:
-    def validate_data(self, data: AnimalSuppliesUpdateValueObject) -> None:
-        if data.critical_amount >= data.amount:
-            raise BusinessValidationError(
-                message="Hay valores ingresados inconsistentes.",
-                details=[
-                    {
-                        "field": "critical_amount",
-                        "message": "La cantidad crítica debe ser menor que la cantidad disponible.",
-                    }
-                ],
-            )
-
-    async def update_animal_supplies(
+    async def validate_update(
         self,
         id: UUID,
-        user_id: UUID,
-        data: AnimalSuppliesUpdateValueObject,
         repository: IAnimalSuppliesRepository,
-    ) -> AnimalSupplyEntity:
-        return await repository.update_data(id, user_id, data)
+    ) -> None:
+        supply = await repository.get_by_id(id=id)
+        if not supply:
+            raise NotFoundError("El insumo a actualizar no existe.")
+        if supply.amount > supply.critical_amount:
+            raise ConflictError("La cantidad crítica debe ser superior a la cantidad de existencias")
+
+    async def update_supply(
+        self,
+        id: UUID,
+        data,
+        repository: IAnimalSuppliesRepository,
+    ):
+        return await repository.update_data(id=id, data=data)

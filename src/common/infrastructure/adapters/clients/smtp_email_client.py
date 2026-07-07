@@ -10,6 +10,7 @@ class SMTPClient(IEmailClient):
         return SMTP_SSL(
             host=settings.SMTP_SERVER,
             port=settings.SMTP_PORT,
+            timeout=30,
         )
 
     def send_email(self, to: list[str], subject: str, body: str):

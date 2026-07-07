@@ -1,3 +1,4 @@
+import asyncio
 from secrets import choice
 from string import printable
 
@@ -7,15 +8,20 @@ from src.common.domain.services.security import ISecurityService
 
 
 class SecurityService(ISecurityService):
-    def hash_password(self, password: str) -> str:
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+    async def hash_password(self, password: str) -> str:
+        salt = await asyncio.to_thread(bcrypt.gensalt)
+        hashed_password = await asyncio.to_thread(
+            bcrypt.hashpw,
+            password.encode("utf-8"),
+            salt,
+        )
         return hashed_password.decode("utf-8")
 
-    def verify_password(self, password: str, hashed_password: str) -> bool:
-        return bcrypt.checkpw(
-            password=password.encode("utf-8"),
-            hashed_password=hashed_password.encode("utf-8"),
+    async def verify_password(self, password: str, hashed_password: str) -> bool:
+        return await asyncio.to_thread(
+            bcrypt.checkpw,
+            password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
         )
 
     def generate_random_str(self, length: int) -> str:

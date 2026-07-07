@@ -21,7 +21,6 @@ class UpdateScheduleEventCase:
             repository = uow.get_repository(IScheduleEventRepository)
             await self.service.validate_event_exists(
                 id=id,
-                user_id=data.user_id,
                 repository=repository,
             )
             await self.service.update_event_data(

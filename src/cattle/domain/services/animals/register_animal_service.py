@@ -9,13 +9,11 @@ from src.common.domain.exceptions import BusinessValidationError, DuplicatedErro
 class RegisterAnimalService:
     async def validate_duplicate(
         self,
-        user_id: UUID,
         type_id: UUID,
         caravana: str,
         repository: IAnimalsRepository,
     ):
         animal_exists = await repository.exists(
-            user_id=user_id,
             type_id=type_id,
             caravana=caravana,
         )

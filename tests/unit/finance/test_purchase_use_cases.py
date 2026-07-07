@@ -60,7 +60,7 @@ class TestCreatePurchaseCase:
         repo = self.uow.get_repository(IPurchasesRepository)
         supply_repo = self.uow.get_repository(IAnimalSuppliesRepository)
         repo.create.return_value = expected
-        supply_repo.exists.return_value = True
+        supply_repo.get_by_id.return_value = make_purchase_entity()
 
         result = await self.case.execute(data=data)
 
@@ -80,15 +80,14 @@ class TestGetPurchaseCase:
 
     async def test_execute_returns_purchase(self) -> None:
         purchase_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected = make_purchase_entity(id=purchase_id)
         repo = self.uow.get_repository(IPurchasesRepository)
         repo.get_by_id.return_value = expected
 
-        result = await self.case.execute(id=purchase_id, user_id=user_id)
+        result = await self.case.execute(id=purchase_id)
 
         assert result == expected
-        repo.get_by_id.assert_awaited_once_with(purchase_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(id=purchase_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         repo = self.uow.get_repository(IPurchasesRepository)
@@ -97,7 +96,6 @@ class TestGetPurchaseCase:
         with pytest.raises(NotFoundError):
             await self.case.execute(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
             )
 
 
@@ -110,7 +108,6 @@ class TestListPurchaseCase:
         self.case = ListPurchaseCase(uow=self.uow, service=self.service)
 
     async def test_execute_returns_list(self) -> None:
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_purchase_list_params()
         expected = [make_purchase_entity(), make_purchase_entity()]
         repo = self.uow.get_repository(IPurchasesRepository)
@@ -118,7 +115,6 @@ class TestListPurchaseCase:
 
         result = await self.case.execute(
             filter=filters,
-            user_id=user_id,
             limit=10,
             offset=0,
             order_by="purchase_date",
@@ -126,7 +122,6 @@ class TestListPurchaseCase:
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -144,22 +139,20 @@ class TestDeletePurchaseCase:
 
     async def test_execute_deletes_purchase(self) -> None:
         purchase_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(IPurchasesRepository)
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = make_purchase_entity(id=purchase_id)
 
-        await self.case.execute(id=purchase_id, user_id=user_id)
+        await self.case.execute(id=purchase_id)
 
-        repo.delete.assert_awaited_once_with(purchase_id)
+        repo.delete.assert_awaited_once_with(id=purchase_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         repo = self.uow.get_repository(IPurchasesRepository)
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
             await self.case.execute(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
             )
 
         repo.delete.assert_not_called()

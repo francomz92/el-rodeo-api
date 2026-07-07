@@ -1,4 +1,7 @@
-from src.auth.application.services.authentication_service import AuthService
+from src.auth.domain.entities import UserEntity
+from src.auth.domain.repositories.refresh_token_repository_port import (
+    IRefreshTokenRepository,
+)
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.common.application.ports.uow import IUoW
@@ -10,23 +13,34 @@ class ChangePasswordCase:
         self,
         uow: IUoW,
         security_service: ISecurityService,
-        auth_service: AuthService,
         change_password_service: ChangePasswordService,
     ) -> None:
         self.uow = uow
         self.security_service = security_service
-        self.auth_service = auth_service
         self.change_password_service = change_password_service
 
     async def execute(
         self,
-        token: str,
+        user: UserEntity,
         password: str,
         new_password: str,
         confirmed_password: str,
-    ):
-        user = await self.auth_service.get_authenticated_user(self.uow, token)
-        self.change_password_service.validate_passwords(user, password, self.security_service)
+    ) -> None:
+        """Change a user's password and revoke all their refresh tokens.
+
+        The authenticated user is resolved by the auth dependency and
+        passed in directly — no token parameter required.
+
+        Args:
+            user: The authenticated user entity.
+            password: The user's current password.
+            new_password: The new password to set.
+            confirmed_password: New password confirmation.
+
+        Raises:
+            UnauthorizedError: If the current password is invalid.
+        """
+        await self.change_password_service.validate_passwords(user, password, self.security_service)
         async with self.uow as uow:
             repository = uow.get_repository(IUserRepository)
             await self.change_password_service.change_password(
@@ -38,3 +52,7 @@ class ChangePasswordCase:
                 repository=repository,
             )
             await uow.commit()
+
+            # Revoke all refresh tokens for security (forces re-login)
+            refresh_repo = uow.get_repository(IRefreshTokenRepository)
+            await refresh_repo.revoke_all_user_tokens(user.id)

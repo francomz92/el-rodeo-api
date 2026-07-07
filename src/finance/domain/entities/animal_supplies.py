@@ -16,6 +16,7 @@ class SupplyTypeEntity:
 @dataclass
 class AnimalSupplyEntity:
     id: UUID
+    tenant_id: UUID
     name: str
     amount: float
     critical_amount: float

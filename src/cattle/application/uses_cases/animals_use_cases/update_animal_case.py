@@ -16,7 +16,6 @@ class UpdateAnimalCase:
             repository = uow.get_repository(IAnimalsRepository)
             await self.service.validate_existence(
                 id=id,
-                user_id=data.user_id,
                 repository=repository,
             )
             animal = await self.service.update_animal(

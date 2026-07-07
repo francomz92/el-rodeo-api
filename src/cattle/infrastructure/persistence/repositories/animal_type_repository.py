@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, exists, insert, select, update
+from sqlalchemy import RowMapping, exists, func, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
@@ -11,10 +11,13 @@ from src.cattle.domain.value_objects.animal_type_value_object import (
 )
 from src.cattle.infrastructure.persistence.models import AnimalType
 from src.common.domain.types import Sentinel
+from src.common.infrastructure.persistence.repositories._auditable_mixin import (
+    AuditableRepositoryMixin,
+)
 from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
-class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
+class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin, AuditableRepositoryMixin):
     async def exists(self, id: UUID) -> bool:
         query = exists(AnimalType).where(AnimalType.id == id).select()
         result = await self.db.execute(query)
@@ -68,14 +71,19 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         query = insert(AnimalType).values(**kws).returning(AnimalType.id)
         result = await self.db.execute(query)
         animal_type_id = result.scalar_one()
-        return await self.get_by_id(animal_type_id)  # type: ignore
+        entity = await self.get_by_id(animal_type_id)  # type: ignore
+        self._audit_create("animal_type", animal_type_id, kws)
+        return entity  # type: ignore[return-value]
 
     async def update(
         self,
         id: UUID,
         data: AnimalTypeUpdateValueObject,
     ) -> AnimalTypeEntity:
+        old_row = await self.db.execute(select(AnimalType.__table__).where(AnimalType.id == id))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
+        kws["updated_at"] = func.now()
         query = (
             update(AnimalType)
             .where(
@@ -86,7 +94,9 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin):
         )
         result = await self.db.execute(query)
         animal_type_id = result.scalar_one_or_none()
-        return await self.get_by_id(animal_type_id)  # type: ignore
+        entity = await self.get_by_id(animal_type_id)  # type: ignore
+        self._audit_update("animal_type", id, old_values, kws)
+        return entity  # type: ignore[return-value]
 
     def _build_animal_type(self, type_data: RowMapping) -> AnimalTypeEntity:
         return AnimalTypeEntity(

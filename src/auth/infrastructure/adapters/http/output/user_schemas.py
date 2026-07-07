@@ -9,5 +9,16 @@ class UserSchema(BaseModel):
     created_at: datetime
     name: str
     dni: str
+    email: str
+    role: str
+    is_active: bool
+    tenant_id: UUID | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedUsersSchema(BaseModel):
+    items: list[UserSchema]
+    total: int
+    page: int
+    per_page: int

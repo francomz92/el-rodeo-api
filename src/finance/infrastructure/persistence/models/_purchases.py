@@ -6,6 +6,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
     Float,
     ForeignKey,
+    Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +17,7 @@ from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 class Purchase(Model):
     __tablename__ = "purchases"
 
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     supply_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supplies.id", ondelete="RESTRICT"), index=True)
     amount: Mapped[float] = mapped_column(Float)

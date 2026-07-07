@@ -27,7 +27,6 @@ class TestRegisterAnimalService:
         repo.exists.return_value = False
 
         await self.service.validate_duplicate(
-            user_id=UUID("00000000-0000-0000-0000-000000000001"),
             type_id=UUID("00000000-0000-0000-0000-000000000002"),
             caravana="CAR-001",
             repository=repo,
@@ -43,7 +42,6 @@ class TestRegisterAnimalService:
 
         with pytest.raises(DuplicatedError):
             await self.service.validate_duplicate(
-                user_id=UUID("00000000-0000-0000-0000-000000000001"),
                 type_id=UUID("00000000-0000-0000-0000-000000000002"),
                 caravana="CAR-001",
                 repository=repo,
@@ -96,15 +94,14 @@ class TestGetAnimalService:
         from unittest.mock import AsyncMock
 
         animal_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_animal_entity(id=animal_id)
         repo = AsyncMock()
         repo.get_by_id.return_value = expected_entity
 
-        result = await self.service.validate_existence_and_get_animal(animal_id, user_id, repo)
+        result = await self.service.validate_existence_and_get_animal(animal_id, repo)
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(id=animal_id, user_id=user_id)
+        repo.get_by_id.assert_awaited_once_with(id=animal_id)
 
     async def test_raises_not_found_when_missing(self) -> None:
         from unittest.mock import AsyncMock
@@ -115,7 +112,6 @@ class TestGetAnimalService:
         with pytest.raises(NotFoundError):
             await self.service.validate_existence_and_get_animal(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -129,14 +125,12 @@ class TestListAnimalService:
     async def test_get_animals_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_animal_list_params()
         expected = [make_animal_entity(), make_animal_entity()]
         repo = AsyncMock()
-        repo.list_for_user.return_value = expected
+        repo.list_for_user.return_value = (expected, 2, False)
 
-        result = await self.service.get_animals(
-            user_id=user_id,
+        items, total, has_next = await self.service.get_animals(
             repository=repo,
             query=filters,
             limit=10,
@@ -144,13 +138,15 @@ class TestListAnimalService:
             order_by="name",
         )
 
-        assert result == expected
+        assert items == expected
+        assert total == 2
+        assert has_next is False
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
             order_by="name",
+            cursor=None,
         )
 
 
@@ -164,12 +160,11 @@ class TestUpdateAnimalService:
         from unittest.mock import AsyncMock
 
         animal_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         animal = make_animal_entity(id=animal_id)
         repo = AsyncMock()
         repo.get_by_id.return_value = animal
 
-        await self.service.validate_existence(animal_id, user_id, repo)
+        await self.service.validate_existence(animal_id, repo)
 
     async def test_validate_existence_raises_not_found(self) -> None:
         from unittest.mock import AsyncMock
@@ -180,7 +175,6 @@ class TestUpdateAnimalService:
         with pytest.raises(NotFoundError):
             await self.service.validate_existence(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -194,7 +188,6 @@ class TestUpdateAnimalService:
         with pytest.raises(NotPermissionError, match="vendido"):
             await self.service.validate_existence(
                 animal.id,
-                UUID("00000000-0000-0000-0000-000000000001"),
                 repo,
             )
 
@@ -226,7 +219,7 @@ class TestDeleteAnimalService:
         repo = AsyncMock()
         repo.get_by_id.return_value = animal
 
-        await self.service.validate_animal_for_delete(animal.id, UUID("00000000-0000-0000-0000-000000000001"), repo)
+        await self.service.validate_animal_for_delete(animal.id, repo)
 
     async def test_validate_animal_for_delete_raises_not_found(self) -> None:
         from unittest.mock import AsyncMock
@@ -237,7 +230,6 @@ class TestDeleteAnimalService:
         with pytest.raises(NotFoundError):
             await self.service.validate_animal_for_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -251,7 +243,6 @@ class TestDeleteAnimalService:
         with pytest.raises(ConflictError, match="vendido"):
             await self.service.validate_animal_for_delete(
                 animal.id,
-                UUID("00000000-0000-0000-0000-000000000001"),
                 repo,
             )
 

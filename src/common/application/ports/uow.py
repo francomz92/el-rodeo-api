@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import TypeVar
+from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.common.domain.events.base import DomainEvent
+from src.common.domain.repositories.audit_repository_port import IAuditRepository
 from src.common.domain.repository import IRepository
 
 RepositoryType = TypeVar("RepositoryType", bound=IRepository)
@@ -9,6 +15,13 @@ RepositoryType = TypeVar("RepositoryType", bound=IRepository)
 
 @dataclass
 class IUoW(ABC):
+    db: AsyncSession | None = None
+    bypass_filter: bool = False
+    current_user: object | None = None
+    tenant_id: UUID | None = None
+    audit_repository: IAuditRepository | None = None
+    outbox_events: list[DomainEvent] = field(default_factory=list)
+
     @abstractmethod
     async def __aenter__(self) -> "IUoW":
         """Método de entrada para el context manager asíncrono."""
@@ -38,3 +51,20 @@ class IUoW(ABC):
     @abstractmethod
     async def dispose(self) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    def add_before_commit_hook(self, hook: Callable[[], None]) -> None:
+        """Register a hook to execute before db.commit(), in FIFO order.
+
+        If any hook raises, the transaction is rolled back and the
+        exception propagates.
+        """
+        ...
+
+    def add_outbox_event(self, event: DomainEvent) -> None:
+        """Queue *event* for transactional outbox persistence.
+
+        The event is flushed to the ``event_outbox`` table during
+        ``commit()`` and later consumed by a background forwarder.
+        """
+        self.outbox_events.append(event)

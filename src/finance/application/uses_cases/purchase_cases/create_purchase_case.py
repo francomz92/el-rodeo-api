@@ -15,17 +15,19 @@ class CreatePurchaseCase:
         self.service.validate_data(data)
         async with self.uow as uow:
             supply_repository = uow.get_repository(IAnimalSuppliesRepository)
-            await self.service.validate_supply_exists(
-                user_id=data.user_id,
+            await self.service.validate_supply(
                 supply_id=data.supply_id,
                 supply_repository=supply_repository,
             )
             repository = uow.get_repository(IPurchasesRepository)
-            purchase = await self.service.create_new(data.user_id, data, repository)
-            await self.service.increase_supply_stock(
-                supply_id=data.supply_id,
+            purchase = await self.service.create_new_purchase(
+                user_id=data.user_id,
+                data=data,
+                repository=repository,
+            )
+            await supply_repository.increase_stock(
+                id=data.supply_id,
                 amount_to_increase=data.amount,
-                supply_repository=supply_repository,
             )
             await uow.commit()
             return purchase

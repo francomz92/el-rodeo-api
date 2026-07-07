@@ -10,18 +10,16 @@ class UpdateBuyerService:
     async def validate_buyer_exists(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IBuyersRepository,
     ) -> None:
-        buyer_exists = await repository.exists(id, user_id)
-        if not buyer_exists:
+        buyer = await repository.get_by_id(id)
+        if not buyer:
             raise NotFoundError("El comprador que intenta actualizar no existe.")
 
     async def update_buyer(
         self,
         id: UUID,
-        user_id: UUID,
         data: BuyerUpdateValueObject,
         repository: IBuyersRepository,
     ) -> BuyerEntity:
-        return await repository.update_data(id, user_id, data)
+        return await repository.update_data(id, data)

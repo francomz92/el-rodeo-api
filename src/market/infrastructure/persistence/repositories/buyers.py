@@ -1,9 +1,14 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, insert, select, update
+from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
 
 from src.common.domain.types import Sentinel
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories._auditable_mixin import (
+    AuditableRepositoryMixin,
+)
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 from src.market.domain.entities.buyers import BuyerEntity
 from src.market.domain.repositories.buyers import IBuyersRepository
 from src.market.domain.value_objects.buyer_value_objects import (
@@ -14,35 +19,25 @@ from src.market.domain.value_objects.buyer_value_objects import (
 from src.market.infrastructure.persistence.models import Buyer
 
 
-class BuyersRepository(IBuyersRepository, SessionMixin):
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
-        query = (
-            exists(Buyer)
-            .where(
-                Buyer.id == id,
-                Buyer.user_id == user_id,
-            )
-            .select()
-        )
+class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    _model: type[Buyer] = Buyer
+
+    async def exists(self, id: UUID) -> bool:
+        query = self._filter_tenant(exists(Buyer).where(Buyer.id == id).select())
         result = await self.db.execute(query)
         return result.scalar_one()
 
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> BuyerEntity | None:
-        query = select(*Buyer.__table__.columns).where(
-            Buyer.id == id,
-            Buyer.user_id == user_id,
-        )
+        query = self._filter_tenant(select(*Buyer.__table__.columns).where(Buyer.id == id))
         result = await self.db.execute(query)
         buyer_db = result.mappings().one_or_none()
         return self._build_buyer(buyer_db) if buyer_db else None
 
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: BuyerListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -54,63 +49,56 @@ class BuyersRepository(IBuyersRepository, SessionMixin):
                 continue
             elif k in ("name", "contact_number"):
                 conditions.append(getattr(Buyer, k).icontains(v))
-        query = (
-            select(*Buyer.__table__.columns)
-            .where(
-                Buyer.user_id == user_id,
-                *conditions,
-            )
-            .limit(limit)
-            .offset(offset)
-            .order_by(order_by)
-        )
+        query = self._filter_tenant(select(*Buyer.__table__.columns).where(*conditions).limit(limit).offset(offset).order_by(order_by))
         result = await self.db.execute(query)
         buyers_list = result.mappings().all()
         return [self._build_buyer(buyer_data) for buyer_data in buyers_list]
 
     async def create(self, data: BuyerCreateValueObject) -> BuyerEntity:
-        query = (
-            insert(Buyer)
-            .values(
-                user_id=data.user_id,
-                name=data.name,
-                description=data.description,
-                contact_number=data.contact_number,
-                contact_address=data.contact_address,
-            )
-            .returning(Buyer.id)
-        )
+        value_dict = {
+            "user_id": data.user_id,
+            "name": data.name,
+            "description": data.description,
+            "contact_number": data.contact_number,
+            "contact_address": data.contact_address,
+            "tenant_id": self._tenant_id,
+        }
+        query = insert(Buyer).values(**value_dict).returning(Buyer.id)
         result = await self.db.execute(query)
         buyer_id = result.scalar_one()
-        return await self.get_by_id(buyer_id, data.user_id)  # type: ignore
+        new_entity = await self.get_by_id(buyer_id)
+        self._audit_create("buyer", buyer_id, value_dict)
+        return new_entity  # type: ignore[return-value]
 
     async def update_data(
         self,
         id: UUID,
-        user_id: UUID,
         data: BuyerUpdateValueObject,
     ) -> BuyerEntity:
+        # Capture old values before update
+        old_row = await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
-        query = (
-            update(Buyer)
-            .where(
-                Buyer.id == id,
-                Buyer.user_id == user_id,
-            )
-            .values(**kws)
-            .returning(Buyer.id)
-        )
+        kws["updated_at"] = func.now()
+        query = self._filter_tenant(update(Buyer).where(Buyer.id == id).values(**kws).returning(Buyer.id))
         result = await self.db.execute(query)
         buyer_id = result.scalar_one()
-        return await self.get_by_id(buyer_id, user_id)  # type: ignore
+        new_entity = await self.get_by_id(buyer_id)
+        self._audit_update("buyer", id, old_values, kws)
+        return new_entity  # type: ignore[return-value]
 
     async def delete(self, id: UUID) -> None:
-        query = delete(Buyer).where(Buyer.id == id)
+        # Capture old values before delete
+        old_row = await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        query = self._filter_tenant(delete(Buyer).where(Buyer.id == id))
         await self.db.execute(query)
+        self._audit_delete("buyer", id, old_values)
 
     def _build_buyer(self, buyer_data: RowMapping) -> BuyerEntity:
         return BuyerEntity(
             id=buyer_data["id"],
+            tenant_id=buyer_data["tenant_id"],
             created_at=buyer_data["created_at"],
             name=buyer_data["name"],
             description=buyer_data["description"],

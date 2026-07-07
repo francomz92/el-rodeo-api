@@ -10,12 +10,11 @@ class DeleteAnimalCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID, user_id: UUID) -> None:
+    async def execute(self, id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
             await self.service.validate_animal_for_delete(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )
             await self.service.delete_animal(

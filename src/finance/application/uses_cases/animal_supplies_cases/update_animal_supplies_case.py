@@ -23,10 +23,8 @@ class UpdateAnimalSuppliesCase:
     async def execute(
         self,
         id: UUID,
-        user_id: UUID,
         data: AnimalSuppliesUpdateValueObject,
     ) -> AnimalSupplyEntity:
-        self.service.validate_data(data)
         async with self.uow as uow:
             supply_type_repository = uow.get_repository(ISupplyTypesRepository)
             await self.get_supply_type_service.validate_exists(
@@ -34,9 +32,12 @@ class UpdateAnimalSuppliesCase:
                 repository=supply_type_repository,
             )
             repository = uow.get_repository(IAnimalSuppliesRepository)
-            animal_supply = await self.service.update_animal_supplies(
+            await self.service.validate_update(
                 id=id,
-                user_id=user_id,
+                repository=repository,
+            )
+            animal_supply = await self.service.update_supply(
+                id=id,
                 data=data,
                 repository=repository,
             )

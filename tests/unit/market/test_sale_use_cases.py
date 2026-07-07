@@ -86,15 +86,14 @@ class TestGetSaleCase:
     async def test_execute_returns_sale(self) -> None:
         """get_by_id is called and the entity is returned."""
         sale_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_sale_entity(id=sale_id)
         repo = self.uow.get_repository(ISalesRepository)
         repo.get_by_id.return_value = expected_entity
 
-        result = await self.case.execute(id=sale_id, user_id=user_id)
+        result = await self.case.execute(id=sale_id)
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(sale_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(sale_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         """Raises NotFoundError if the sale does not exist."""
@@ -104,7 +103,6 @@ class TestGetSaleCase:
         with pytest.raises(NotFoundError):
             await self.case.execute(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
             )
 
 
@@ -118,14 +116,12 @@ class TestListSaleCase:
 
     async def test_execute_returns_sale_list(self) -> None:
         """list_for_user is called with the correct parameters."""
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         expected_entities = [make_sale_entity(), make_sale_entity()]
         params = make_sale_list_params()
         repo = self.uow.get_repository(ISalesRepository)
         repo.list_for_user.return_value = expected_entities
 
         result = await self.case.execute(
-            user_id=user_id,
             filters=params,
             limit=10,
             offset=0,
@@ -134,7 +130,6 @@ class TestListSaleCase:
 
         assert result == expected_entities
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=params,
             limit=10,
             offset=0,
@@ -151,24 +146,22 @@ class TestDeleteSaleCase:
         self.case = DeleteSaleCase(uow=self.uow, service=self.service)
 
     async def test_execute_deletes_sale(self) -> None:
-        """Deletes when the sale exists (the app code does NOT call commit)."""
+        """Deletes when the sale exists."""
         sale_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(ISalesRepository)
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = make_sale_entity(id=sale_id)
 
-        await self.case.execute(id=sale_id, user_id=user_id)
+        await self.case.execute(id=sale_id)
 
         repo.delete.assert_awaited_once_with(sale_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         """Raises when the sale does not exist for this user."""
         sale_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(ISalesRepository)
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.case.execute(id=sale_id, user_id=user_id)
+            await self.case.execute(id=sale_id)
 
         repo.delete.assert_not_called()

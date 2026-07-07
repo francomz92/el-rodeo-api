@@ -5,13 +5,13 @@ from src.common.domain.services.security import ISecurityService
 
 
 class ChangePasswordService:
-    def validate_passwords(
+    async def validate_passwords(
         self,
         user: UserEntity,
         password: str,
         security_service: ISecurityService,
     ):
-        if not user.passwords_match(security_service, password):
+        if not await user.passwords_match(security_service, password):
             raise UnauthorizedError("Las credenciales proporcionadas no son válidas")
 
     async def change_password(
@@ -23,7 +23,7 @@ class ChangePasswordService:
         security_service: ISecurityService,
         repository: IUserRepository,
     ):
-        user.update_password(
+        await user.update_password(
             security_service,
             password,
             new_password,

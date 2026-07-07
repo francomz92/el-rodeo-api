@@ -8,11 +8,10 @@ class DeleteBuyerService:
     async def validate_buyer_exists(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IBuyersRepository,
     ) -> None:
-        buyer_exists = await repository.exists(id, user_id)
-        if not buyer_exists:
+        buyer = await repository.get_by_id(id)
+        if not buyer:
             raise NotFoundError("El comprador que intenta eliminar no existe.")
 
     async def delete_buyer(

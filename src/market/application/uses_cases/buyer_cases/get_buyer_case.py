@@ -11,11 +11,10 @@ class GetBuyerCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID, user_id: UUID) -> BuyerEntity:
+    async def execute(self, id: UUID) -> BuyerEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
             return await self.service.get_buyer(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )

@@ -11,21 +11,19 @@ from src.market.domain.value_objects.sale_value_objects import (
 
 class ISalesRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> SaleEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: SaleListQueryParamsValueObject,
         limit: int,
         offset: int,

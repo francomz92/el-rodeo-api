@@ -9,10 +9,9 @@ class GetBuyerService:
     async def get_buyer(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IBuyersRepository,
     ) -> BuyerEntity:
-        buyer = await repository.get_by_id(id, user_id)
+        buyer = await repository.get_by_id(id)
         if buyer is None:
             raise NotFoundError("No se encontró el comprador seleccionado.")
         return buyer

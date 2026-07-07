@@ -67,14 +67,12 @@ class TestListScheduleEventsCase:
         self.case = ListScheduleEventsCase(uow=self.uow, service=self.service)
 
     async def test_execute_returns_events(self) -> None:
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_schedule_event_list_params()
         expected = [make_schedule_event_entity(), make_schedule_event_entity()]
         repo = self.uow.get_repository(IScheduleEventRepository)
         repo.list_for_user.return_value = expected
 
         result = await self.case.execute(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -83,7 +81,6 @@ class TestListScheduleEventsCase:
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -125,12 +122,11 @@ class TestDeleteScheduleEventCase:
 
     async def test_execute_deletes_event(self) -> None:
         event_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         existing = make_schedule_event_entity(id=event_id, pending=True)
         repo = self.uow.get_repository(IScheduleEventRepository)
         repo.get_by_id.return_value = existing
 
-        await self.case.execute(id=event_id, user_id=user_id)
+        await self.case.execute(id=event_id)
 
         repo.delete.assert_awaited_once_with(id=event_id)
         self.uow.commit.assert_awaited_once()

@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import DateTime, Float, ForeignKey, String
+from sqlalchemy import DateTime, Float, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.infrastructure.persistence.models import Model
@@ -10,6 +10,7 @@ from src.common.infrastructure.persistence.models import Model
 class Sale(Model):
     __tablename__ = "sales"
 
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     buyer_id: Mapped[UUID] = mapped_column(ForeignKey("buyers.id", ondelete="SET NULL"), index=True)
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"), index=True)

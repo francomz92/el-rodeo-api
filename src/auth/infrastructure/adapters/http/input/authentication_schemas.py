@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginSchema(BaseModel):
@@ -9,11 +9,14 @@ class LoginSchema(BaseModel):
 class RegisterSchema(BaseModel):
     name: str = Field(..., max_length=50)
     dni: str = Field(..., alias="dni", max_length=10)
-    email: str = Field(..., alias="email", max_length=100)
+    email: EmailStr = Field(..., alias="email", max_length=100)
 
 
 class ChangePasswordSchema(BaseModel):
-    token: str
     password: str = Field(..., alias="password", min_length=8, max_length=50)
     new_password: str = Field(..., alias="new_password", min_length=8, max_length=50)
     confirmed_password: str = Field(..., alias="confirmed_password", min_length=8, max_length=50)
+
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token: str

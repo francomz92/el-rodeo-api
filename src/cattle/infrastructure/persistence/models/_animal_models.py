@@ -8,6 +8,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     String,
+    Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +27,7 @@ class AnimalType(Model):
 class Animal(Model):
     __tablename__ = "animals"
 
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_types.id", ondelete="SET NULL"), nullable=True)
     caravana: Mapped[str] = mapped_column(String(50), unique=True)
@@ -44,6 +46,7 @@ class Animal(Model):
 class AnimalProtocols(Model):
     __tablename__ = "animal_protocols"
 
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"))
     vaccinated: Mapped[bool] = mapped_column(Boolean, default=False)

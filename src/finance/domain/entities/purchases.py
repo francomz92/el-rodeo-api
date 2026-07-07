@@ -8,6 +8,7 @@ from src.finance.domain.entities.animal_supplies import UnitOfMeasurement
 @dataclass
 class PurchaseEntity:
     id: UUID
+    tenant_id: UUID
     amount: float
     price: float
     purchase_date: date

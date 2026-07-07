@@ -5,6 +5,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     String,
+    Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +22,7 @@ class AnimalSupplyType(Model):
 class AnimalSupply(Model):
     __tablename__ = "animal_supplies"
 
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supply_types.id", ondelete="RESTRICT"))
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False)

@@ -12,21 +12,19 @@ from src.finance.domain.value_objects.animal_supplies_value_objects import (
 
 class IAnimalSuppliesRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> AnimalSupplyEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: AnimalSuppliesListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -45,7 +43,6 @@ class IAnimalSuppliesRepository(IRepository):
     async def update_data(
         self,
         id: UUID,
-        user_id: UUID,
         data: AnimalSuppliesUpdateValueObject,
     ) -> AnimalSupplyEntity:
         raise NotImplementedError

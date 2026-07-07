@@ -13,7 +13,7 @@ class UpdateAnimalProtocolService:
         data: AnimalProtocolUpdateValueObject,
         repository: IAnimalProtocolsRepository,
     ) -> None:
-        protocol = await repository.get_by_id(id, data.user_id)
+        protocol = await repository.get_by_id(id)
         if protocol is None:
             raise NotFoundError("El recurso que deseas actualizar no existe")
         if not protocol.can_update():

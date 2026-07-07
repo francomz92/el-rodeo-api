@@ -61,15 +61,14 @@ class TestGetAnimalProtocolService:
         from unittest.mock import AsyncMock
 
         protocol_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_animal_protocol_entity(id=protocol_id)
         repo = AsyncMock()
         repo.get_by_id.return_value = expected_entity
 
-        result = await self.service.get_animal_protocol(protocol_id, user_id, repo)
+        result = await self.service.get_animal_protocol(protocol_id, repo)
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(protocol_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(protocol_id)
 
     async def test_get_animal_protocol_raises_not_found(self) -> None:
         from unittest.mock import AsyncMock
@@ -80,7 +79,6 @@ class TestGetAnimalProtocolService:
         with pytest.raises(NotFoundError):
             await self.service.get_animal_protocol(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -94,14 +92,12 @@ class TestListAnimalProtocolService:
     async def test_get_animal_protocols_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_animal_protocol_list_params()
         expected = [make_animal_protocol_entity(), make_animal_protocol_entity()]
         repo = AsyncMock()
         repo.list_for_user.return_value = expected
 
         result = await self.service.get_animal_protocols(
-            user_id,
             repo,
             filters,
             limit=10,
@@ -111,7 +107,6 @@ class TestListAnimalProtocolService:
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id,
             filters,
             limit=10,
             offset=0,
@@ -196,7 +191,6 @@ class TestDeleteAnimalProtocolService:
 
         await self.service.validate_can_delete(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -209,7 +203,6 @@ class TestDeleteAnimalProtocolService:
         with pytest.raises(NotFoundError):
             await self.service.validate_can_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -224,7 +217,6 @@ class TestDeleteAnimalProtocolService:
         with pytest.raises(ConflictError):
             await self.service.validate_can_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 

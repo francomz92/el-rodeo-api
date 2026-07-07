@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.market.domain.value_objects.buyer_value_objects import (
     BuyerCreateValueObject,
     BuyerListQueryParamsValueObject,
@@ -22,6 +26,7 @@ from src.market.infrastructure.presentation.dependencies.buyer_dependencies impo
 buyer_router = APIRouter(
     prefix="/buyers",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -30,6 +35,7 @@ buyer_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new buyer for a user in the database",
     response_model=BuyerSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def create_buyer(
     current_user: GetCurrentUser,
@@ -48,6 +54,7 @@ async def create_buyer(
     status_code=status.HTTP_200_OK,
     summary="Update a buyer in the database",
     response_model=BuyerSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def update_buyer(
     id: UUID,
@@ -58,7 +65,6 @@ async def update_buyer(
     payload = BuyerUpdateValueObject(**data.model_dump())
     return await update_use_case.execute(
         id=id,
-        user_id=current_user.id,
         data=payload,
     )
 
@@ -67,6 +73,7 @@ async def update_buyer(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a buyer from the database",
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_buyer(
     id: UUID,
@@ -75,7 +82,6 @@ async def delete_buyer(
 ):
     return await delete_use_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -92,7 +98,6 @@ async def get_buyer(
 ):
     return await get_use_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -118,7 +123,6 @@ async def list_buyers(
         )
     )
     return await list_use_case.execute(
-        user_id=current_user.id,
         filters=params,
         limit=filters.limit,
         offset=filters.offset,

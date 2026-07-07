@@ -18,13 +18,11 @@ class GetAnimalSuppliesCase:
     async def execute(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> AnimalSupplyEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalSuppliesRepository)
-            supplies = await self.service.get_animal_supplies(
+            supplies = await self.service.validate_existence(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )
             return supplies

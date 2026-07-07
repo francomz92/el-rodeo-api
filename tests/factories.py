@@ -11,6 +11,7 @@ from uuid import uuid4
 from faker import Faker
 
 from src.auth.domain.entities import UserEntity
+from src.auth.domain.entities._user_role import UserRole
 from src.market.domain.entities.buyers import BuyerEntity
 from src.market.domain.entities.sales import SaleEntity
 from src.market.domain.value_objects.buyer_value_objects import (
@@ -49,6 +50,7 @@ def make_sale_entity(**overrides: Any) -> SaleEntity:
     weight = round(float(_faker.pydecimal(min_value=50, max_value=500, right_digits=2)), 2)
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         sale_date=_faker.date_between(start_date="-1y"),
         price=price,
         price_per_kg=round(price / weight + float(_faker.pydecimal(min_value=1, max_value=10, right_digits=2)), 2),
@@ -90,6 +92,7 @@ def make_buyer_entity(**overrides: Any) -> BuyerEntity:
     """Build a BuyerEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         created_at=datetime.now(tz=timezone.utc),
         name=_faker.company(),
         description=_faker.catch_phrase(),
@@ -104,11 +107,12 @@ def make_user_entity(**overrides: Any) -> UserEntity:
     """Build a UserEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         name=_faker.name(),
         dni=_faker.unique.numerify(text="########"),
         email=_faker.unique.email(),
         created_at=datetime.now(tz=timezone.utc),
-        is_admin=False,
+        role=UserRole.VIEWER,
         _hashed_password=_faker.sha256(),
     )
     defaults.update(overrides)
@@ -148,6 +152,7 @@ def make_animal_entity(**overrides: Any) -> AnimalEntity_:
     """Build an AnimalEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         caravana=_faker.unique.bothify(text="CAR-??????"),
         tag=_faker.unique.bothify(text="TAG-??????"),
         date_of_birth=_faker.date_between(start_date="-3y", end_date="-1y"),
@@ -237,6 +242,7 @@ def make_animal_protocol_entity(**overrides: Any) -> AnimalProtocolEntity:
     """Build an AnimalProtocolEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         animal=make_animal_entity(),
         vaccinated=False,
         vaccinated_date=None,
@@ -287,6 +293,7 @@ def make_schedule_event_entity(**overrides: Any) -> ScheduleEventEntity:
     """Build a ScheduleEventEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         user_id=uuid4(),
         created_at=datetime.now(tz=timezone.utc),
         title=_faker.sentence(nb_words=4),
@@ -346,6 +353,7 @@ def make_purchase_entity(**overrides: Any) -> PurchaseEntity:
     """Build a PurchaseEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         amount=round(float(_faker.pydecimal(min_value=1, max_value=100, right_digits=2)), 2),
         price=round(float(_faker.pydecimal(min_value=100, max_value=5000, right_digits=2)), 2),
         purchase_date=_faker.date_between(start_date="-1m", end_date="today"),
@@ -396,6 +404,7 @@ def make_animal_supply_entity(**overrides: Any) -> AnimalSupplyEntity:
     """Build an AnimalSupplyEntity with realistic defaults."""
     defaults = dict(
         id=uuid4(),
+        tenant_id=uuid4(),
         name=_faker.unique.word(),
         amount=round(float(_faker.pydecimal(min_value=50, max_value=500, right_digits=2)), 2),
         critical_amount=round(float(_faker.pydecimal(min_value=5, max_value=25, right_digits=2)), 2),

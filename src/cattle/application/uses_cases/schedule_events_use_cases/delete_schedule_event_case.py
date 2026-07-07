@@ -14,12 +14,11 @@ class DeleteScheduleEventCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID, user_id: UUID):
+    async def execute(self, id: UUID):
         async with self.uow as uow:
             repository = uow.get_repository(IScheduleEventRepository)
             await self.service.validate_for_delete(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )
             await self.service.delete_event(

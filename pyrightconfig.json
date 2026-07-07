@@ -1,0 +1,11 @@
+{
+  "include": ["src"],
+  "exclude": ["alembic", "tests", "scripts", "**/__pycache__"],
+  "typeCheckingMode": "basic",
+  "reportMissingTypeStubs": false,
+  "reportMissingImports": false,
+  "reportOptionalMemberAccess": "error",
+  "reportUnusedImport": "error",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Linux"
+}

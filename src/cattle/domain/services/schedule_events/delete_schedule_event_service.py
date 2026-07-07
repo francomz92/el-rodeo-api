@@ -8,10 +8,9 @@ class DeleteScheduleEventService:
     async def validate_for_delete(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IScheduleEventRepository,
     ):
-        event = await repository.get_by_id(id, user_id)
+        event = await repository.get_by_id(id)
         if not event:
             raise NotFoundError("El evento que intenta eliminar no existe.")
         if not event.can_delete():

@@ -67,15 +67,14 @@ class TestGetAnimalSuppliesService:
         from unittest.mock import AsyncMock
 
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected = make_animal_supply_entity(id=supply_id)
         repo = AsyncMock()
         repo.get_by_id.return_value = expected
 
-        result = await self.service.get_animal_supplies(supply_id, user_id, repo)
+        result = await self.service.validate_existence(supply_id, repo)
 
         assert result == expected
-        repo.get_by_id.assert_awaited_once_with(supply_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(id=supply_id)
 
     async def test_get_animal_supplies_raises_not_found(self) -> None:
         from unittest.mock import AsyncMock
@@ -84,9 +83,8 @@ class TestGetAnimalSuppliesService:
         repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.service.get_animal_supplies(
+            await self.service.validate_existence(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -100,24 +98,21 @@ class TestListAnimalSuppliesService:
     async def test_get_animal_supplies_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_animal_supply_list_params()
         expected = [make_animal_supply_entity(), make_animal_supply_entity()]
         repo = AsyncMock()
         repo.list_for_user.return_value = expected
 
-        result = await self.service.get_animal_supplies(
-            user_id=user_id,
-            filters=filters,
+        result = await self.service.get_supplies(
+            repository=repo,
+            query=filters,
             limit=10,
             offset=0,
             order_by="name",
-            repository=repo,
         )
 
         assert result == expected
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -131,29 +126,31 @@ class TestUpdateAnimalSuppliesService:
     def setup_method(self) -> None:
         self.service = UpdateAnimalSuppliesService()
 
-    def test_validate_data_passes(self) -> None:
-        data = make_animal_supply_update(amount=100.0, critical_amount=20.0)
-        self.service.validate_data(data)
+    async def test_validate_update_passes(self) -> None:
+        from unittest.mock import AsyncMock
 
-    def test_validate_data_raises_when_critical_gte_amount(self) -> None:
-        data = make_animal_supply_update(amount=50.0, critical_amount=50.0)
-        with pytest.raises(BusinessValidationError):
-            self.service.validate_data(data)
+        supply = make_animal_supply_entity(amount=5.0, critical_amount=10.0)
+        repo = AsyncMock()
+        repo.get_by_id.return_value = supply
+
+        await self.service.validate_update(
+            UUID("00000000-0000-0000-0000-000000000001"),
+            repo,
+        )
 
     async def test_update_animal_supplies_delegates_to_repo(self) -> None:
         from unittest.mock import AsyncMock
 
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         data = make_animal_supply_update()
         expected = make_animal_supply_entity(id=supply_id)
         repo = AsyncMock()
         repo.update_data.return_value = expected
 
-        result = await self.service.update_animal_supplies(supply_id, user_id, data, repo)
+        result = await self.service.update_supply(supply_id, data, repo)
 
         assert result == expected
-        repo.update_data.assert_awaited_once_with(supply_id, user_id, data)
+        repo.update_data.assert_awaited_once_with(id=supply_id, data=data)
 
 
 class TestDeleteAnimalSuppliesService:
@@ -165,12 +162,12 @@ class TestDeleteAnimalSuppliesService:
     async def test_validate_exists_passes(self) -> None:
         from unittest.mock import AsyncMock
 
+        supply = make_animal_supply_entity(amount=0.0)
         repo = AsyncMock()
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = supply
 
-        await self.service.validate_exists(
+        await self.service.validate_delete(
             UUID("00000000-0000-0000-0000-000000000001"),
-            UUID("00000000-0000-0000-0000-000000000002"),
             repo,
         )
 
@@ -178,12 +175,11 @@ class TestDeleteAnimalSuppliesService:
         from unittest.mock import AsyncMock
 
         repo = AsyncMock()
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.service.validate_exists(
+            await self.service.validate_delete(
                 UUID("00000000-0000-0000-0000-000000000001"),
-                UUID("00000000-0000-0000-0000-000000000002"),
                 repo,
             )
 
@@ -193,6 +189,6 @@ class TestDeleteAnimalSuppliesService:
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
         repo = AsyncMock()
 
-        await self.service.delete_animal_supplies(supply_id, repo)
+        await self.service.delete_supply(supply_id, repo)
 
-        repo.delete.assert_awaited_once_with(supply_id)
+        repo.delete.assert_awaited_once_with(id=supply_id)

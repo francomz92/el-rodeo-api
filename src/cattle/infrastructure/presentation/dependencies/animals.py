@@ -13,7 +13,43 @@ from src.cattle.domain.services.animals.get_animal_service import GetAnimalServi
 from src.cattle.domain.services.animals.list_animal_service import ListAnimalService
 from src.cattle.domain.services.animals.register_animal_service import RegisterAnimalService
 from src.cattle.domain.services.animals.update_animal_service import UpdateAnimalService
+from src.cattle.infrastructure.events.handlers.cache_invalidation import (
+    AnimalCacheInvalidationHandler,
+)
+from src.common.domain.ports.cache_service import ICacheService
+from src.common.domain.ports.event_bus import IEventBus
+from src.common.infrastructure.adapters.cache_service import RedisCacheService
+from src.common.infrastructure.events.bus import InMemoryEventBus
+from src.common.infrastructure.events.handlers.outbox_scheduler import OutboxScheduler
+from src.common.infrastructure.events.handlers.ws_broadcast import (
+    WebSocketBroadcastHandler,
+)
+from src.common.infrastructure.persistence.connections.redis import _redis_client
+from src.common.infrastructure.presentation.dependencies.redis import GetRedisClient
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
+
+
+def _get_cache_service(redis: GetRedisClient) -> ICacheService:  # type: ignore[reportInvalidTypeForm]
+    """Build a Redis-backed cache service."""
+    return RedisCacheService(redis=redis)
+
+
+GetCacheService = Annotated[ICacheService, Depends(_get_cache_service)]
+
+
+def _get_event_bus(
+    uow: GetUnitOfWork,
+    cache_service: GetCacheService,
+) -> IEventBus:
+    """Build a request-scoped event bus with handler registrations."""
+    bus = InMemoryEventBus()
+    bus.register("*", OutboxScheduler(uow))
+    bus.register("*", WebSocketBroadcastHandler(_redis_client))
+    bus.register("animal.created", AnimalCacheInvalidationHandler(cache_service))
+    return bus
+
+
+GetEventBus = Annotated[IEventBus, Depends(_get_event_bus)]
 
 
 def _get_register_animals_case(
@@ -23,11 +59,13 @@ def _get_register_animals_case(
         CreateAnimalProtocolService,
         Depends(),
     ],
+    event_bus: GetEventBus,
 ):
     return RegisterAnimalCase(
         uow=uow,
         service=service,
         create_animal_protocol_service=create_animal_protocol_service,
+        event_bus=event_bus,
     )
 
 

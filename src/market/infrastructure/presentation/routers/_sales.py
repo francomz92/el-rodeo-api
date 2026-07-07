@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.market.domain.value_objects.sale_value_objects import (
     SaleCreateValueObject,
     SaleListQueryParamsValueObject,
@@ -23,6 +27,7 @@ from src.market.infrastructure.presentation.dependencies.sale_dependencies impor
 sale_router = APIRouter(
     prefix="/sales",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -31,6 +36,7 @@ sale_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new sale in the database",
     response_model=SaleSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def create_sale(
     current_user: GetCurrentUser,
@@ -48,6 +54,7 @@ async def create_sale(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a sale from the database",
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_sale(
     id: UUID,
@@ -56,7 +63,6 @@ async def delete_sale(
 ):
     return await delete_use_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -73,7 +79,6 @@ async def get_sale(
 ):
     return await get_use_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -99,7 +104,6 @@ async def list_sale(
         )
     )
     return await list_use_case.execute(
-        user_id=current_user.id,
         filters=params,
         limit=filters.limit,
         offset=filters.offset,

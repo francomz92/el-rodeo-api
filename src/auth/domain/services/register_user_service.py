@@ -22,7 +22,7 @@ class RegisterUserService:
         repository: IUserRepository,
     ) -> tuple[UserEntity, str]:
         random_password = security_service.generate_random_str(10)
-        random_hashed_password = security_service.hash_password(random_password)
+        random_hashed_password = await security_service.hash_password(random_password)
         user = await repository.create(
             data=data,
             password=random_hashed_password,

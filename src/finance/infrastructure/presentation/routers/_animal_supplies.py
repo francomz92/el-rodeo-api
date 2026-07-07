@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesCreateValueObject,
     AnimalSuppliesListQueryParamsValueObject,
@@ -26,6 +30,7 @@ from src.finance.infrastructure.presentation.dependencies.animal_supplies_depend
 animal_supplies_router = APIRouter(
     prefix="/animal-supplies",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -34,6 +39,7 @@ animal_supplies_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create an animal supply in data base",
     response_model=AnimalSupplySchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def create_animal_supply(
     current_user: GetCurrentUser,
@@ -52,6 +58,7 @@ async def create_animal_supply(
     status_code=status.HTTP_200_OK,
     summary="Update an animal supply in data base",
     response_model=AnimalSupplySchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def update_animal_supply(
     current_user: GetCurrentUser,
@@ -64,7 +71,6 @@ async def update_animal_supply(
     )
     return await update_animal_supply_case.execute(
         id=id,
-        user_id=current_user.id,
         data=payload,
     )
 
@@ -73,6 +79,7 @@ async def update_animal_supply(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an animal supply in data base",
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_animal_supply(
     current_user: GetCurrentUser,
@@ -81,7 +88,6 @@ async def delete_animal_supply(
 ):
     return await delete_animal_supply_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -103,7 +109,6 @@ async def list_animal_supplies(
         )
     )
     return await list_animal_supplies_case.execute(
-        user_id=current_user.id,
         filters=filters,
         limit=query_params.limit,
         offset=query_params.offset,
@@ -124,5 +129,4 @@ async def get_animal_supply(
 ):
     return await get_animal_supply_case.execute(
         id=id,
-        user_id=current_user.id,
     )

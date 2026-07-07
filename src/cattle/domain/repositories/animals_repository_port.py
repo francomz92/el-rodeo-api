@@ -16,14 +16,13 @@ class IAnimalsRepository(IRepository):
     async def exists(
         self,
         id: UUID | None = None,
-        user_id: UUID | None = None,
         type_id: UUID | None = None,
         caravana: str | None = None,
     ) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID, user_id: UUID) -> AnimalEntity | None:
+    async def get_by_id(self, id: UUID) -> AnimalEntity | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -33,12 +32,22 @@ class IAnimalsRepository(IRepository):
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: AnimalsListQueryParamsValueObject,
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalEntity]:
+        cursor: str | None = None,
+    ) -> tuple[list[AnimalEntity], int, bool]:
+        """List animals matching filters with pagination.
+
+        When *cursor* is provided, cursor-based pagination is used
+        (``WHERE id > :cursor_id ORDER BY id ASC``) and offset is ignored.
+        When *cursor* is ``None``, the legacy offset/limit pagination is used.
+
+        Returns ``(items, total_count, has_next)``.
+        ``has_next`` is ``True`` when there are more items after the returned page
+        (cursor mode only; always ``False`` when cursor is ``None``).
+        """
         raise NotImplementedError
 
     @abstractmethod

@@ -80,15 +80,14 @@ class TestGetBuyerCase:
     async def test_execute_returns_buyer(self) -> None:
         """get_by_id is called and the entity is returned."""
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected_entity = make_buyer_entity(id=buyer_id)
         repo = self.uow.get_repository(IBuyersRepository)
         repo.get_by_id.return_value = expected_entity
 
-        result = await self.case.execute(id=buyer_id, user_id=user_id)
+        result = await self.case.execute(id=buyer_id)
 
         assert result == expected_entity
-        repo.get_by_id.assert_awaited_once_with(buyer_id, user_id)
+        repo.get_by_id.assert_awaited_once_with(buyer_id)
 
     async def test_execute_raises_when_not_found(self) -> None:
         """Raises NotFoundError if the buyer does not exist."""
@@ -98,7 +97,6 @@ class TestGetBuyerCase:
         with pytest.raises(NotFoundError):
             await self.case.execute(
                 id=UUID("00000000-0000-0000-0000-000000000001"),
-                user_id=UUID("00000000-0000-0000-0000-000000000002"),
             )
 
 
@@ -112,14 +110,12 @@ class TestListBuyerCase:
 
     async def test_execute_returns_buyer_list(self) -> None:
         """list_for_user is called with the correct parameters."""
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         expected_entities = [make_buyer_entity(), make_buyer_entity()]
         filters = make_buyer_update()
         repo = self.uow.get_repository(IBuyersRepository)
         repo.list_for_user.return_value = expected_entities
 
         result = await self.case.execute(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -128,7 +124,6 @@ class TestListBuyerCase:
 
         assert result == expected_entities
         repo.list_for_user.assert_awaited_once_with(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -147,30 +142,27 @@ class TestUpdateBuyerCase:
     async def test_execute_updates_buyer_successfully(self) -> None:
         """Validates existence + updates + commits."""
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         data = make_buyer_update(name="Updated Name")
         expected_entity = make_buyer_entity(id=buyer_id, name="Updated Name")
         repo = self.uow.get_repository(IBuyersRepository)
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = make_buyer_entity(id=buyer_id)
         repo.update_data.return_value = expected_entity
 
-        result = await self.case.execute(id=buyer_id, user_id=user_id, data=data)
+        result = await self.case.execute(id=buyer_id, data=data)
 
         assert result == expected_entity
-        repo.exists.assert_awaited_once_with(buyer_id, user_id)
-        repo.update_data.assert_awaited_once_with(buyer_id, user_id, data)
+        repo.update_data.assert_awaited_once_with(buyer_id, data)
         self.uow.commit.assert_awaited_once()
 
     async def test_execute_raises_when_not_found(self) -> None:
         """Raises NotFoundError before calling update or commit."""
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         data = make_buyer_update(name="Updated Name")
         repo = self.uow.get_repository(IBuyersRepository)
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.case.execute(id=buyer_id, user_id=user_id, data=data)
+            await self.case.execute(id=buyer_id, data=data)
 
         repo.update_data.assert_not_called()
         self.uow.commit.assert_not_called()
@@ -187,11 +179,10 @@ class TestDeleteBuyerCase:
     async def test_execute_deletes_buyer(self) -> None:
         """Validates existence + deletes + commits."""
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(IBuyersRepository)
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = make_buyer_entity(id=buyer_id)
 
-        await self.case.execute(id=buyer_id, user_id=user_id)
+        await self.case.execute(id=buyer_id)
 
         repo.delete.assert_awaited_once_with(buyer_id)
         self.uow.commit.assert_awaited_once()
@@ -199,12 +190,11 @@ class TestDeleteBuyerCase:
     async def test_execute_raises_when_not_found(self) -> None:
         """Raises NotFoundError before calling delete or commit."""
         buyer_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(IBuyersRepository)
-        repo.exists.return_value = False
+        repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
-            await self.case.execute(id=buyer_id, user_id=user_id)
+            await self.case.execute(id=buyer_id)
 
         repo.delete.assert_not_called()
         self.uow.commit.assert_not_called()

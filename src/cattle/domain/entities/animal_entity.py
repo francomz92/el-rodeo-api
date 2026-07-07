@@ -15,6 +15,7 @@ class AnimalTypeEntity:
 @dataclass
 class AnimalEntity:
     id: UUID
+    tenant_id: UUID
     caravana: str
     tag: str
     date_of_birth: date

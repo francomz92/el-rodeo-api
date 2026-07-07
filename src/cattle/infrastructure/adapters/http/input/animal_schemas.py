@@ -19,7 +19,7 @@ class AnimalCreationSchema(BaseModel):
     breed: str = Field(..., max_length=50)
     tag: str = Field(default_factory=str, max_length=50)
     date_of_birth: date
-    initial_weight: float
+    initial_weight: float = Field(..., gt=0)
     initial_weight_date: date
 
 
@@ -27,9 +27,9 @@ class AnimalUpdateSchema(BaseModel):
     type_id: UUID
     caravana: str | None = None
     date_of_birth: date | None = None
-    initial_weight: float | None = None
+    initial_weight: float | None = Field(None, gt=0)
     initial_weight_date: date | None = None
-    last_weight: float | None = None
+    last_weight: float | None = Field(None, gt=0)
     breed: str | None = None
     tag: str | None = None
     status: AnimalStatus | None = None

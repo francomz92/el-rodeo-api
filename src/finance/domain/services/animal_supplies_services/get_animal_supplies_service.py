@@ -6,13 +6,12 @@ from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepos
 
 
 class GetAnimalSuppliesService:
-    async def get_animal_supplies(
+    async def validate_existence(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IAnimalSuppliesRepository,
     ) -> AnimalSupplyEntity:
-        animal_supplies = await repository.get_by_id(id, user_id)
-        if not animal_supplies:
-            raise NotFoundError("Animal supply not found")
-        return animal_supplies
+        supply = await repository.get_by_id(id=id)
+        if not supply:
+            raise NotFoundError("El insumo no existe")
+        return supply

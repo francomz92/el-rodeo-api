@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, insert, select, update
+from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
@@ -13,28 +13,27 @@ from src.cattle.domain.value_objects.animal_protocol_value_object import (
 from src.cattle.infrastructure.persistence.models import AnimalType
 from src.cattle.infrastructure.persistence.models._animal_models import Animal, AnimalProtocols
 from src.common.domain.types import Sentinel
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories._auditable_mixin import (
+    AuditableRepositoryMixin,
+)
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 
 
-class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
-        query = (
-            exists(AnimalProtocols)
-            .where(
-                AnimalProtocols.id == id,
-                AnimalProtocols.user_id == user_id,
-            )
-            .select()
-        )
+class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    _model: type[AnimalProtocols] = AnimalProtocols
+
+    async def exists(self, id: UUID) -> bool:
+        query = self._filter_tenant(exists(AnimalProtocols).where(AnimalProtocols.id == id).select())
         result = await self.db.execute(query)
         return result.scalar_one()
 
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> AnimalProtocolEntity | None:
-        query = (
+        query = self._filter_tenant(
             select(
                 *AnimalProtocols.__table__.columns,
                 Animal.id.label("animal_id"),
@@ -49,15 +48,9 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
                 AnimalType.id.label("animal_type_id"),
                 AnimalType.name.label("animal_type_name"),
             )
-            .where(
-                AnimalProtocols.id == id,
-                AnimalProtocols.user_id == user_id,
-            )
+            .where(AnimalProtocols.id == id)
             .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
             .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
-            # .options(
-            #     joinedload(AnimalProtocols.animal).joinedload(Animal.type),
-            # )
         )
         result = await self.db.execute(query)
         protocol = result.mappings().one_or_none()
@@ -65,7 +58,6 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
 
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: AnimalProtocolListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -77,7 +69,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
                 continue
             elif k in ("id", "vaccinated", "sale_permission"):
                 conditions.append(getattr(AnimalProtocols, k) == v)
-        query = (
+        query = self._filter_tenant(
             select(
                 *AnimalProtocols.__table__.columns,
                 Animal.date_of_birth.label("animal_date_of_birth"),
@@ -91,18 +83,12 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
                 AnimalType.id.label("animal_type_id"),
                 AnimalType.name.label("animal_type_name"),
             )
-            .where(
-                AnimalProtocols.user_id == user_id,
-                *conditions,
-            )
+            .where(*conditions)
             .order_by(order_by)
             .limit(limit)
             .offset(offset)
             .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
             .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
-            # .options(
-            #     joinedload(AnimalProtocols.animal).joinedload(Animal.type),
-            # )
         )
         result = await self.db.execute(query)
         protocols = result.mappings().all()
@@ -118,32 +104,43 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
             .values(
                 user_id=user_id,
                 **vars(data),
+                tenant_id=self._tenant_id,
             )
             .returning(AnimalProtocols.id)
         )
         result = await self.db.execute(query)
         protocol_id = result.scalar_one()
-        return await self.get_by_id(protocol_id, user_id)  # type: ignore
+        entity = await self.get_by_id(protocol_id)
+        self._audit_create(
+            "animal_protocol",
+            protocol_id,
+            vars(data),
+            tenant_id=self._tenant_id,
+            user_id=user_id,
+        )
+        return entity  # type: ignore[return-value]
 
     async def update_data(
         self,
         id: UUID,
         data: AnimalProtocolUpdateValueObject,
     ) -> AnimalProtocolEntity:
+        old_row = await self.db.execute(self._filter_tenant(select(AnimalProtocols.__table__).where(AnimalProtocols.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
-        query = (
-            update(AnimalProtocols)
-            .where(
-                AnimalProtocols.id == id,
-            )
-            .values(**kws)
-        )
+        kws["updated_at"] = func.now()
+        query = self._filter_tenant(update(AnimalProtocols).where(AnimalProtocols.id == id).values(**kws))
         await self.db.execute(query)
-        return await self.get_by_id(id, data.user_id)  # type: ignore
+        entity = await self.get_by_id(id)
+        self._audit_update("animal_protocol", id, old_values, vars(data))
+        return entity  # type: ignore[return-value]
 
     async def delete(self, id: UUID) -> None:
-        query = delete(AnimalProtocols).where(AnimalProtocols.id == id)
+        old_row = await self.db.execute(self._filter_tenant(select(AnimalProtocols.__table__).where(AnimalProtocols.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        query = self._filter_tenant(delete(AnimalProtocols).where(AnimalProtocols.id == id))
         await self.db.execute(query)
+        self._audit_delete("animal_protocol", id, old_values)
 
     def _build_animal_protocol_entity(self, protocol: RowMapping) -> AnimalProtocolEntity:
         animal_type = (
@@ -156,8 +153,10 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, SessionMixin):
         )
         return AnimalProtocolEntity(
             id=protocol["id"],
+            tenant_id=protocol["tenant_id"],
             animal=AnimalEntity(
                 id=protocol["animal_id"],
+                tenant_id=protocol["tenant_id"],
                 date_of_birth=protocol["animal_date_of_birth"],
                 initial_weight=protocol["animal_initial_weight"],
                 type=animal_type,

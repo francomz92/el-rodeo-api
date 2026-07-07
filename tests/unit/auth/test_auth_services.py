@@ -51,7 +51,7 @@ class TestRegisterUserService:
 
         security = MagicMock()
         security.generate_random_str = MagicMock(return_value="randompass12")
-        security.hash_password = MagicMock(return_value="hashed_value")
+        security.hash_password = AsyncMock(return_value="hashed_value")
 
         data = MagicMock()
         expected_user = make_user_entity()
@@ -63,7 +63,7 @@ class TestRegisterUserService:
         assert user == expected_user
         assert password == "randompass12"
         security.generate_random_str.assert_called_once_with(10)
-        security.hash_password.assert_called_once_with("randompass12")
+        security.hash_password.assert_awaited_once_with("randompass12")
         repo.create.assert_awaited_once_with(data=data, password="hashed_value")
 
 
@@ -106,12 +106,12 @@ class TestLoginUserService:
 
         user = make_user_entity()
         security = MagicMock()
-        user.passwords_match = MagicMock(return_value=True)
+        user.passwords_match = AsyncMock(return_value=True)
 
         # Should not raise
         await self.service.validate_credentials(user, "correct_password", security)
 
-        user.passwords_match.assert_called_once_with(security, "correct_password")
+        user.passwords_match.assert_awaited_once_with(security, "correct_password")
 
     async def test_validate_credentials_raises_when_passwords_dont_match(self) -> None:
         """Raises UnauthorizedError when passwords_match returns False."""
@@ -119,7 +119,7 @@ class TestLoginUserService:
 
         user = make_user_entity()
         security = MagicMock()
-        user.passwords_match = MagicMock(return_value=False)
+        user.passwords_match = AsyncMock(return_value=False)
 
         with pytest.raises(UnauthorizedError):
             await self.service.validate_credentials(user, "wrong_password", security)
@@ -131,27 +131,27 @@ class TestChangePasswordService:
     def setup_method(self) -> None:
         self.service = ChangePasswordService()
 
-    def test_validate_passwords_passes_when_match(self) -> None:
+    async def test_validate_passwords_passes_when_match(self) -> None:
         """Does not raise when passwords_match returns True."""
         from tests.factories import make_user_entity
 
         user = make_user_entity()
         security = MagicMock()
-        user.passwords_match = MagicMock(return_value=True)
+        user.passwords_match = AsyncMock(return_value=True)
 
         # Should not raise
-        self.service.validate_passwords(user, "current_password", security)
+        await self.service.validate_passwords(user, "current_password", security)
 
-    def test_validate_passwords_raises_when_mismatch(self) -> None:
+    async def test_validate_passwords_raises_when_mismatch(self) -> None:
         """Raises UnauthorizedError when passwords_match returns False."""
         from tests.factories import make_user_entity
 
         user = make_user_entity()
         security = MagicMock()
-        user.passwords_match = MagicMock(return_value=False)
+        user.passwords_match = AsyncMock(return_value=False)
 
         with pytest.raises(UnauthorizedError):
-            self.service.validate_passwords(user, "wrong_password", security)
+            await self.service.validate_passwords(user, "wrong_password", security)
 
     async def test_change_password_updates_and_persists(self) -> None:
         """change_password calls user.update_password and repository.update_password."""
@@ -159,6 +159,7 @@ class TestChangePasswordService:
 
         user = make_user_entity(_hashed_password="old_hash")
         security = MagicMock()
+        security.hash_password = AsyncMock(return_value="new_hashed_value")
         repo = AsyncMock()
         repo.update_password = AsyncMock()
 

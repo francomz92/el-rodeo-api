@@ -2,7 +2,7 @@ from src.common.domain.entities.errors import ErrorCode, ErrorDetail
 
 
 class DomainError(Exception):
-    error_code: ErrorCode
+    error_code: ErrorCode = "domain_error"
 
     def __init__(self, message: str, details: list[ErrorDetail]) -> None:
         self.message = message

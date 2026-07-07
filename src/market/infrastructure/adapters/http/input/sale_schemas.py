@@ -16,7 +16,7 @@ class SaleCreateSchema(BaseModel):
     animal_id: UUID
     buyer_id: UUID
     sale_date: date
-    price: float
-    price_per_kg: float
-    weight: float
+    price: float = Field(..., gt=0)
+    price_per_kg: float = Field(..., gt=0)
+    weight: float = Field(..., gt=0)
     description: str = Field("", max_length=500)

@@ -8,11 +8,10 @@ class DeleteSaleService:
     async def validate_sale_exists(
         self,
         id: UUID,
-        user_id: UUID,
         repository: ISalesRepository,
     ) -> None:
-        sale_exists = await repository.exists(id, user_id)
-        if not sale_exists:
+        sale = await repository.get_by_id(id)
+        if not sale:
             raise NotFoundError("La venta que intenta eliminar no existe.")
 
     async def delete_sale(

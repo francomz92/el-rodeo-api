@@ -12,21 +12,19 @@ from src.market.domain.value_objects.buyer_value_objects import (
 
 class IBuyersRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> BuyerEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: BuyerListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -42,7 +40,6 @@ class IBuyersRepository(IRepository):
     async def update_data(
         self,
         id: UUID,
-        user_id: UUID,
         data: BuyerUpdateValueObject,
     ) -> BuyerEntity:
         raise NotImplementedError

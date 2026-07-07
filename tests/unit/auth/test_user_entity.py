@@ -1,15 +1,58 @@
 """Unit tests for UserEntity domain logic.
 
-The entity encapsulates password verification and update logic.
+The entity encapsulates password verification, update logic, and role field.
 We mock the security service to avoid hashing dependencies.
 """
 
-from unittest.mock import MagicMock
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 
 from src.auth.domain.entities import UserEntity
+from src.auth.domain.entities._user_role import UserRole
 from src.common.domain.services.security import ISecurityService
+
+
+class TestUserEntityRole:
+    """UserEntity has a role field with sensible defaults."""
+
+    def test_default_role_is_viewer(self) -> None:
+        """When role is not provided, it defaults to VIEWER."""
+        user = UserEntity(
+            id=uuid4(),
+            name="Test",
+            dni="12345678",
+            email="test@example.com",
+            created_at=datetime.now(tz=timezone.utc),
+            role=UserRole.VIEWER,
+        )
+        assert user.role == UserRole.VIEWER
+
+    def test_can_set_explicit_role(self) -> None:
+        """Role can be set explicitly at construction."""
+        for role in (UserRole.VIEWER, UserRole.EDITOR, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPER_ADMIN):
+            user = UserEntity(
+                id=uuid4(),
+                name="Test",
+                dni="12345678",
+                email="test@example.com",
+                created_at=datetime.now(tz=timezone.utc),
+                role=role,
+            )
+            assert user.role == role
+
+    def test_super_admin_rank_is_5(self) -> None:
+        """SUPER_ADMIN has rank 5, above all other roles."""
+        assert UserRole.SUPER_ADMIN.rank == 5
+
+    def test_super_admin_hierarchy(self) -> None:
+        """SUPER_ADMIN rank > OWNER rank."""
+        assert UserRole.SUPER_ADMIN.rank > UserRole.OWNER.rank
+        assert UserRole.SUPER_ADMIN.rank > UserRole.ADMIN.rank
+        assert UserRole.SUPER_ADMIN.rank > UserRole.EDITOR.rank
+        assert UserRole.SUPER_ADMIN.rank > UserRole.VIEWER.rank
 
 
 class TestUserEntityPasswordMatching:
@@ -17,26 +60,29 @@ class TestUserEntityPasswordMatching:
 
     def setup_method(self) -> None:
         self.security = MagicMock(spec=ISecurityService)
+        self.security.verify_password = AsyncMock()
 
-    def test_returns_true_when_passwords_match(self) -> None:
+    @pytest.mark.asyncio
+    async def test_returns_true_when_passwords_match(self) -> None:
         """Delegates to security_service.verify_password and returns True."""
         user = _make_user()
         self.security.verify_password.return_value = True
 
-        result = user.passwords_match(self.security, "correct_password")
+        result = await user.passwords_match(self.security, "correct_password")
 
         assert result is True
-        self.security.verify_password.assert_called_once_with(
+        self.security.verify_password.assert_awaited_once_with(
             "correct_password",
             user._hashed_password,
         )
 
-    def test_returns_false_when_passwords_dont_match(self) -> None:
+    @pytest.mark.asyncio
+    async def test_returns_false_when_passwords_dont_match(self) -> None:
         """Returns False when the security service says no."""
         user = _make_user()
         self.security.verify_password.return_value = False
 
-        result = user.passwords_match(self.security, "wrong_password")
+        result = await user.passwords_match(self.security, "wrong_password")
 
         assert result is False
 
@@ -46,30 +92,34 @@ class TestUserEntityUpdatePassword:
 
     def setup_method(self) -> None:
         self.security = MagicMock(spec=ISecurityService)
+        self.security.hash_password = AsyncMock()
 
-    def test_updates_password_successfully(self) -> None:
+    @pytest.mark.asyncio
+    async def test_updates_password_successfully(self) -> None:
         """Hashes the new password and stores it."""
         user = _make_user()
         self.security.hash_password.return_value = "new_hashed_value"
 
-        user.update_password(self.security, "old_pass", "new_pass", "new_pass")
+        await user.update_password(self.security, "old_pass", "new_pass", "new_pass")
 
-        self.security.hash_password.assert_called_once_with("new_pass")
+        self.security.hash_password.assert_awaited_once_with("new_pass")
         assert user._hashed_password == "new_hashed_value"
 
-    def test_raises_when_new_passwords_dont_match(self) -> None:
+    @pytest.mark.asyncio
+    async def test_raises_when_new_passwords_dont_match(self) -> None:
         """Raises ValueError when confirm does not match the new password."""
         user = _make_user()
 
         with pytest.raises(ValueError, match="deben coincidir"):
-            user.update_password(self.security, "old_pass", "new_pass", "different_confirm")
+            await user.update_password(self.security, "old_pass", "new_pass", "different_confirm")
 
-    def test_raises_when_new_password_equals_old(self) -> None:
+    @pytest.mark.asyncio
+    async def test_raises_when_new_password_equals_old(self) -> None:
         """Raises ValueError when new password is the same as the old one."""
         user = _make_user()
 
         with pytest.raises(ValueError, match="diferente"):
-            user.update_password(self.security, "same_pass", "same_pass", "same_pass")
+            await user.update_password(self.security, "same_pass", "same_pass", "same_pass")
 
 
 def _make_user() -> UserEntity:
@@ -83,6 +133,5 @@ def _make_user() -> UserEntity:
         dni="12345678",
         email="test@example.com",
         created_at=datetime.now(tz=timezone.utc),
-        is_admin=False,
         _hashed_password="old_hashed_value",
     )

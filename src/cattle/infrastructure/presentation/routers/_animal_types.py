@@ -3,9 +3,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
+from src.auth.domain.entities._user_role import UserRole
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
-    is_admin_user,
-    is_authenticated_current_user,
+    require_role,
 )
 from src.cattle.domain.value_objects.animal_type_value_object import (
     AnimalTypeCreateValueObject,
@@ -35,7 +35,7 @@ animal_type_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new animal type in the database, only for administrators",
     response_model=AnimalTypeSchema,
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def create_animal_type(
     data: AnimalTypeCreateSchema,
@@ -51,7 +51,7 @@ async def create_animal_type(
     responses={404: {}},
     summary="Update an animal type in the database, only for administrators",
     response_model=AnimalTypeSchema,
-    dependencies=[is_admin_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def update_animal_type(
     id: UUID,
@@ -67,7 +67,7 @@ async def update_animal_type(
     status_code=status.HTTP_200_OK,
     summary="List animal types in the database",
     response_model=list[AnimalTypeSchema],
-    dependencies=[is_authenticated_current_user],
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def list_animal_types(
     params: Annotated[AnimalTypeListQueryParamsSchema, Query()],

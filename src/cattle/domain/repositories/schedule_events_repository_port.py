@@ -15,17 +15,16 @@ from src.common.domain.repository import IRepository
 
 class IScheduleEventRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID, user_id: UUID) -> ScheduleEventEntity | None:
+    async def get_by_id(self, id: UUID) -> ScheduleEventEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: ScheduleEventsListQueryParamsValueObject,
         limit: int,
         offset: int,
@@ -34,7 +33,7 @@ class IScheduleEventRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_pending_events(self) -> list[ScheduleEventRemindedEntity]:
+    async def get_pending_events(self, tenant_id: UUID | None = None) -> list[ScheduleEventRemindedEntity]:
         raise NotImplementedError
 
     @abstractmethod

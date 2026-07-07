@@ -14,12 +14,11 @@ class DeleteAnimalProtocolCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID, user_id: UUID) -> None:
+    async def execute(self, id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalProtocolsRepository)
             await self.service.validate_can_delete(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )
             await self.service.delete_protocol(id, repository)

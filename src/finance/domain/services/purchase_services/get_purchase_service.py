@@ -6,13 +6,12 @@ from src.finance.domain.repositories.purchases import IPurchasesRepository
 
 
 class GetPurchaseService:
-    async def get_purchase(
+    async def validate_existence(
         self,
         id: UUID,
-        user_id: UUID,
         repository: IPurchasesRepository,
     ) -> PurchaseEntity:
-        purchase = await repository.get_by_id(id, user_id)
-        if purchase is None:
-            raise NotFoundError("La compra no fue encontrada")
+        purchase = await repository.get_by_id(id=id)
+        if not purchase:
+            raise NotFoundError("Compra no encontrada")
         return purchase

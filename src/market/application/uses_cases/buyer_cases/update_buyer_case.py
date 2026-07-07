@@ -15,20 +15,17 @@ class UpdateBuyerCase:
     async def execute(
         self,
         id: UUID,
-        user_id: UUID,
         data: BuyerUpdateValueObject,
     ) -> BuyerEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
             await self.service.validate_buyer_exists(
                 id=id,
-                user_id=user_id,
                 repository=repository,
             )
             result = await self.service.update_buyer(
                 repository=repository,
                 id=id,
-                user_id=user_id,
                 data=data,
             )
             await uow.commit()

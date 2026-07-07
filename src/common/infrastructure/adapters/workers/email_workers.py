@@ -4,7 +4,7 @@ from src.common.infrastructure.workers.email_tasks import send_email
 
 class EmailNotifier(IEmailNotifier):
     def send(self, to: list[str], subject: str, body: str) -> None:
-        send_email.apply_async(
+        send_email.apply_async(  # type: ignore[attr-defined]
             kwargs={
                 "to": to,
                 "subject": subject,

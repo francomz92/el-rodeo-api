@@ -6,8 +6,8 @@ from src.common.domain.exceptions import NotFoundError, NotPermissionError
 
 
 class UpdateAnimalService:
-    async def validate_existence(self, id: UUID, user_id: UUID, repository: IAnimalsRepository) -> None:
-        animal = await repository.get_by_id(id, user_id)
+    async def validate_existence(self, id: UUID, repository: IAnimalsRepository) -> None:
+        animal = await repository.get_by_id(id)
         if not animal:
             raise NotFoundError("El animal que intenta actualizar no existe")
         if not animal.can_delete():

@@ -12,21 +12,19 @@ from src.common.domain.repository import IRepository
 
 class IAnimalProtocolsRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_id(
         self,
         id: UUID,
-        user_id: UUID,
     ) -> AnimalProtocolEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: AnimalProtocolListQueryParamsValueObject,
         limit: int,
         offset: int,

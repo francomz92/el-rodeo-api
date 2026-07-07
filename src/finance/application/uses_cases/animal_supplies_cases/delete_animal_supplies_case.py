@@ -14,9 +14,9 @@ class DeleteAnimalSuppliesCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID, user_id: UUID) -> None:
+    async def execute(self, id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalSuppliesRepository)
-            await self.service.validate_exists(id, user_id, repository)
-            await self.service.delete_animal_supplies(id, repository)
+            await self.service.validate_delete(id=id, repository=repository)
+            await self.service.delete_supply(id=id, repository=repository)
             await uow.commit()

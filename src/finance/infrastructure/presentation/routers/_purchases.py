@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.finance.domain.value_objects.purchase_value_objects import (
     PurchaseCreateValueObject,
     PurchaseListQueryParamValueObject,
@@ -23,6 +27,7 @@ from src.finance.infrastructure.presentation.dependencies.purchase_dependencies 
 purchase_router = APIRouter(
     prefix="/purchases",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -31,6 +36,7 @@ purchase_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user purchase in database",
     response_model=PurchaseSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def create_purchase(
     current_user: GetCurrentUser,
@@ -48,13 +54,14 @@ async def create_purchase(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a user purchase from database",
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_purchase(
     id: UUID,
     current_user: GetCurrentUser,
     delete_purchase_case: GetDeletePurchaseCase,
 ):
-    return await delete_purchase_case.execute(id, current_user.id)
+    return await delete_purchase_case.execute(id)
 
 
 @purchase_router.get(
@@ -76,7 +83,6 @@ async def get_purchases(
     )
     return await list_purchases_case.execute(
         filter=payload,
-        user_id=current_user.id,
         limit=filters.limit,
         offset=filters.offset,
         order_by=filters.order_by,
@@ -94,4 +100,4 @@ async def get_purchase(
     current_user: GetCurrentUser,
     get_purchase_case: GetObtainPurchaseCase,
 ):
-    return await get_purchase_case.execute(id, current_user.id)
+    return await get_purchase_case.execute(id)

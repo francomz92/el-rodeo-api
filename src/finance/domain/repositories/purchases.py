@@ -10,17 +10,16 @@ from src.finance.domain.value_objects.purchase_value_objects import PurchaseCrea
 
 class IPurchasesRepository(IRepository):
     @abstractmethod
-    async def exists(self, id: UUID, user_id: UUID) -> bool:
+    async def exists(self, id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID, user_id: UUID) -> PurchaseEntity | None:
+    async def get_by_id(self, id: UUID) -> PurchaseEntity | None:
         raise NotImplementedError
 
     @abstractmethod
     async def list_for_user(
         self,
-        user_id: UUID,
         filters: PurchaseListQueryParamValueObject,
         limit: int,
         offset: int,

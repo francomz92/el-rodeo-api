@@ -14,7 +14,7 @@ class AnimalSuppliesListQueryParamsSchema(StandardQueryParams):
 
 class AnimalSuppliesCreateSchema(BaseModel):
     type_id: UUID
-    name: str
+    name: str = Field(..., max_length=100)
     amount: float
     critical_amount: float
     unit_of_measurement: UnitOfMeasurement

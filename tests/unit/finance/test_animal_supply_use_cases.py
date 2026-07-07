@@ -85,12 +85,11 @@ class TestGetAnimalSuppliesCase:
 
     async def test_execute_returns_supply(self) -> None:
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         expected = make_animal_supply_entity(id=supply_id)
         repo = self.uow.get_repository(IAnimalSuppliesRepository)
         repo.get_by_id.return_value = expected
 
-        result = await self.case.execute(id=supply_id, user_id=user_id)
+        result = await self.case.execute(id=supply_id)
 
         assert result == expected
 
@@ -104,14 +103,12 @@ class TestListAnimalSuppliesCase:
         self.case = ListAnimalSuppliesCase(uow=self.uow, service=self.service)
 
     async def test_execute_returns_list(self) -> None:
-        user_id = UUID("00000000-0000-0000-0000-000000000001")
         filters = make_animal_supply_list_params()
         expected = [make_animal_supply_entity(), make_animal_supply_entity()]
         repo = self.uow.get_repository(IAnimalSuppliesRepository)
         repo.list_for_user.return_value = expected
 
         result = await self.case.execute(
-            user_id=user_id,
             filters=filters,
             limit=10,
             offset=0,
@@ -136,12 +133,14 @@ class TestUpdateAnimalSuppliesCase:
 
     async def test_execute_updates_successfully(self) -> None:
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        data = make_animal_supply_update(amount=100.0, critical_amount=20.0)
+        data = make_animal_supply_update(amount=10.0, critical_amount=20.0)
         expected = make_animal_supply_entity(id=supply_id)
+        supply_for_validation = make_animal_supply_entity(id=supply_id, amount=5.0, critical_amount=10.0)
         repo = self.uow.get_repository(IAnimalSuppliesRepository)
+        repo.get_by_id.return_value = supply_for_validation
         repo.update_data.return_value = expected
 
-        result = await self.case.execute(id=supply_id, user_id=UUID("00000000-0000-0000-0000-000000000002"), data=data)
+        result = await self.case.execute(id=supply_id, data=data)
 
         assert result == expected
         repo.update_data.assert_awaited_once()
@@ -158,11 +157,10 @@ class TestDeleteAnimalSuppliesCase:
 
     async def test_execute_deletes_supply(self) -> None:
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        user_id = UUID("00000000-0000-0000-0000-000000000002")
         repo = self.uow.get_repository(IAnimalSuppliesRepository)
-        repo.exists.return_value = True
+        repo.get_by_id.return_value = make_animal_supply_entity(id=supply_id, amount=0.0)
 
-        await self.case.execute(id=supply_id, user_id=user_id)
+        await self.case.execute(id=supply_id)
 
-        repo.delete.assert_awaited_once_with(supply_id)
+        repo.delete.assert_awaited_once_with(id=supply_id)
         self.uow.commit.assert_awaited_once()

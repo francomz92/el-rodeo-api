@@ -3,7 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import GetCurrentUser
+from src.auth.domain.entities._user_role import UserRole
+from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
+    GetCurrentUser,
+    require_role,
+)
 from src.cattle.domain.value_objects.schedule_event_value_object import (
     ScheduleEventCreationValueObject,
     ScheduleEventsListQueryParamsValueObject,
@@ -25,6 +29,7 @@ from src.cattle.infrastructure.presentation.dependencies.schedule_events import 
 events_router = APIRouter(
     prefix="/schedule-events",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -33,6 +38,7 @@ events_router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user schedule event in the database",
     response_model=ScheduleEventSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def create_schedule_event(
     current_user: GetCurrentUser,
@@ -51,6 +57,7 @@ async def create_schedule_event(
     status_code=status.HTTP_200_OK,
     summary="Update an event data in the database",
     response_model=ScheduleEventSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def update_event(
     id: UUID,
@@ -72,6 +79,7 @@ async def update_event(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a scheduled event in the database",
+    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def delete_evetn(
     id: UUID,
@@ -80,7 +88,6 @@ async def delete_evetn(
 ):
     return await delete_schedule_event_case.execute(
         id=id,
-        user_id=current_user.id,
     )
 
 
@@ -102,7 +109,6 @@ async def list_schedule_events(
         ),
     )
     return await list_schedule_events_case.execute(
-        user_id=current_user.id,
         filters=filters,
         limit=query_params.limit,
         offset=query_params.offset,

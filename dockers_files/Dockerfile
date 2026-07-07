@@ -21,7 +21,7 @@
 
 
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -32,7 +32,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync
 
 # Run stage
-FROM python:3.11-slim AS runner
+FROM python:3.12-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \

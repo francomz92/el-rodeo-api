@@ -21,6 +21,8 @@ class LoginUserService:
         password: str,
         security_service: ISecurityService,
     ) -> None:
-        passwords_match = user.passwords_match(security_service, password)
+        if user and not user.is_active:
+            raise UnauthorizedError("Las credenciales proporcionadas no son válidas")
+        passwords_match = await user.passwords_match(security_service, password)
         if not passwords_match:
             raise UnauthorizedError("Las credenciales proporcionadas no son válidas")
