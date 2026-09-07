@@ -22,7 +22,8 @@ app.autodiscover_tasks(
         "src.common.infrastructure.workers.email_tasks",
         "src.common.infrastructure.workers.event_tasks",
         "src.cattle.infrastructure.workers.upcoming_events_tasks",
-        "src.billing.infrastructure.workers._billing_tasks",
+        "src.billing.infrastructure.workers._expire_trials_task",
+        "src.billing.infrastructure.workers._monthly_billing_task",
     ]
 )
 

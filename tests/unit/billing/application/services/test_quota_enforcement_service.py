@@ -7,7 +7,7 @@ Tests check_quota behavior with different quota conditions:
 - Unlimited quota (-1) never raises
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -55,6 +55,7 @@ class TestQuotaEnforcementService:
             plan_id=self.plan_with_quotas.id,
             status=SubscriptionStatus.ACTIVE,
             current_period_start=datetime.now(timezone.utc),
+            current_period_end=datetime.now(timezone.utc) + timedelta(days=30),
             metadata={"animals": 10, "users": 3, "storage": 100},
         )
 
@@ -83,6 +84,7 @@ class TestQuotaEnforcementService:
             plan_id=self.plan_with_quotas.id,
             status=SubscriptionStatus.ACTIVE,
             current_period_start=self.active_subscription.current_period_start,
+            current_period_end=self.active_subscription.current_period_end,
             metadata={"animals": 500, "users": 3},  # animals already at limit
         )
         self.subscription_repo.get_by_tenant = AsyncMock(return_value=sub_at_limit)

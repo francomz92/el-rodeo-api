@@ -3,6 +3,8 @@ from src.cattle.domain.services.schedule_events.list_schedule_event_service impo
 from src.cattle.domain.value_objects.schedule_event_value_object import ScheduleEventsListQueryParamsValueObject
 from src.common.application.ports.uow import IUoW
 
+# TODO: implement cursor-based pagination for consistency with list_animals_case
+
 
 class ListScheduleEventsCase:
     def __init__(
@@ -13,19 +15,7 @@ class ListScheduleEventsCase:
         self.uow = uow
         self.service = service
 
-    async def execute(
-        self,
-        filters: ScheduleEventsListQueryParamsValueObject,
-        limit: int,
-        offset: int,
-        order_by: str,
-    ):
+    async def execute(self, filters: ScheduleEventsListQueryParamsValueObject, order_by: str):
         async with self.uow as uow:
             repository = uow.get_repository(IScheduleEventRepository)
-            return await self.service.get_events(
-                query=filters,
-                limit=limit,
-                offset=offset,
-                order_by=order_by,
-                repository=repository,
-            )
+            return await self.service.get_events(query=filters, order_by=order_by, repository=repository)

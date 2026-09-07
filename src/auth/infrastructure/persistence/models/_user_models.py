@@ -1,16 +1,16 @@
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, String, Uuid
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.auth.domain.entities._user_role import UserRole
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 class User(Model):
     __tablename__ = "users"
 
-    name: Mapped[str] = mapped_column(String(50), index=True)
+    name: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     dni: Mapped[str] = mapped_column(String(10), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
@@ -25,4 +25,14 @@ class User(Model):
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
+    )
+
+    event_links: Mapped[list["ScheduledEventParticipant"]] = relationship(  # type: ignore  # noqa: F821
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    events: Mapped[list["ScheduledEvent"]] = relationship(  # type: ignore  # noqa: F821
+        secondary="scheduled_event_participants",
+        back_populates="participants",
     )

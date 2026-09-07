@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from src.common.infrastructure.persistence.models._base import Model
+from src.common.infrastructure.persistence.models import Model
 
 # ── 2.2 Model base updated_at ────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ class TestModelUpdatedAt:
         """Model base should define an updated_at attribute."""
         # Will pass once updated_at is added to the Model class
         assert hasattr(Model, "updated_at"), (
-            "Model must have updated_at attribute — add it to src/common/infrastructure/persistence/models/_base.py"
+            "Model must have updated_at attribute — add it to src/common/infrastructure/persistence/models/base.py"
         )
 
     def test_created_at_and_updated_at_are_distinct(self) -> None:

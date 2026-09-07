@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from src.common.domain.repositories.audit_repository_port import IAuditRepository
-from src.common.infrastructure.persistence.models._audit_log_model import AuditLog
+from src.common.infrastructure.persistence.models import AuditLog
 from src.common.utils.date_utils import get_current_datetime
 
 
@@ -79,7 +79,7 @@ class AuditRepository(IAuditRepository):
         if not self._queue:
             return
 
-        stmt = insert(AuditLog.__table__).values(self._queue)  # type: ignore[arg-type]
+        stmt = insert(AuditLog.__table__).values(self._queue)  # type: ignore
         await connection.execute(stmt)
         self._queue.clear()
 

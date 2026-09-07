@@ -10,8 +10,7 @@ from src.cattle.domain.value_objects.animal_protocol_value_object import (
     AnimalProtocolListQueryParamsValueObject,
     AnimalProtocolUpdateValueObject,
 )
-from src.cattle.infrastructure.persistence.models import AnimalType
-from src.cattle.infrastructure.persistence.models._animal_models import Animal, AnimalProtocols
+from src.cattle.infrastructure.persistence.models import Animal, AnimalProtocols, AnimalType
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -49,6 +48,30 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
                 AnimalType.name.label("animal_type_name"),
             )
             .where(AnimalProtocols.id == id)
+            .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
+            .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
+        )
+        result = await self.db.execute(query)
+        protocol = result.mappings().one_or_none()
+        return self._build_animal_protocol_entity(protocol) if protocol else None
+
+    async def get_by_animal_id(self, animal_id: UUID) -> AnimalProtocolEntity | None:
+        query = self._filter_tenant(
+            select(
+                *AnimalProtocols.__table__.columns,
+                Animal.id.label("animal_id"),
+                Animal.date_of_birth.label("animal_date_of_birth"),
+                Animal.initial_weight.label("animal_initial_weight"),
+                Animal.status.label("animal_status"),
+                Animal.breed.label("animal_breed"),
+                Animal.caravana.label("animal_caravana"),
+                Animal.initial_weight_date.label("animal_initial_weight_date"),
+                Animal.last_weight.label("animal_last_weight"),
+                Animal.tag.label("animal_tag"),
+                AnimalType.id.label("animal_type_id"),
+                AnimalType.name.label("animal_type_name"),
+            )
+            .where(AnimalProtocols.animal_id == animal_id)
             .outerjoin(Animal, AnimalProtocols.animal_id == Animal.id)
             .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
         )
@@ -118,7 +141,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
             tenant_id=self._tenant_id,
             user_id=user_id,
         )
-        return entity  # type: ignore[return-value]
+        return entity  # type: ignore
 
     async def update_data(
         self,
@@ -127,13 +150,13 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
     ) -> AnimalProtocolEntity:
         old_row = await self.db.execute(self._filter_tenant(select(AnimalProtocols.__table__).where(AnimalProtocols.id == id)))
         old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
-        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET and k != "user_id"}
         kws["updated_at"] = func.now()
         query = self._filter_tenant(update(AnimalProtocols).where(AnimalProtocols.id == id).values(**kws))
         await self.db.execute(query)
         entity = await self.get_by_id(id)
         self._audit_update("animal_protocol", id, old_values, vars(data))
-        return entity  # type: ignore[return-value]
+        return entity  # type: ignore
 
     async def delete(self, id: UUID) -> None:
         old_row = await self.db.execute(self._filter_tenant(select(AnimalProtocols.__table__).where(AnimalProtocols.id == id)))

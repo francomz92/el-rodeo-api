@@ -91,6 +91,7 @@ class TestSubscription:
             plan_id=plan_id,
             status=SubscriptionStatus.ACTIVE,
             current_period_start=now,
+            current_period_end=now + timedelta(days=30),
             metadata=metadata,
         )
         assert sub.metadata == metadata

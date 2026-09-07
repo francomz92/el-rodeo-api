@@ -1,4 +1,4 @@
-from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
+from src.cattle.domain.entities.animal_entity import AnimalTypeEntity  # TODO: import from its own module when extracted
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.services.animal_type_services.list_animal_type_service import ListAnimalTypeService
 from src.cattle.domain.value_objects.animal_type_value_object import AnimalTypeListQueryParamsValueObject

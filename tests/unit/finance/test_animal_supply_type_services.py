@@ -10,7 +10,7 @@ from tests.factories import (
     make_supply_type_update,
 )
 
-from src.common.domain.exceptions import BusinessValidationError, ConflictError, NotFoundError
+from src.common.domain.exceptions import ConflictError, NotFoundError
 from src.finance.domain.services.animal_supply_type_services.create_animal_supply_type_service import (
     CreateAnimalSupplyTypeService,
 )
@@ -88,7 +88,7 @@ class TestGetSupplyTypeService:
         repo = AsyncMock()
         repo.exists.return_value = False
 
-        with pytest.raises(BusinessValidationError):
+        with pytest.raises(NotFoundError):
             await self.service.validate_exists(
                 UUID("00000000-0000-0000-0000-000000000001"),
                 repo,
@@ -174,12 +174,12 @@ class TestUpdateAnimalSupplyTypeService:
         data = make_supply_type_update()
         expected = make_supply_type_entity(id=type_id)
         repo = AsyncMock()
-        repo.update.return_value = expected
+        repo.update_data.return_value = expected
 
         result = await self.service.update_supply_type(type_id, data, repo)
 
         assert result == expected
-        repo.update.assert_awaited_once_with(type_id, data)
+        repo.update_data.assert_awaited_once_with(type_id, data)
 
 
 class TestDeleteAnimalSupplyTypeService:

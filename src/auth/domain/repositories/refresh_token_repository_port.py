@@ -27,8 +27,8 @@ class IRefreshTokenRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def revoke_token(self, token_id: UUID) -> None:
-        """Revoke a single token by its ID."""
+    async def revoke_token(self, token: RefreshTokenEntity) -> None:
+        """Revoke a single token."""
         raise NotImplementedError
 
     @abstractmethod

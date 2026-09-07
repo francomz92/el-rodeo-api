@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from src.common.domain.exceptions import ConflictError, NotFoundError
+from src.common.domain.types import Sentinel
 from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
 from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 from src.finance.domain.value_objects.animal_supply_type_value_objects import (
@@ -23,6 +24,8 @@ class UpdateAnimalSupplyTypeService:
         data: AnimalSupplyTypeUpdateValueObject,
         repository: ISupplyTypesRepository,
     ) -> None:
+        if data.name is Sentinel.UNSET:
+            return
         exists = await repository.get_by_name(data.name)
         if exists:
             raise ConflictError("Ya existe un tipo de suministro con ese nombre.")
@@ -33,4 +36,4 @@ class UpdateAnimalSupplyTypeService:
         data: AnimalSupplyTypeUpdateValueObject,
         repository: ISupplyTypesRepository,
     ) -> SupplyTypeEntity:
-        return await repository.update(id, data)
+        return await repository.update_data(id, data)

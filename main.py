@@ -9,7 +9,7 @@ from src.common.infrastructure.core import settings
 from src.common.infrastructure.core.app import configure_app
 from src.common.infrastructure.persistence.connections.db import engine
 from src.common.infrastructure.persistence.connections.redis import _redis_client
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 @asynccontextmanager

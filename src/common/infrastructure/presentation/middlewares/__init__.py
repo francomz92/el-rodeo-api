@@ -2,20 +2,16 @@ from fastapi import FastAPI
 
 from src.common.infrastructure.core import settings
 
-from .body_size_limit import BodySizeLimitMiddleware
+from .body_size_limit import configure_body_size_limit
 from .compresion import configure_compression_body
-from .cors import configure_cors
-from .rate_limiter import configure_rate_limiter
-from .security_headers import SecurityHeadersMiddleware
-from .trusted_host import configure_trusted_host
 
 # Observability middleware — only added when OBSERVABILITY_MIDDLEWARE_ENABLED=True
-try:
-    from .correlation_id import CorrelationIdMiddleware  # type: ignore[import-untyped]
-    from .request_logging import RequestLoggingMiddleware  # type: ignore[import-untyped]
-except ImportError:
-    CorrelationIdMiddleware = None  # type: ignore
-    RequestLoggingMiddleware = None  # type: ignore
+from .correlation_id import configure_correlation_id_middleware
+from .cors import configure_cors
+from .rate_limiter import configure_rate_limiter
+from .request_logging import configure_request_logging_middleware
+from .security_headers import configure_security_headers
+from .trusted_host import configure_trusted_host
 
 
 def configure_middlewares(app: FastAPI):
@@ -35,24 +31,24 @@ def configure_middlewares(app: FastAPI):
     configure_trusted_host(app)
 
     # 2. Body Size Limit — rejects oversized payloads before body is read
-    app.add_middleware(BodySizeLimitMiddleware)  # type: ignore[arg-type]
+    configure_body_size_limit(app)
 
     # 3. CORS — handles OPTIONS preflight
     configure_cors(app)
 
     # 4. Rate Limiter — slowapi middleware (registered inside configure_rate_limiter)
-    configure_rate_limiter(app, settings)
+    configure_rate_limiter(app)
 
     # 5. Security Headers — ASGI-level, runs after Rate Limiter
-    app.add_middleware(SecurityHeadersMiddleware, settings=settings)  # type: ignore[arg-type]
+    configure_security_headers(app)
 
     # 6. Correlation ID — ASGI-level, runs after Security Headers
-    if settings.OBSERVABILITY_MIDDLEWARE_ENABLED and CorrelationIdMiddleware is not None:
-        app.add_middleware(CorrelationIdMiddleware)  # type: ignore[arg-type]
+    if settings.OBSERVABILITY_MIDDLEWARE_ENABLED:
+        configure_correlation_id_middleware(app)
 
     # 7. Request Logging — ASGI-level, runs after Correlation ID
-    if settings.OBSERVABILITY_MIDDLEWARE_ENABLED and RequestLoggingMiddleware is not None:
-        app.add_middleware(RequestLoggingMiddleware)  # type: ignore[arg-type]
+    if settings.OBSERVABILITY_MIDDLEWARE_ENABLED:
+        configure_request_logging_middleware(app)
 
     # 8. GZip — compression (innermost)
     configure_compression_body(app)

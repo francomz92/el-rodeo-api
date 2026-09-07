@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Quota:
+class QuotaEntity:
     name: str
     limit: int
     description: str = ""

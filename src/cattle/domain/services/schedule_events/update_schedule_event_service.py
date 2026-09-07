@@ -1,34 +1,20 @@
-from datetime import date
-from typing import Any
 from uuid import UUID
 
+from src.cattle.domain.entities.schedule_events_entity import ScheduleEventEntity
 from src.cattle.domain.repositories.schedule_events_repository_port import IScheduleEventRepository
+from src.cattle.domain.value_objects.schedule_event_value_object import ScheduleEventUpdateValueObject
 from src.common.domain.exceptions import BusinessValidationError, ConflictError, NotFoundError
-from src.common.utils.date_utils import get_current_datetime
 
 
 class UpdateScheduleEventService:
-    def validate_event_date(
-        self,
-        event_date: date | Any,
-    ):
-        if not isinstance(event_date, date):
+    def validate_event_date(self, data: ScheduleEventUpdateValueObject):
+        if data.end < data.start:
             raise BusinessValidationError(
-                message="La fecha del evento no es válida.",
+                message="Fecha/hora de fin del evento inválido.",
                 details=[
                     {
-                        "field": "event_date",
-                        "message": "La fecha del evento debe ser una fecha válida.",
-                    }
-                ],
-            )
-        if event_date < get_current_datetime().date():
-            raise BusinessValidationError(
-                message="La fecha del evento ya ha pasado.",
-                details=[
-                    {
-                        "field": "event_date",
-                        "message": "La fecha del evento no puede ser menor a la fecha actual.",
+                        "field": "end",
+                        "message": "El fin del evento no puede ser anterior al inicio.",
                     }
                 ],
             )
@@ -47,7 +33,9 @@ class UpdateScheduleEventService:
     async def update_event_data(
         self,
         id: UUID,
-        data,
+        data: ScheduleEventUpdateValueObject,
         repository: IScheduleEventRepository,
-    ):
-        return await repository.update_data(id, data)
+    ) -> ScheduleEventEntity:
+        event = await repository.update_data(id, data)
+        await repository.update_participants(event.id, data.participants)
+        return event

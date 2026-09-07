@@ -1,5 +1,6 @@
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.repositories.users_repository_port import IUserRepository
+from src.auth.domain.value_objects.user_value_object import UserCreationValueObject
 from src.common.domain.exceptions import DuplicatedError
 from src.common.domain.services.security import ISecurityService
 
@@ -17,7 +18,7 @@ class RegisterUserService:
 
     async def create_new(
         self,
-        data,
+        data: UserCreationValueObject,
         security_service: ISecurityService,
         repository: IUserRepository,
     ) -> tuple[UserEntity, str]:

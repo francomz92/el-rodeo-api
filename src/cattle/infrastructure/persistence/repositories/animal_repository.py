@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
+from sqlalchemy import delete, exists, func, insert, select, update
 
 from src.cattle.domain.constants.animal import AnimalStatus
-from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.cattle.domain.repositories.animals_repository_port import (
     AnimalCreateValueObject,
     AnimalsListQueryParamsValueObject,
@@ -19,6 +19,8 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
+
+from ._mappers import build_animal_with_type
 
 
 class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -47,6 +49,7 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
     async def get_by_id(
         self,
         id: UUID,
+        lock: bool = False,
     ) -> AnimalEntity | None:
         query = self._filter_tenant(
             select(
@@ -56,9 +59,11 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
             .where(Animal.id == id)
             .outerjoin(AnimalType, Animal.type_id == AnimalType.id)
         )
+        if lock:
+            query = query.with_for_update()
         result = await self.db.execute(query)
         animal_db = result.mappings().one_or_none()
-        return self._build_animal_with_type(animal_db) if animal_db else None
+        return build_animal_with_type(animal_db) if animal_db else None
 
     async def get_by_caravana(self, caravana: str) -> AnimalEntity | None:
         query = self._filter_tenant(
@@ -71,7 +76,7 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
         )
         result = await self.db.execute(query)
         animal_db = result.mappings().one_or_none()
-        return self._build_animal_with_type(animal_db) if animal_db else None
+        return build_animal_with_type(animal_db) if animal_db else None
 
     async def list_for_user(
         self,
@@ -97,7 +102,15 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
         base_join = Animal.type_id == AnimalType.id
 
         # ── Count total (filter-wide, not cursor-sliced) ────────────
-        count_query = self._filter_tenant(select(func.count()).select_from(Animal).outerjoin(AnimalType, base_join).where(*conditions))
+        query = (
+            select(
+                func.count(),
+            )
+            .select_from(Animal)
+            .outerjoin(AnimalType, base_join)
+            .where(*conditions)
+        )
+        count_query = self._filter_tenant(query)
         total_result = await self.db.execute(count_query)
         total = total_result.scalar_one()
 
@@ -109,7 +122,7 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
             query = self._filter_tenant(
                 select(*base_columns)
                 .where(*conditions, Animal.id > cursor_id)
-                .order_by(Animal.id.asc())
+                .order_by(order_by)
                 .limit(limit + 1)  # fetch one extra to detect next page
                 .outerjoin(AnimalType, base_join)
             )
@@ -129,7 +142,7 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
             # offset mode: only compute has_next if caller requested it
             has_next = False
 
-        items = [self._build_animal_with_type(animal_data) for animal_data in animal_list_db]
+        items = [build_animal_with_type(animal_data) for animal_data in animal_list_db]
         return items, total, has_next
 
     async def create(self, data: AnimalCreateValueObject) -> AnimalEntity:
@@ -150,19 +163,19 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
             vars(data),
             tenant_id=self._tenant_id,
         )
-        return new_entity  # type: ignore[return-value]
+        return new_entity  # type: ignore
 
     async def update_data(self, id: UUID, data: AnimalUpdateValueObject) -> AnimalEntity:
         # Capture old values before update
         old_row = await self.db.execute(self._filter_tenant(select(Animal.__table__).where(Animal.id == id)))
         old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
-        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
+        kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET and k != "user_id"}
         kws["updated_at"] = func.now()
         query = self._filter_tenant(update(Animal).where(Animal.id == id).values(**kws))
         await self.db.execute(query)
         new_entity = await self.get_by_id(id=id)
-        self._audit_update("animal", id, old_values, vars(data))
-        return new_entity  # type: ignore[return-value]
+        self._audit_update("animal", id, old_values, kws)
+        return new_entity  # type: ignore
 
     async def update_status(self, id: UUID, status: AnimalStatus):
         old_row = await self.db.execute(self._filter_tenant(select(Animal.__table__).where(Animal.id == id)))
@@ -184,23 +197,3 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
         query = self._filter_tenant(delete(Animal).where(Animal.id == id))
         await self.db.execute(query)
         self._audit_delete("animal", id, old_values)
-
-    def _build_animal_with_type(self, animal_data: RowMapping) -> AnimalEntity:
-        return AnimalEntity(
-            id=animal_data["id"],
-            tenant_id=animal_data["tenant_id"],
-            caravana=animal_data["caravana"],
-            tag=animal_data["tag"],
-            date_of_birth=animal_data["date_of_birth"],
-            initial_weight=animal_data["initial_weight"],
-            initial_weight_date=animal_data["initial_weight_date"],
-            last_weight=animal_data["last_weight"],
-            breed=animal_data["breed"],
-            status=animal_data["status"],
-            type=AnimalTypeEntity(
-                id=animal_data["type_id"],
-                name=animal_data["type_name"],
-            )
-            if animal_data["type_id"]
-            else None,
-        )

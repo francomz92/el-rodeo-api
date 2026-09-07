@@ -4,7 +4,7 @@ from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.common.application.ports.uow import IUoW
-from src.common.domain.exceptions import NotPermissionError
+from src.common.domain.exceptions import NotFoundError, NotPermissionError
 from src.common.infrastructure.adapters.http.output.cursor_page import encode_cursor
 
 
@@ -46,7 +46,8 @@ class ListUsersCase:
 
         async with self.uow as uow:
             repo: IUserRepository = uow.get_repository(IUserRepository)
-            assert current_user.tenant_id is not None
+            if current_user.tenant_id is None:
+                raise NotFoundError("Tenant no encontrado")
             items, total, has_next = await repo.list(
                 tenant_id=current_user.tenant_id,
                 page=page,
@@ -59,6 +60,6 @@ class ListUsersCase:
         next_cursor: str | None = None
         if cursor is not None and has_next and items:
             last = items[-1]
-            next_cursor = encode_cursor(str(last.id))
+            next_cursor = encode_cursor(str(last.id), sort_value=last.created_at.isoformat())
 
         return items, total, next_cursor

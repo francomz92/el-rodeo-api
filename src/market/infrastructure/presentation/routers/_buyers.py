@@ -58,11 +58,10 @@ async def create_buyer(
 )
 async def update_buyer(
     id: UUID,
-    current_user: GetCurrentUser,
     data: BuyerUpdateSchema,
     update_use_case: GetUpdateBuyerCase,
 ):
-    payload = BuyerUpdateValueObject(**data.model_dump())
+    payload = BuyerUpdateValueObject(**data.model_dump(exclude_unset=True))
     return await update_use_case.execute(
         id=id,
         data=payload,
@@ -77,10 +76,9 @@ async def update_buyer(
 )
 async def delete_buyer(
     id: UUID,
-    current_user: GetCurrentUser,
     delete_use_case: GetDeleteBuyerCase,
 ):
-    return await delete_use_case.execute(
+    await delete_use_case.execute(
         id=id,
     )
 
@@ -93,7 +91,6 @@ async def delete_buyer(
 )
 async def get_buyer(
     id: UUID,
-    current_user: GetCurrentUser,
     get_use_case: GetObtainBuyerCase,
 ):
     return await get_use_case.execute(
@@ -119,6 +116,7 @@ async def list_buyers(
                 "limit",
                 "offset",
                 "order_by",
+                "cursor",
             },
         )
     )
@@ -127,4 +125,5 @@ async def list_buyers(
         limit=filters.limit,
         offset=filters.offset,
         order_by=filters.order_by,
+        user_id=current_user.id,
     )

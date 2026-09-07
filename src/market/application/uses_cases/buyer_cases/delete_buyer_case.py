@@ -13,9 +13,5 @@ class DeleteBuyerCase:
     async def execute(self, id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
-            await self.service.validate_buyer_exists(
-                id=id,
-                repository=repository,
-            )
             await self.service.delete_buyer(id, repository)
             await uow.commit()

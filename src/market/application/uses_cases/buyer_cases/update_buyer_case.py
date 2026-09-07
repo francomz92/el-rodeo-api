@@ -19,10 +19,6 @@ class UpdateBuyerCase:
     ) -> BuyerEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
-            await self.service.validate_buyer_exists(
-                id=id,
-                repository=repository,
-            )
             result = await self.service.update_buyer(
                 repository=repository,
                 id=id,

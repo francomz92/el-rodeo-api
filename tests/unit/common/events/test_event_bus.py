@@ -33,7 +33,8 @@ class TestInMemoryEventBus:
     def setup_method(self) -> None:
         self.bus = InMemoryEventBus()
 
-    def test_register_adds_handler_for_event_type(self) -> None:
+    @pytest.mark.asyncio
+    async def test_register_adds_handler_for_event_type(self) -> None:
         """After registering, the handler is stored for that event type."""
         calls: list[DomainEvent] = []
 
@@ -45,12 +46,13 @@ class TestInMemoryEventBus:
             event_type="test.event",
         )
         self.bus.register("test.event", handler)
-        self.bus.dispatch(event)
+        await self.bus.dispatch(event)
 
         assert len(calls) == 1
         assert calls[0] is event
 
-    def test_dispatch_calls_all_handlers_for_event_type(self) -> None:
+    @pytest.mark.asyncio
+    async def test_dispatch_calls_all_handlers_for_event_type(self) -> None:
         """Multiple handlers for the same event type are all invoked."""
         results: list[str] = []
 
@@ -66,11 +68,12 @@ class TestInMemoryEventBus:
         )
         self.bus.register("test.event", handler_a)
         self.bus.register("test.event", handler_b)
-        self.bus.dispatch(event)
+        await self.bus.dispatch(event)
 
         assert results == ["a", "b"]
 
-    def test_handler_exception_does_not_block_other_handlers(self) -> None:
+    @pytest.mark.asyncio
+    async def test_handler_exception_does_not_block_other_handlers(self) -> None:
         """When a handler raises, remaining handlers still execute."""
         results: list[str] = []
 
@@ -87,18 +90,19 @@ class TestInMemoryEventBus:
         )
         self.bus.register("test.event", failing_handler)
         self.bus.register("test.event", good_handler)
-        self.bus.dispatch(event)
+        await self.bus.dispatch(event)
 
         assert results == ["ok"]
 
-    def test_dispatch_does_not_call_handlers_for_other_types(self) -> None:
+    @pytest.mark.asyncio
+    async def test_dispatch_does_not_call_handlers_for_other_types(self) -> None:
         """Handlers are only called for their registered event type."""
         calls: list[DomainEvent] = []
 
         def handler(event: DomainEvent) -> None:
             calls.append(event)
 
-        event_a = DomainEvent(
+        DomainEvent(
             aggregate_id=UUID("00000000-0000-0000-0000-000000000001"),
             event_type="type_a",
         )
@@ -107,11 +111,12 @@ class TestInMemoryEventBus:
             event_type="type_b",
         )
         self.bus.register("type_a", handler)
-        self.bus.dispatch(event_b)
+        await self.bus.dispatch(event_b)
 
         assert len(calls) == 0
 
-    def test_dispatch_calls_handlers_in_registration_order(self) -> None:
+    @pytest.mark.asyncio
+    async def test_dispatch_calls_handlers_in_registration_order(self) -> None:
         """Handlers execute in the order they were registered."""
         order: list[int] = []
 
@@ -131,15 +136,16 @@ class TestInMemoryEventBus:
         self.bus.register("test.event", handler_1)
         self.bus.register("test.event", handler_2)
         self.bus.register("test.event", handler_3)
-        self.bus.dispatch(event)
+        await self.bus.dispatch(event)
 
         assert order == [1, 2, 3]
 
-    def test_dispatch_for_unregistered_type_does_nothing(self) -> None:
+    @pytest.mark.asyncio
+    async def test_dispatch_for_unregistered_type_does_nothing(self) -> None:
         """Dispatching an event with no registered handlers is a no-op."""
         event = DomainEvent(
             aggregate_id=UUID("00000000-0000-0000-0000-000000000001"),
             event_type="unregistered",
         )
         # Should not raise
-        self.bus.dispatch(event)
+        await self.bus.dispatch(event)

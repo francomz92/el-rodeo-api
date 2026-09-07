@@ -7,7 +7,7 @@ from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.value_objects.user_value_object import UserUpdateValueObject
 from src.common.application.ports.uow import IUoW
-from src.common.domain.exceptions import DomainError, NotPermissionError
+from src.common.domain.exceptions import NotFoundError, NotPermissionError
 
 
 class SoftDeleteUserCase:
@@ -28,12 +28,13 @@ class SoftDeleteUserCase:
             target_user_id: UUID of the user to deactivate.
 
         Raises:
-            DomainError: If trying to deactivate self or the last OWNER.
+            NotPermissionError: If trying to deactivate self.
             NotPermissionError: If missing permissions or cross-tenant.
+            NotFoundError: If target user not found or tenant_id is None.
         """
         # Self-deactivation guard
         if current_user.id == target_user_id:
-            raise DomainError("No puedes desactivarte a ti mismo", [])
+            raise NotPermissionError("No puedes desactivarte a ti mismo")
 
         # Role guard: must be ADMIN or higher
         if current_user.role.rank < UserRole.ADMIN.rank:
@@ -46,7 +47,7 @@ class SoftDeleteUserCase:
 
             target = await repo.get_by_id(target_user_id)
             if not target:
-                raise DomainError("Usuario no encontrado", [])
+                raise NotFoundError("Usuario no encontrado")
 
             # Cross-tenant isolation
             if target.tenant_id != current_user.tenant_id:
@@ -56,14 +57,19 @@ class SoftDeleteUserCase:
 
             # Cannot deactivate the last OWNER
             if target.role == UserRole.OWNER:
-                assert current_user.tenant_id is not None
+                if current_user.tenant_id is None:
+                    raise NotFoundError("Tenant no encontrado")
+                # NOTE: Race condition — count_owners_by_tenant and the actual
+                # deactivation are not atomic. In high-concurrency scenarios,
+                # two concurrent requests could both see owner_count > 1 and
+                # deactivate the last two owners simultaneously.
+                # Future: use advisory lock or SERIALIZABLE isolation.
                 owner_count = await repo.count_owners_by_tenant(
                     current_user.tenant_id,
                 )
                 if owner_count <= 1:
-                    raise DomainError(
+                    raise NotPermissionError(
                         "No puedes desactivar al único propietario del tenant",
-                        [],
                     )
 
             await repo.update_data(

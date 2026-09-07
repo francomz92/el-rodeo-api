@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 import src.auth.infrastructure.persistence.models  # noqa: F401
 import src.billing.infrastructure.persistence.models  # noqa: F401
 import src.cattle.infrastructure.persistence.models  # noqa: F401
-import src.common.infrastructure.persistence.models._audit_log_model  # noqa: F401
+import src.common.infrastructure.persistence.models  # noqa: F401
 import src.finance.infrastructure.persistence.models  # noqa: F401
 import src.market.infrastructure.persistence.models  # noqa: F401
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 config = context.config
 

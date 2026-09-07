@@ -11,12 +11,21 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from src.common.infrastructure.adapters.correlation import get_correlation_id
-
 
 @pytest.fixture
 def correlation_app():
-    """Create a minimal FastAPI app with the correlation middleware."""
+    """Create a minimal FastAPI app with the correlation middleware.
+
+    NOTE: Uses an inline import of ``get_correlation_id`` rather than a
+    module-level import because ``test_db.py:_fresh_db_module`` clears ALL
+    ``src.*`` modules from ``sys.modules`` during the test run.  If a
+    module-level import binds ``get_correlation_id`` from copy A of the
+    ``correlation`` module, but the middleware (imported later, inline)
+    picks up copy B, the handler reads a **different** ``ContextVar`` than
+    the middleware writes to.
+    """
+    from src.common.infrastructure.adapters.correlation import get_correlation_id
+
     app = FastAPI()
 
     @app.get("/test")

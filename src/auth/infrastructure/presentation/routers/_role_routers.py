@@ -5,7 +5,7 @@ Only OWNER-level users can access these endpoints.
 
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
 
 from src.auth.domain.entities import UserRole
@@ -32,6 +32,9 @@ from src.auth.infrastructure.presentation.dependencies.user_dependencies import 
 from src.common.infrastructure.adapters.http.output.cursor_page import (
     CursorPage,
     encode_cursor,
+)
+from src.common.infrastructure.adapters.http.output.messages import (
+    SimpleMessageSchema,
 )
 
 role_router = APIRouter()
@@ -89,7 +92,7 @@ async def list_users(
     search: str | None = Query(default=None, description="Search by name or email"),
     role: UserRole | None = Query(default=None, description="Filter by role"),
     cursor: str | None = Query(default=None, description="Cursor for cursor-based pagination"),
-) -> Response:
+):
     """List users for the current tenant with pagination and optional filters."""
     users, total, next_cursor = await list_users_case.execute(
         current_user=current_user,
@@ -117,7 +120,7 @@ async def list_users(
         ]
         page_data = CursorPage[UserSchema](
             items=user_items,
-            cursor=encode_cursor(str(user_items[0].id)) if user_items else None,
+            cursor=encode_cursor(str(user_items[0].id), sort_value=user_items[0].created_at.isoformat()) if user_items else None,
             next_cursor=next_cursor,
             total=total,
         )
@@ -181,16 +184,17 @@ async def get_user_by_id(
     status_code=status.HTTP_200_OK,
     summary="Deactivate a user (admin)",
     description="Requires ADMIN or higher role. Cannot deactivate self or last OWNER.",
+    response_model=SimpleMessageSchema,
     dependencies=[require_role(UserRole.ADMIN)],
 )
 async def deactivate_user(
     user_id: UUID,
     current_user: GetCurrentUser,
     soft_delete_user_case: GetSoftDeleteUserCaseDep,
-) -> dict:
+) -> SimpleMessageSchema:
     """Soft-delete a user by setting is_active=False."""
     await soft_delete_user_case.execute(
         current_user=current_user,
         target_user_id=user_id,
     )
-    return {"message": "Usuario desactivado exitosamente"}
+    return SimpleMessageSchema(message="Usuario desactivado exitosamente")

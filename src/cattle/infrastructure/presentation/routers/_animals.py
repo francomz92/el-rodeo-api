@@ -103,7 +103,7 @@ async def delete_animal(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List all animals by current user authenticated in the database",
-    response_model=list[AnimalSchema],
+    response_model=CursorPage[AnimalSchema] | list[AnimalSchema],
 )
 async def list_animals_user(
     current_user: GetCurrentUser,
@@ -124,19 +124,19 @@ async def list_animals_user(
         cursor=query_params.cursor,
     )
 
-    if query_params.cursor is not None:
-        # Return cursor-paginated response (bypasses response_model validation)
-        validated = [AnimalSchema.model_validate(a) for a in items]
-        page = CursorPage[AnimalSchema](
-            items=validated,
-            cursor=encode_cursor(str(validated[0].id)) if validated else None,
-            next_cursor=next_cursor,
-            total=total,
-        )
-        return JSONResponse(
-            content=page.model_dump(mode="json"),
-            status_code=status.HTTP_200_OK,
-        )
+    # if query_params.cursor is not None:
+    # Return cursor-paginated response (bypasses response_model validation)
+    validated = [AnimalSchema.model_validate(a) for a in items]
+    page = CursorPage[AnimalSchema](
+        items=validated,
+        cursor=encode_cursor(str(validated[0].id)) if validated else None,
+        next_cursor=next_cursor,
+        total=total,
+    )
+    return JSONResponse(
+        content=page.model_dump(mode="json"),
+        status_code=status.HTTP_200_OK,
+    )
 
     # Legacy offset/limit response — validated against response_model
     return [AnimalSchema.model_validate(a) for a in items]

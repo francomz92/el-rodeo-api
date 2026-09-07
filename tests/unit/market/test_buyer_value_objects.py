@@ -19,14 +19,14 @@ class TestBuyerCreateValueObject:
             user_id=any_uuid,
             name="Comprador Test",
             description="Comprador de prueba",
-            contact_number="+54 11 1234-5678",
+            contact_number="1156781234",
             contact_address="Calle Falsa 123",
         )
 
         assert vo.user_id == any_uuid
         assert vo.name == "Comprador Test"
         assert vo.description == "Comprador de prueba"
-        assert vo.contact_number == "+54 11 1234-5678"
+        assert vo.contact_number == "1156781234"
         assert vo.contact_address == "Calle Falsa 123"
 
     def test_defaults_are_empty_strings(self, any_uuid: UUID) -> None:

@@ -59,12 +59,35 @@ class IUoW(ABC):
         If any hook raises, the transaction is rolled back and the
         exception propagates.
         """
-        ...
+        raise NotImplementedError
 
+    @abstractmethod
     def add_outbox_event(self, event: DomainEvent) -> None:
         """Queue *event* for transactional outbox persistence.
 
         The event is flushed to the ``event_outbox`` table during
         ``commit()`` and later consumed by a background forwarder.
         """
-        self.outbox_events.append(event)
+        raise NotImplementedError
+
+
+class IUoWFactory(ABC):
+    """Factory that creates an IUoW with its own database session.
+
+    Use this when work needs its own session context — for example,
+    background tasks, workers, or any flow that runs outside the
+    FastAPI request lifecycle.
+
+    Usage::
+
+        uow = factory()
+        async with uow:
+            repo = uow.get_repository(IRepository)
+            ...
+            await uow.commit()
+    """
+
+    @abstractmethod
+    def __call__(self) -> IUoW:
+        """Create a new IUoW with a fresh database session."""
+        ...

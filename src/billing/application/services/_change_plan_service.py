@@ -10,12 +10,11 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from src.billing.domain.entities._plan_type import PlanType
+from src.billing.domain.entities._plan_type import PlanTypeEntity
 from src.billing.domain.entities._subscription import Subscription
 from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.billing.domain.exceptions import PlanNotChangeableError
 from src.billing.domain.repositories import IPlanRepository, ISubscriptionRepository
-from src.common.application.ports.uow import IUoW
 
 if TYPE_CHECKING:
     from src.billing.application.services._mercadopago_service import (
@@ -35,17 +34,15 @@ class ChangePlanService:
         plan_repo: IPlanRepository,
         sub_repo: ISubscriptionRepository,
         mercado_pago_service: "MercadoPagoService | None",
-        uow_factory: IUoW,
     ) -> None:
         self._plan_repo = plan_repo
         self._sub_repo = sub_repo
         self._mp_service = mercado_pago_service
-        self._uow_factory = uow_factory
 
     async def change_plan(
         self,
         tenant_id: UUID,
-        new_plan_type: PlanType,
+        new_plan_type: PlanTypeEntity,
     ) -> tuple[Subscription, str | None]:
         """Change the subscription plan for a tenant.
 
@@ -78,7 +75,7 @@ class ChangePlanService:
             raise ValueError(f"No subscription found for tenant {tenant_id}")
 
         # --- GUARD: FREE is not selectable ---
-        if new_plan_type == PlanType.FREE:
+        if new_plan_type == PlanTypeEntity.FREE:
             raise PlanNotChangeableError("FREE plan cannot be selected")
 
         # --- GUARD: TRIAL subscriptions cannot change plan ---
@@ -102,6 +99,8 @@ class ChangePlanService:
 
         # --- Load target plan ---
         new_plan = await self._plan_repo.get_by_plan_type(new_plan_type)
+        if new_plan is None:
+            raise PlanNotChangeableError(f"Plan not found: {new_plan_type.value}")
 
         # --- Upgrade: paid plan → create MP preference (don't apply yet) ---
         if new_plan.price_monthly is not None and new_plan.price_monthly.amount > Decimal("0"):

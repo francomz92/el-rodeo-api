@@ -5,16 +5,15 @@ requires a 200 OK response to every IPN request.
 """
 
 import asyncio
-import logging
 
 from fastapi import APIRouter, Header, Query, Request, Response, status
 
-from src.billing.domain.exceptions import MercadoPagoError
+from src.billing.domain.exceptions import PaymentGatewayError
 from src.billing.infrastructure.presentation.dependencies._billing_dependencies import (
     GetPaymentWebhookService,
 )
-
-logger = logging.getLogger(__name__)
+from src.common.infrastructure.presentation.middlewares.rate_limiter import rate_limit
+from src.common.utils import log
 
 webhook_router = APIRouter(prefix="/billing", tags=["Billing / Webhooks"])
 
@@ -25,6 +24,7 @@ webhook_router = APIRouter(prefix="/billing", tags=["Billing / Webhooks"])
     summary="Receive MercadoPago IPN webhook",
     description="Public endpoint for MercadoPago IPN notifications. Always returns 200 OK. Processing happens in a background task.",
 )
+@rate_limit("20/minute")
 async def mercadopago_webhook(
     request: Request,
     webhook_service: GetPaymentWebhookService,
@@ -46,12 +46,12 @@ async def mercadopago_webhook(
         x_request_id=x_request_id,
         data_id=id,
     ):
-        raise MercadoPagoError(
+        raise PaymentGatewayError(
             message="Invalid webhook x-signature",
             status_code=401,
         )
 
-    asyncio.create_task(
+    task = asyncio.create_task(
         webhook_service.handle_ipn(
             topic=topic,
             id=id,
@@ -59,4 +59,13 @@ async def mercadopago_webhook(
             x_request_id=x_request_id,
         )
     )
+
+    def _log_task_error(t: asyncio.Task) -> None:
+        if t.cancelled():
+            return
+        exc = t.exception()
+        if exc:
+            log.error("Webhook IPN task failed", exc_info=exc)
+
+    task.add_done_callback(_log_task_error)
     return Response(status_code=200)

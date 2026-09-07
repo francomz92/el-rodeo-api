@@ -3,7 +3,12 @@ from uuid import UUID
 from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories._auditable_mixin import (
+    AuditableRepositoryMixin,
+)
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 from src.finance.domain.entities.animal_supplies import SupplyTypeEntity
 from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 from src.finance.domain.value_objects.animal_supply_type_value_objects import (
@@ -14,7 +19,11 @@ from src.finance.domain.value_objects.animal_supply_type_value_objects import (
 from src.finance.infrastructure.persistence.models import AnimalSupplyType
 
 
-class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
+class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    @property
+    def _model(self) -> type:
+        return AnimalSupplyType
+
     async def exists(self, id: UUID) -> bool:
         query = (
             exists(AnimalSupplyType)
@@ -79,9 +88,13 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
         query = insert(AnimalSupplyType).values(**kws).returning(AnimalSupplyType.id)
         result = await self.db.execute(query)
         supply_type_id = result.scalar_one()
-        return await self.get_by_id(supply_type_id)  # type: ignore
+        new_entity = await self.get_by_id(supply_type_id)
+        self._audit_create("supply_type", supply_type_id, kws)
+        return new_entity  # type: ignore
 
-    async def update(self, id: UUID, data: AnimalSupplyTypeUpdateValueObject) -> SupplyTypeEntity:
+    async def update_data(self, id: UUID, data: AnimalSupplyTypeUpdateValueObject) -> SupplyTypeEntity:
+        old_row = await self.db.execute(select(AnimalSupplyType.__table__).where(AnimalSupplyType.id == id))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
         query = (
             update(AnimalSupplyType)
@@ -91,11 +104,16 @@ class SupplyTypesRepository(ISupplyTypesRepository, SessionMixin):
             .values(**kws)
         )
         await self.db.execute(query)
-        return await self.get_by_id(id)  # type: ignore
+        new_entity = await self.get_by_id(id)
+        self._audit_update("supply_type", id, old_values, kws)
+        return new_entity  # type: ignore
 
     async def delete(self, id: UUID) -> None:
+        old_row = await self.db.execute(select(AnimalSupplyType.__table__).where(AnimalSupplyType.id == id))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
         query = delete(AnimalSupplyType).where(AnimalSupplyType.id == id)
         await self.db.execute(query)
+        self._audit_delete("supply_type", id, old_values)
 
     def _build_supply_type(self, supply_data: RowMapping) -> SupplyTypeEntity:
         return SupplyTypeEntity(

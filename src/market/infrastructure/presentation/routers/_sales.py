@@ -11,10 +11,12 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
 from src.market.domain.value_objects.sale_value_objects import (
     SaleCreateValueObject,
     SaleListQueryParamsValueObject,
+    SaleUpdateValueObject,
 )
 from src.market.infrastructure.adapters.http.input.sale_schemas import (
     SaleCreateSchema,
     SaleListQueryParamsSchema,
+    SaleUpdateSchema,
 )
 from src.market.infrastructure.adapters.http.output.sale_schemas import SaleSchema
 from src.market.infrastructure.presentation.dependencies.sale_dependencies import (
@@ -22,6 +24,7 @@ from src.market.infrastructure.presentation.dependencies.sale_dependencies impor
     GetDeleteSaleCase,
     GetListSaleCase,
     GetObtainSaleCase,
+    GetUpdateSaleCase,
 )
 
 sale_router = APIRouter(
@@ -50,6 +53,25 @@ async def create_sale(
     return await create_use_case.execute(data=payload)
 
 
+@sale_router.put(
+    path="/{id}",
+    status_code=status.HTTP_200_OK,
+    summary="Update a sale in the database",
+    response_model=SaleSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
+)
+async def update_sale(
+    id: UUID,
+    data: SaleUpdateSchema,
+    update_use_case: GetUpdateSaleCase,
+):
+    payload = SaleUpdateValueObject(**data.model_dump(exclude_unset=True))
+    return await update_use_case.execute(
+        id=id,
+        data=payload,
+    )
+
+
 @sale_router.delete(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -58,10 +80,9 @@ async def create_sale(
 )
 async def delete_sale(
     id: UUID,
-    current_user: GetCurrentUser,
     delete_use_case: GetDeleteSaleCase,
 ):
-    return await delete_use_case.execute(
+    await delete_use_case.execute(
         id=id,
     )
 
@@ -74,7 +95,6 @@ async def delete_sale(
 )
 async def get_sale(
     id: UUID,
-    current_user: GetCurrentUser,
     get_use_case: GetObtainSaleCase,
 ):
     return await get_use_case.execute(
@@ -100,6 +120,7 @@ async def list_sale(
                 "limit",
                 "offset",
                 "order_by",
+                "cursor",
             },
         )
     )
@@ -108,4 +129,5 @@ async def list_sale(
         limit=filters.limit,
         offset=filters.offset,
         order_by=filters.order_by,
+        user_id=current_user.id,
     )

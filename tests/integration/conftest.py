@@ -18,7 +18,6 @@ from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
-import sqlalchemy as sa
 from faker import Faker
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -103,43 +102,7 @@ async def test_engine():
         # Drop first to clean up stale data from crashed runs
         await conn.run_sync(Model.metadata.drop_all)
         await conn.run_sync(Model.metadata.create_all)
-        # Create audit_log monthly partitions (not created by ORM metadata)
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_past PARTITION OF audit_log
-            FOR VALUES FROM (MINVALUE) TO ('2026-07-01')
-        """)
-        )
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_2026_08 PARTITION OF audit_log
-            FOR VALUES FROM ('2026-08-01') TO ('2026-09-01')
-        """)
-        )
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_2026_09 PARTITION OF audit_log
-            FOR VALUES FROM ('2026-09-01') TO ('2026-10-01')
-        """)
-        )
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_2026_10 PARTITION OF audit_log
-            FOR VALUES FROM ('2026-10-01') TO ('2026-11-01')
-        """)
-        )
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_2026_11 PARTITION OF audit_log
-            FOR VALUES FROM ('2026-11-01') TO ('2026-12-01')
-        """)
-        )
-        await conn.execute(
-            sa.text("""
-            CREATE TABLE IF NOT EXISTS audit_log_2026_12 PARTITION OF audit_log
-            FOR VALUES FROM ('2026-12-01') TO ('2027-01-01')
-        """)
-        )
+        # audit_log is no longer partitioned — no manual partition creation needed
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Model.metadata.drop_all)

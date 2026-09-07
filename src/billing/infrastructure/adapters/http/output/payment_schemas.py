@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -17,6 +16,10 @@ class SubscriptionSchema(BaseModel):
     status: str
     current_period_start: datetime
     current_period_end: datetime | None = None
+    next_billing_date: datetime | None = None
+    billing_date: datetime | None = None
+    gateway_card_id: str | None = None
+    gateway_subscription_id: str | None = None
 
 
 class PaymentSchema(BaseModel):
@@ -30,15 +33,3 @@ class PaymentSchema(BaseModel):
     payment_method: str | None = None
     paid_at: datetime | None = None
     created_at: datetime
-
-
-T = TypeVar("T")
-
-
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Generic paginated response wrapper."""
-
-    items: list[T]
-    total: int
-    page: int
-    per_page: int

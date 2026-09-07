@@ -6,6 +6,7 @@ from src.market.domain.entities.sales import SaleEntity
 from src.market.domain.value_objects.sale_value_objects import (
     SaleCreateValueObject,
     SaleListQueryParamsValueObject,
+    SaleUpdateValueObject,
 )
 
 
@@ -28,7 +29,10 @@ class ISalesRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
+        user_id: UUID | None = None,
     ) -> list[SaleEntity]:
+        # NOTE: user_id is accepted for API/documentation purposes.
+        #       The infra implementation may not enforce it as a filter yet.
         raise NotImplementedError
 
     @abstractmethod
@@ -36,5 +40,13 @@ class ISalesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: UUID) -> None:
+    async def update_data(
+        self,
+        id: UUID,
+        data: SaleUpdateValueObject,
+    ) -> SaleEntity | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, id: UUID) -> bool:
         raise NotImplementedError

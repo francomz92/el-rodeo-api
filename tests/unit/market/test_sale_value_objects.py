@@ -5,6 +5,7 @@ value objects without any infrastructure dependency.
 """
 
 from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
 from src.common.domain.types import Sentinel
@@ -115,9 +116,9 @@ class TestSaleListQueryParamsValueObject:
 
     def test_with_price_filter(self, unset: Sentinel) -> None:
         """Sets price (max price filter) and leaves others as unset."""
-        params = SaleListQueryParamsValueObject(price=5000.0)
+        params = SaleListQueryParamsValueObject(price=Decimal("5000"))
 
-        assert params.price == 5000.0
+        assert params.price == Decimal("5000")
         assert params.buyer_id is unset
         assert params.sale_date is unset
 
@@ -127,9 +128,9 @@ class TestSaleListQueryParamsValueObject:
         params = SaleListQueryParamsValueObject(
             buyer_id=any_uuid,
             sale_date=sale_date,
-            price=3000.0,
+            price=Decimal("3000"),
         )
 
         assert params.buyer_id == any_uuid
         assert params.sale_date == sale_date
-        assert params.price == 3000.0
+        assert params.price == Decimal("3000")

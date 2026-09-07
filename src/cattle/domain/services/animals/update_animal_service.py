@@ -10,7 +10,7 @@ class UpdateAnimalService:
         animal = await repository.get_by_id(id)
         if not animal:
             raise NotFoundError("El animal que intenta actualizar no existe")
-        if not animal.can_delete():
+        if not animal.can_update():
             raise NotPermissionError("No se puede modificar un animal que ya ha sido vendido")
 
     async def update_animal(self, id: UUID, data, repository: IAnimalsRepository) -> AnimalEntity:

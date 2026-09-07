@@ -10,7 +10,6 @@ degrades gracefully (cache miss / no-op) instead of raising 500.
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -18,8 +17,23 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from src.common.domain.ports.cache_service import ICacheService
+from src.common.utils import log
 
-log = logging.getLogger(__name__)
+
+def _safe_key(key: str) -> str:
+    """Sanitise a cache key for logging — truncate and hash sensitive segments.
+
+    Replaces anything after the first colon with a SHA-256 prefix so PII
+    (e.g. emails, user IDs in key values) never appears raw in logs.
+    """
+    import hashlib
+
+    if ":" in key:
+        prefix, suffix = key.split(":", 1)
+        suffix_hash = hashlib.sha256(suffix.encode()).hexdigest()[:8]
+        return f"{prefix}:{suffix_hash}"
+    return key
+
 
 # All cache keys are prefixed to avoid collisions with other Redis consumers
 # (e.g. the token blacklist).
@@ -137,7 +151,7 @@ class RedisCacheService(ICacheService):
                 return None
             return _deserialize(raw)
         except Exception:
-            log.exception("Redis GET failed for key=%s — degrading as cache miss", key)
+            log.exception("Redis GET failed for key={} — degrading as cache miss", _safe_key(key))
             return None
 
     async def set(
@@ -156,7 +170,7 @@ class RedisCacheService(ICacheService):
             serialised = _serialize(value)
             await self._redis.set(self._prefixed(key), serialised, ex=effective_ttl)
         except Exception:
-            log.exception("Redis SET failed for key=%s — degrading silently", key)
+            log.exception("Redis SET failed for key={} — degrading silently", key)
 
     async def delete(self, key: str) -> None:
         """Remove the entry at *key* (no-op if missing).
@@ -166,13 +180,14 @@ class RedisCacheService(ICacheService):
         try:
             await self._redis.delete(self._prefixed(key))
         except Exception:
-            log.exception("Redis DELETE failed for key=%s — degrading silently", key)
+            log.exception("Redis DELETE failed for key={} — degrading silently", key)
 
     async def get_or_set(
         self,
         key: str,
         ttl: int,
         factory: Callable[[], Awaitable[Any]],
+        domain: str | None = None,
     ) -> Any:
         """Cache-aside: return cached value or call *factory*, cache, return.
 
@@ -184,12 +199,12 @@ class RedisCacheService(ICacheService):
                 return cached
         except Exception:
             log.exception(
-                "Redis GET (get_or_set) failed for key=%s — falling through to factory",
+                "Redis GET (get_or_set) failed for key={} — falling through to factory",
                 key,
             )
 
         value = await factory()
-        await self.set(key, value, ttl=ttl)
+        await self.set(key, value, ttl=ttl, domain=domain)
         return value
 
     async def invalidate_pattern(self, pattern: str) -> None:
@@ -208,6 +223,6 @@ class RedisCacheService(ICacheService):
                     break
         except Exception:
             log.exception(
-                "Redis SCAN/DELETE failed for pattern=%s — degrading silently",
+                "Redis SCAN/DELETE failed for pattern={} — degrading silently",
                 pattern,
             )

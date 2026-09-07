@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from src.finance.domain.entities.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
 @dataclass
@@ -22,5 +22,5 @@ class PurchaseEntity:
     def validate_unit_price(self):
         if self.unit_price < 0:
             raise ValueError("Purchase price cant be negative")
-        if self.unit_price > self.price:
-            raise ValueError("El precio unitario no puede ser superior al precio de compra")
+        if abs(self.unit_price * self.amount - self.price) > 0.01:
+            raise ValueError("El precio unitario por la cantidad no coincide con el precio de compra")

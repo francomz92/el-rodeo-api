@@ -7,10 +7,16 @@ from src.billing.domain.entities._subscription import Subscription
 from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.billing.domain.repositories import ISubscriptionRepository
 from src.billing.infrastructure.persistence.models import Subscription as SubscriptionModel
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 
 
-class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
+class SubscriptionRepository(ISubscriptionRepository, TenantAwareRepository):
+    @property
+    def _model(self) -> type:
+        return SubscriptionModel
+
     async def create(self, subscription: Subscription) -> Subscription:
         stmt = (
             insert(SubscriptionModel)
@@ -25,15 +31,18 @@ class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
                     SubscriptionModel.trial_end: subscription.trial_end,
                     SubscriptionModel.canceled_at: subscription.canceled_at,
                     SubscriptionModel.subscription_metadata: subscription.metadata,
-                    SubscriptionModel.mp_preference_id: subscription.mp_preference_id,
-                    SubscriptionModel.mp_subscription_id: subscription.mp_subscription_id,
+                    SubscriptionModel.gateway_preference_id: subscription.gateway_preference_id,
+                    SubscriptionModel.gateway_subscription_id: subscription.gateway_subscription_id,
+                    SubscriptionModel.billing_date: subscription.billing_date,
+                    SubscriptionModel.next_billing_date: subscription.next_billing_date,
+                    SubscriptionModel.gateway_card_id: subscription.gateway_card_id,
                 }
             )
             .returning(SubscriptionModel.id)
         )
         result = await self.db.execute(stmt)
         sub_id = result.scalar_one()
-        return await self.get_by_id(sub_id)  # type: ignore[return-value]
+        return await self.get_by_id(sub_id)  # type: ignore
 
     async def update(self, subscription: Subscription) -> Subscription:
         stmt = (
@@ -48,14 +57,17 @@ class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
                     SubscriptionModel.trial_end: subscription.trial_end,
                     SubscriptionModel.canceled_at: subscription.canceled_at,
                     SubscriptionModel.subscription_metadata: subscription.metadata,
-                    SubscriptionModel.mp_preference_id: subscription.mp_preference_id,
-                    SubscriptionModel.mp_subscription_id: subscription.mp_subscription_id,
+                    SubscriptionModel.gateway_preference_id: subscription.gateway_preference_id,
+                    SubscriptionModel.gateway_subscription_id: subscription.gateway_subscription_id,
+                    SubscriptionModel.billing_date: subscription.billing_date,
+                    SubscriptionModel.next_billing_date: subscription.next_billing_date,
+                    SubscriptionModel.gateway_card_id: subscription.gateway_card_id,
                     SubscriptionModel.updated_at: func.now(),
                 }
             )
         )
         await self.db.execute(stmt)
-        return await self.get_by_id(subscription.id)  # type: ignore[return-value]
+        return await self.get_by_id(subscription.id)  # type: ignore
 
     _SELECT_COLS = (
         SubscriptionModel.id,
@@ -67,8 +79,11 @@ class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
         SubscriptionModel.trial_end,
         SubscriptionModel.canceled_at,
         SubscriptionModel.subscription_metadata,
-        SubscriptionModel.mp_preference_id,
-        SubscriptionModel.mp_subscription_id,
+        SubscriptionModel.gateway_preference_id,
+        SubscriptionModel.gateway_subscription_id,
+        SubscriptionModel.billing_date,
+        SubscriptionModel.next_billing_date,
+        SubscriptionModel.gateway_card_id,
     )
 
     async def get_by_tenant(self, tenant_id: UUID) -> Subscription | None:
@@ -106,6 +121,27 @@ class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
         result = await self.db.execute(stmt)
         return [self._build_entity(row) for row in result.mappings().all()]
 
+    async def list_by_tenant(
+        self,
+        tenant_id: UUID,
+        status_filter: SubscriptionStatus | None = None,
+    ) -> list[Subscription]:
+        """List subscriptions for a tenant with optional status filter."""
+        conditions = [SubscriptionModel.tenant_id == tenant_id]
+        if status_filter is not None:
+            conditions.append(SubscriptionModel.status == status_filter.value)
+
+        stmt = select(*self._SELECT_COLS).where(and_(*conditions))
+        result = await self.db.execute(stmt)
+        return [self._build_entity(row) for row in result.mappings().all()]
+
+    async def get_by_gateway_subscription_id(self, gateway_subscription_id: str) -> Subscription | None:
+        """Retrieve a subscription by its gateway subscription ID."""
+        stmt = select(*self._SELECT_COLS).where(SubscriptionModel.gateway_subscription_id == gateway_subscription_id)
+        result = await self.db.execute(stmt)
+        row = result.mappings().one_or_none()
+        return self._build_entity(row) if row else None
+
     @staticmethod
     def _build_entity(row: RowMapping) -> Subscription:
         return Subscription(
@@ -118,6 +154,9 @@ class SubscriptionRepository(ISubscriptionRepository, SessionMixin):
             trial_end=row.get("trial_end"),
             canceled_at=row.get("canceled_at"),
             metadata=row.get("subscription_metadata"),
-            mp_preference_id=row.get("mp_preference_id"),
-            mp_subscription_id=row.get("mp_subscription_id"),
+            gateway_preference_id=row.get("gateway_preference_id"),
+            gateway_subscription_id=row.get("gateway_subscription_id"),
+            billing_date=row.get("billing_date"),
+            next_billing_date=row.get("next_billing_date"),
+            gateway_card_id=row.get("gateway_card_id"),
         )

@@ -20,3 +20,8 @@ backlog.md
 
 .atl/
 .coverage
+
+tests
+errors.json
+logs/*
+openspec

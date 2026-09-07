@@ -10,34 +10,37 @@ from src.cattle.domain.services.schedule_events.delete_schedule_event_service im
 from src.cattle.domain.services.schedule_events.list_schedule_event_service import ListScheduleEventService
 from src.cattle.domain.services.schedule_events.register_schedule_event_service import RegisterScheduleEventService
 from src.cattle.domain.services.schedule_events.update_schedule_event_service import UpdateScheduleEventService
+from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
 def _get_register_event_case(
     uow: GetUnitOfWork,
     service: Annotated[RegisterScheduleEventService, Depends()],
-):
-    return RegisterScheduleEventCase(uow=uow, service=service)
+    event_bus: GetEventBus,
+) -> RegisterScheduleEventCase:
+    return RegisterScheduleEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
 def _get_update_event_case(
     uow: GetUnitOfWork,
     service: Annotated[UpdateScheduleEventService, Depends()],
-):
-    return UpdateScheduleEventCase(uow=uow, service=service)
+    event_bus: GetEventBus,
+) -> UpdateScheduleEventCase:
+    return UpdateScheduleEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
 def _get_delete_event_case(
     uow: GetUnitOfWork,
     service: Annotated[DeleteScheduleEventService, Depends()],
-):
+) -> DeleteScheduleEventCase:
     return DeleteScheduleEventCase(uow=uow, service=service)
 
 
 def _get_list_events_case(
     uow: GetUnitOfWork,
     service: Annotated[ListScheduleEventService, Depends()],
-):
+) -> ListScheduleEventsCase:
     return ListScheduleEventsCase(uow=uow, service=service)
 
 

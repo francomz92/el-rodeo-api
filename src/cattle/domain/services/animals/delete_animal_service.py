@@ -14,7 +14,7 @@ class DeleteAnimalService:
         if not animal:
             raise NotFoundError("El animal que intenta eliminar no existe")
         if not animal.can_delete():
-            raise ConflictError("No se puede eliminar porque se encuntra vendido")
+            raise ConflictError("No se puede eliminar porque se encuentra vendido")
 
     async def delete_animal(self, id: UUID, repository: IAnimalsRepository):
         await repository.delete(id=id)

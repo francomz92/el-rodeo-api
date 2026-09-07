@@ -4,7 +4,7 @@ The UoW must accept an optional tenant_id at construction and pass it
 to TenantAwareRepository constructors when get_repository() is called.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
@@ -26,6 +26,9 @@ class MockSessionMixinRepo:
         self.db = session
 
 
+import src.common.infrastructure.persistence.uow as _uow_mod
+
+
 class TestUnitOfWorkTenantId:
     """UoW accepts and propagates tenant_id."""
 
@@ -45,37 +48,17 @@ class TestUnitOfWorkTenantId:
 
     def test_get_repository_passes_tenant_id_to_tenant_aware_repo(self) -> None:
         """TenantAwareRepository repos get tenant_id from UoW."""
-        # Register the mock repo type
-        from src.common.infrastructure.persistence.repositories._registry import (
-            repositories_list,
-        )
-
-        repositories_list[MockTenantRepo.__class__] = MockTenantRepo  # type: ignore[assignment]
-
-        repo = self.uow.get_repository(MockTenantRepo.__class__)  # type: ignore[arg-type]
-
-        assert isinstance(repo, MockTenantRepo)
-        assert repo._tenant_id == self.tenant_id  # type: ignore[attr-defined]
-
-        # Cleanup
-        del repositories_list[MockTenantRepo.__class__]
+        with patch.object(_uow_mod, "repositories_list", {MockTenantRepo: MockTenantRepo}):
+            repo = self.uow.get_repository(MockTenantRepo)  # type: ignore[arg-type]
+            assert isinstance(repo, MockTenantRepo)
+            assert repo._tenant_id == self.tenant_id
 
     def test_get_repository_passes_session_only_for_non_tenant_repo(self) -> None:
         """Non-tenant-aware repos receive only the session."""
-        from src.common.infrastructure.persistence.repositories._registry import (
-            repositories_list,
-        )
-
-        # Register a SessionMixin-based repo
-        repositories_list[MockSessionMixinRepo] = MockSessionMixinRepo
-
-        repo = self.uow.get_repository(MockSessionMixinRepo)
-
-        assert isinstance(repo, MockSessionMixinRepo)
-        assert repo.db == self.session
-
-        # Cleanup
-        del repositories_list[MockSessionMixinRepo]
+        with patch.object(_uow_mod, "repositories_list", {MockSessionMixinRepo: MockSessionMixinRepo}):
+            repo = self.uow.get_repository(MockSessionMixinRepo)
+            assert isinstance(repo, MockSessionMixinRepo)
+            assert repo.db == self.session
 
     def test_bypass_filter_defaults_to_false(self) -> None:
         """UoW.bypass_filter is False by default."""
@@ -88,16 +71,7 @@ class TestUnitOfWorkTenantId:
 
     def test_bypass_filter_passed_to_tenant_aware_repo(self) -> None:
         """When bypass_filter=True, TenantAwareRepository receives bypass."""
-        from src.common.infrastructure.persistence.repositories._registry import (
-            repositories_list,
-        )
-
-        repositories_list[MockTenantRepo.__class__] = MockTenantRepo  # type: ignore[assignment]
-
-        self.uow.bypass_filter = True
-        repo = self.uow.get_repository(MockTenantRepo.__class__)  # type: ignore[arg-type]
-
-        assert repo._bypass is True
-
-        # Cleanup
-        del repositories_list[MockTenantRepo.__class__]
+        with patch.object(_uow_mod, "repositories_list", {MockTenantRepo: MockTenantRepo}):
+            self.uow.bypass_filter = True
+            repo = self.uow.get_repository(MockTenantRepo)  # type: ignore[arg-type]
+            assert repo._bypass is True

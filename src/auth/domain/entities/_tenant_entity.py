@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from src.billing.domain.entities import PlanEntity
+
 
 @dataclass
 class TenantEntity:
@@ -10,4 +12,4 @@ class TenantEntity:
     slug: str
     created_at: datetime
     updated_at: datetime
-    plan_id: UUID | None = None
+    plan: PlanEntity | None = None

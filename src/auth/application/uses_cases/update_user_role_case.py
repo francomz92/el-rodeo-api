@@ -15,7 +15,7 @@ from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.update_user_role_service import UpdateUserRoleService
 from src.common.application.ports.uow import IUoW
-from src.common.domain.exceptions import NotPermissionError
+from src.common.domain.exceptions import NotFoundError, NotPermissionError
 
 
 class UpdateUserRoleCase:
@@ -53,7 +53,7 @@ class UpdateUserRoleCase:
             The updated UserEntity with the new role.
 
         Raises:
-            ValueError: If the target user is not found.
+            NotFoundError: If the target user is not found.
             NotPermissionError: If any business rule prevents the change.
         """
         async with self.uow as uow:
@@ -61,18 +61,23 @@ class UpdateUserRoleCase:
 
             target = await repo.get_by_id(target_user_id)
             if not target:
-                raise ValueError(
+                raise NotFoundError(
                     f"Usuario con ID '{target_user_id}' no encontrado",
                 )
 
             # Cross-tenant isolation: actor and target must be in same tenant
-            if target.tenant_id and actor.tenant_id and target.tenant_id != actor.tenant_id:
+            if not actor.tenant_id or not target.tenant_id:
+                raise NotPermissionError(
+                    "No tienes permisos para modificar usuarios de otro tenant",
+                )
+            if target.tenant_id != actor.tenant_id:
                 raise NotPermissionError(
                     "No tienes permisos para modificar usuarios de otro tenant",
                 )
 
             # Count owners for last-OWNER protection check
-            assert actor.tenant_id is not None
+            if actor.tenant_id is None:
+                raise NotFoundError("Tenant no encontrado")
             owners_count = await repo.count_owners_by_tenant(actor.tenant_id)
 
             # Validate business rules via domain service
@@ -90,8 +95,7 @@ class UpdateUserRoleCase:
             # Return the updated user
             updated = await repo.get_by_id(target_user_id)
             if updated is None:
-                # Should never happen since we just validated the user exists
                 msg = f"Usuario con ID '{target_user_id}' no encontrado después de actualizar"
-                raise ValueError(msg)
+                raise NotFoundError(msg)
 
             return updated

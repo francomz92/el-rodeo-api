@@ -11,21 +11,21 @@ from src.cattle.domain.services.animal_type_services.update_animal_type_service 
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
-async def _get_create_animal_type_case(
+def _get_create_animal_type_case(
     uow: GetUnitOfWork,
     service: Annotated[CreateAnimalTypeService, Depends()],
 ) -> CreateAnimalTypeCase:
     return CreateAnimalTypeCase(uow=uow, service=service)
 
 
-async def _get_update_animal_type_case(
+def _get_update_animal_type_case(
     uow: GetUnitOfWork,
     service: Annotated[UpdateAnimalTypeService, Depends()],
 ) -> UpdateAnimalTypeCase:
     return UpdateAnimalTypeCase(uow=uow, service=service)
 
 
-async def get_list_animal_type_case(
+def _get_list_animal_type_case(
     uow: GetUnitOfWork,
     service: Annotated[ListAnimalTypeService, Depends()],
 ) -> ListAnimalTypeCase:
@@ -34,4 +34,4 @@ async def get_list_animal_type_case(
 
 GetCreateAnimalTypeCase = Annotated[CreateAnimalTypeCase, Depends(_get_create_animal_type_case)]
 GetUpdateAnimalTypeCase = Annotated[UpdateAnimalTypeCase, Depends(_get_update_animal_type_case)]
-GetListAnimalTypeCase = Annotated[ListAnimalTypeCase, Depends(get_list_animal_type_case)]
+GetListAnimalTypeCase = Annotated[ListAnimalTypeCase, Depends(_get_list_animal_type_case)]

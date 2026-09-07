@@ -9,14 +9,14 @@ class WellcomeEmailService:
         body = f"""
         Bienvenido a El Rodeo!
 
+        Tu contraseña temporal es: {password}
+
         Hace click en el siguiente enlace para comenzar:
         {url}
-
-        Tu contraseña es: {password}
         """
         return body
 
-    def send(
+    async def send(
         self,
         to: list[str],
         subject: str,

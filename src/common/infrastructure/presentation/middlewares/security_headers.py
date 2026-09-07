@@ -6,7 +6,8 @@ on every HTTP response. Configurable via application settings.
 
 from typing import Any
 
-from src.common.infrastructure.core import settings as app_settings
+from src.common.infrastructure.core import settings
+from src.common.utils import log
 
 # Security headers applied to every HTTP response.
 _BASE_HEADERS: dict[str, str] = {
@@ -27,9 +28,10 @@ class SecurityHeadersMiddleware:
     interference with preflight responses.
     """
 
-    def __init__(self, app: Any, settings: Any = None) -> None:
+    def __init__(self, app: Any) -> None:
         self.app = app
-        self.settings = settings or app_settings
+        if not settings.CSP_DIRECTIVES_ENABLED:
+            log.warning("CSP_DIRECTIVES_ENABLED is False")
 
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope["type"] != "http":
@@ -45,16 +47,17 @@ class SecurityHeadersMiddleware:
                     headers.append((name.lower().encode(), value.encode()))
 
                 # CSP (configurable from settings)
-                directives = getattr(self.settings, "CSP_DIRECTIVES", None)
-                if directives:
-                    csp_value = "; ".join(f"{k} {v}" for k, v in directives.items())
-                else:
-                    csp_value = f"default-src {self.settings.CSP_DEFAULT_SRC}"
-                headers.append((b"content-security-policy", csp_value.encode()))
+                if settings.CSP_DIRECTIVES_ENABLED:
+                    directives = getattr(settings, "CSP_DIRECTIVES", None)
+                    if directives:
+                        csp_value = "; ".join(f"{k} {v}" for k, v in directives.items())
+                    else:
+                        csp_value = f"default-src {settings.CSP_DEFAULT_SRC}"
+                    headers.append((b"content-security-policy", csp_value.encode()))
 
                 # HSTS — only for non-development environments
-                if not self.settings.DEBUG:
-                    hsts_value = f"max-age={self.settings.HSTS_MAX_AGE}; includeSubDomains"
+                if not settings.DEBUG:
+                    hsts_value = f"max-age={settings.HSTS_MAX_AGE}; includeSubDomains"
                     headers.append((b"strict-transport-security", hsts_value.encode()))
 
                 message["headers"] = headers
@@ -62,3 +65,7 @@ class SecurityHeadersMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_with_headers)
+
+
+def configure_security_headers(app: Any) -> None:
+    app.add_middleware(SecurityHeadersMiddleware)

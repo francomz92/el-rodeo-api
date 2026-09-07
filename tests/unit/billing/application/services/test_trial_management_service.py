@@ -27,11 +27,9 @@ class TestTrialManagementService:
         """Set up service with mocked repositories for each test."""
         self.plan_repo = MagicMock()
         self.subscription_repo = MagicMock()
-        self.tenant_repo = MagicMock()
         self.service = TrialManagementService(
             plan_repo=self.plan_repo,
             subscription_repo=self.subscription_repo,
-            tenant_repo=self.tenant_repo,
         )
         self.pro_plan = Plan(
             id=uuid4(),
@@ -58,7 +56,6 @@ class TestTrialManagementService:
         tenant_id = uuid4()
         self.plan_repo.get_by_plan_type = AsyncMock(return_value=self.pro_plan)
         self.subscription_repo.create = AsyncMock(side_effect=lambda sub: sub)
-        self.tenant_repo.update = AsyncMock()
 
         result = await self.service.start_trial(tenant_id)
 
@@ -68,7 +65,6 @@ class TestTrialManagementService:
         assert result.trial_end is not None
         self.plan_repo.get_by_plan_type.assert_awaited_once_with(PlanType.PRO)
         self.subscription_repo.create.assert_awaited_once()
-        self.tenant_repo.update.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_start_trial_uses_correct_trial_duration(self) -> None:
@@ -78,7 +74,6 @@ class TestTrialManagementService:
         tenant_id = uuid4()
         self.plan_repo.get_by_plan_type = AsyncMock(return_value=self.pro_plan)
         self.subscription_repo.create = AsyncMock(side_effect=lambda sub: sub)
-        self.tenant_repo.update = AsyncMock()
 
         result = await self.service.start_trial(tenant_id)
 
@@ -122,7 +117,6 @@ class TestTrialManagementService:
         self.subscription_repo.get_by_tenant = AsyncMock(return_value=existing_sub)
         self.plan_repo.get_by_plan_type = AsyncMock(return_value=self.free_plan)
         self.subscription_repo.update = AsyncMock(side_effect=lambda sub: sub)
-        self.tenant_repo.update = AsyncMock()
 
         result = await self.service.expire_trial(tenant_id)
 
@@ -130,4 +124,3 @@ class TestTrialManagementService:
         assert result.plan_id == self.free_plan.id
         self.plan_repo.get_by_plan_type.assert_awaited_once_with(PlanType.FREE)
         self.subscription_repo.update.assert_awaited_once()
-        self.tenant_repo.update.assert_awaited_once()

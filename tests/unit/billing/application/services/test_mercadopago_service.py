@@ -51,7 +51,6 @@ class TestMercadoPagoServiceCreatePreference:
             payment_repo=self.payment_repo,
             subscription_repo=self.subscription_repo,
             plan_repo=self.plan_repo,
-            uow_factory=self.uow,
         )
 
         self.tenant_id = uuid4()

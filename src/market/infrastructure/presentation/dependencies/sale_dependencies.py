@@ -7,10 +7,12 @@ from src.market.application.uses_cases.sale_cases.create_sale_case import Create
 from src.market.application.uses_cases.sale_cases.delete_sale_case import DeleteSaleCase
 from src.market.application.uses_cases.sale_cases.get_sale_case import GetSaleCase
 from src.market.application.uses_cases.sale_cases.list_sale_case import ListSaleCase
+from src.market.application.uses_cases.sale_cases.update_sale_case import UpdateSaleCase
 from src.market.domain.services.sale_services.create_sale_service import CreateSaleService
 from src.market.domain.services.sale_services.delete_sale_service import DeleteSaleService
 from src.market.domain.services.sale_services.get_sale_service import GetSaleService
 from src.market.domain.services.sale_services.list_sale_service import ListSaleService
+from src.market.domain.services.sale_services.update_sale_service import UpdateSaleService
 
 
 def _get_create_sale_case(
@@ -41,7 +43,15 @@ def _get_list_sale_case(
     return ListSaleCase(uow, service)
 
 
+def _get_update_sale_case(
+    uow: GetUnitOfWork,
+    service: Annotated[UpdateSaleService, Depends()],
+) -> UpdateSaleCase:
+    return UpdateSaleCase(uow, service)
+
+
 GetCreateSaleCase = Annotated[CreateSaleCase, Depends(_get_create_sale_case)]
 GetDeleteSaleCase = Annotated[DeleteSaleCase, Depends(_get_delete_sale_case)]
 GetObtainSaleCase = Annotated[GetSaleCase, Depends(_get_obtain_sale_case)]
 GetListSaleCase = Annotated[ListSaleCase, Depends(_get_list_sale_case)]
+GetUpdateSaleCase = Annotated[UpdateSaleCase, Depends(_get_update_sale_case)]

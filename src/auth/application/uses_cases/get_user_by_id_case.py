@@ -29,7 +29,8 @@ class GetUserByIdCase:
 
         async with self.uow as uow:
             repo: IUserRepository = uow.get_repository(IUserRepository)
-            assert current_user.tenant_id is not None
+            if current_user.tenant_id is None:
+                raise NotFoundError("Tenant no encontrado")
             user = await repo.get_by_id_with_tenant_check(
                 user_id=target_user_id,
                 tenant_id=current_user.tenant_id,

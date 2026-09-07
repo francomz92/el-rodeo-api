@@ -1,10 +1,10 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Uuid
+from sqlalchemy import Date, Float, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 class Sale(Model):
@@ -14,7 +14,10 @@ class Sale(Model):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     buyer_id: Mapped[UUID] = mapped_column(ForeignKey("buyers.id", ondelete="SET NULL"), index=True)
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"), index=True)
-    sale_date: Mapped[date] = mapped_column(DateTime)
+    sale_date: Mapped[date] = mapped_column(Date)
+    # TODO: Migrate these columns to Numeric (instead of Float) for full Decimal precision.
+    #       Float works with Decimal via conversion but can introduce rounding errors
+    #       in edge cases. Requires an Alembic migration.
     price: Mapped[float] = mapped_column(Float)
     price_per_kg: Mapped[float] = mapped_column(Float)
     weight: Mapped[float] = mapped_column(Float)

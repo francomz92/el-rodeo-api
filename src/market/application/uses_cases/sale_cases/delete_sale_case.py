@@ -13,9 +13,5 @@ class DeleteSaleCase:
     async def execute(self, id: UUID) -> None:
         async with self.uow as uow:
             repository = uow.get_repository(ISalesRepository)
-            await self.service.validate_sale_exists(
-                id=id,
-                repository=repository,
-            )
             await self.service.delete_sale(id, repository)
             await uow.commit()

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserSchema(BaseModel):
@@ -22,3 +22,7 @@ class PaginatedUsersSchema(BaseModel):
     total: int
     page: int
     per_page: int
+    has_next: bool = Field(
+        default=False,
+        description="Whether there are more pages after this one",
+    )

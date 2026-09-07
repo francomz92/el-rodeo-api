@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
+from sqlalchemy import RowMapping, delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -42,7 +43,11 @@ class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableReposi
         limit: int,
         offset: int,
         order_by: str,
+        user_id: UUID | None = None,  # NOTE: not yet applied as a WHERE filter
     ) -> list[BuyerEntity]:
+        ALLOWED_ORDER_BY = {"name", "created_at"}
+        if order_by not in ALLOWED_ORDER_BY:
+            order_by = "created_at"
         conditions = []
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
@@ -68,32 +73,37 @@ class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableReposi
         buyer_id = result.scalar_one()
         new_entity = await self.get_by_id(buyer_id)
         self._audit_create("buyer", buyer_id, value_dict)
-        return new_entity  # type: ignore[return-value]
+        return new_entity  # type: ignore
 
     async def update_data(
         self,
         id: UUID,
         data: BuyerUpdateValueObject,
-    ) -> BuyerEntity:
+    ) -> BuyerEntity | None:
         # Capture old values before update
-        old_row = await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))
-        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        old_row = (await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))).mappings().one_or_none()
+        if old_row is None:
+            return None
+        old_values = dict(old_row)
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
-        kws["updated_at"] = func.now()
+        kws["updated_at"] = datetime.now(timezone.utc)
         query = self._filter_tenant(update(Buyer).where(Buyer.id == id).values(**kws).returning(Buyer.id))
         result = await self.db.execute(query)
         buyer_id = result.scalar_one()
         new_entity = await self.get_by_id(buyer_id)
         self._audit_update("buyer", id, old_values, kws)
-        return new_entity  # type: ignore[return-value]
+        return new_entity  # type: ignore
 
-    async def delete(self, id: UUID) -> None:
+    async def delete(self, id: UUID) -> bool:
         # Capture old values before delete
-        old_row = await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))
-        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        old_row = (await self.db.execute(self._filter_tenant(select(Buyer.__table__).where(Buyer.id == id)))).mappings().one_or_none()
+        if old_row is None:
+            return False
+        old_values = dict(old_row)
         query = self._filter_tenant(delete(Buyer).where(Buyer.id == id))
         await self.db.execute(query)
         self._audit_delete("buyer", id, old_values)
+        return True
 
     def _build_buyer(self, buyer_data: RowMapping) -> BuyerEntity:
         return BuyerEntity(

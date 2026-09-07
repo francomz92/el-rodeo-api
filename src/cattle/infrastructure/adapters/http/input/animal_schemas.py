@@ -24,7 +24,7 @@ class AnimalCreationSchema(BaseModel):
 
 
 class AnimalUpdateSchema(BaseModel):
-    type_id: UUID
+    type_id: UUID | None = None
     caravana: str | None = None
     date_of_birth: date | None = None
     initial_weight: float | None = Field(None, gt=0)

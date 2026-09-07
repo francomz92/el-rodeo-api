@@ -10,13 +10,9 @@ only apply rate limiting when ``settings.ENABLE_RATE_LIMIT`` is True.
 
 from typing import Any
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
 from slowapi import Limiter
-from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from src.common.infrastructure.adapters.correlation import get_correlation_id
 from src.common.infrastructure.core import settings
 from src.common.infrastructure.presentation.middlewares.ip_utils import get_client_ip
 from src.common.utils import log
@@ -24,6 +20,7 @@ from src.common.utils import log
 # Module-level limiter — initialised on import.
 # Uses RATE_LIMIT_DEFAULT as the middleware-level default (100/minute).
 # Per-endpoint @rate_limit decorators add/override limits on top.
+
 limiter = Limiter(
     key_func=get_client_ip,
     storage_uri="memory://",
@@ -103,8 +100,14 @@ def _maybe_switch_to_redis(settings: Any) -> None:
         loop = asyncio.new_event_loop()
         try:
             probe = AsyncRedis.from_url(redis_url, socket_connect_timeout=2)
-            loop.run_until_complete(probe.ping())  # type: ignore[arg-type]
+            loop.run_until_complete(probe.ping())
             loop.run_until_complete(probe.aclose())
+        except Exception as err:
+            log.warning(
+                "Redis error: {err}",
+                err=err,
+            )
+            raise  # Re-raise so the outer except triggers the in-memory fallback
         finally:
             loop.close()
 
@@ -112,7 +115,7 @@ def _maybe_switch_to_redis(settings: Any) -> None:
         limiter = Limiter(
             key_func=get_client_ip,
             storage_uri=redis_url,
-            default_limits=[],
+            default_limits=[settings.RATE_LIMIT_DEFAULT] if settings.ENABLE_RATE_LIMIT else [],
         )
         log.info(
             "Rate limiter switched to Redis backend: {url}",
@@ -125,10 +128,7 @@ def _maybe_switch_to_redis(settings: Any) -> None:
         )
 
 
-def configure_rate_limiter(
-    app: Any,
-    settings: Any,
-) -> Limiter:
+def configure_rate_limiter(app: Any) -> Limiter:
     """Attach the module-level Limiter to the FastAPI app.
 
     In development mode uses the default in-memory storage.
@@ -145,22 +145,6 @@ def configure_rate_limiter(
     # ── Auto-detect Redis backend ──────────────────────────────────────────
     _maybe_switch_to_redis(settings)
 
-    async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
-        """Custom 429 handler that includes a Retry-After header."""
-        cid = get_correlation_id()
-        log.warning(
-            "Rate limit exceeded: {path}",
-            path=request.url.path,
-            correlation_id=cid,
-            client_ip=get_client_ip(request),
-        )
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Too many requests"},
-            headers={"Retry-After": "60"},
-        )
-
     app.state.limiter = limiter
-    app.add_exception_handler(429, _rate_limit_handler)
     app.add_middleware(SlowAPIMiddleware)  # type: ignore[arg-type]
     return limiter

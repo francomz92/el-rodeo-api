@@ -105,7 +105,7 @@ async def list_animal_supplies(
     filters = AnimalSuppliesListQueryParamsValueObject(
         **query_params.model_dump(
             exclude_unset=True,
-            exclude={"limit", "offset", "order_by"},
+            exclude={"limit", "offset", "order_by", "cursor"},
         )
     )
     return await list_animal_supplies_case.execute(

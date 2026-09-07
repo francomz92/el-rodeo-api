@@ -27,6 +27,8 @@ from src.cattle.infrastructure.presentation.dependencies.animal_type import (
 animal_type_router = APIRouter(
     prefix="/animal-types",
     responses={401: {}, 403: {}},
+    # Router-level VIEWER + endpoint-level ADMIN is defense-in-depth
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 

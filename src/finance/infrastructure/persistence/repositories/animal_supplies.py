@@ -60,7 +60,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
             elif k == "name":
                 conditions.append(AnimalSupply.name.icontains(v))
             elif k in ("id", "type_id"):
-                conditions.append(AnimalSupply.id == v)
+                conditions.append(getattr(AnimalSupply, k) == v)
         query = self._filter_tenant(
             select(
                 *AnimalSupply.__table__.columns,
@@ -87,10 +87,10 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         kws["tenant_id"] = self._tenant_id
         query = insert(AnimalSupply).values(**kws).returning(AnimalSupply.id)
         result = await self.db.execute(query)
-        suplie_id = result.scalar_one()
-        new_entity = await self.get_by_id(suplie_id)
-        self._audit_create("animal_supply", suplie_id, kws)
-        return new_entity  # type: ignore[return-value]
+        supply_id = result.scalar_one()
+        new_entity = await self.get_by_id(supply_id)
+        self._audit_create("animal_supply", supply_id, kws)
+        return new_entity  # type: ignore
 
     async def update_data(
         self,
@@ -107,7 +107,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         updated_id = result.scalar_one()
         new_entity = await self.get_by_id(updated_id)
         self._audit_update("animal_supply", id, old_values, kws)
-        return new_entity  # type: ignore[return-value]
+        return new_entity  # type: ignore
 
     async def increase_stock(self, id: UUID, amount_to_increase: float) -> None:
         # Capture old values before update
@@ -117,7 +117,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
             update(AnimalSupply)
             .where(AnimalSupply.id == id)
             .values(
-                amount=AnimalSupply.amount - amount_to_increase,
+                amount=AnimalSupply.amount + amount_to_increase,
                 updated_at=func.now(),
             )
         )
@@ -126,7 +126,27 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
             "animal_supply",
             id,
             old_values,
-            {"amount": f"decreased_by_{amount_to_increase}"},
+            {"amount": f"increased_by_{amount_to_increase}"},
+        )
+
+    async def decrease_stock(self, id: UUID, amount_to_decrease: float) -> None:
+        # Capture old values before update
+        old_row = await self.db.execute(self._filter_tenant(select(AnimalSupply.__table__).where(AnimalSupply.id == id)))
+        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        query = self._filter_tenant(
+            update(AnimalSupply)
+            .where(AnimalSupply.id == id)
+            .values(
+                amount=AnimalSupply.amount - amount_to_decrease,
+                updated_at=func.now(),
+            )
+        )
+        await self.db.execute(query)
+        self._audit_update(
+            "animal_supply",
+            id,
+            old_values,
+            {"amount": f"decreased_by_{amount_to_decrease}"},
         )
 
     async def delete(self, id: UUID) -> None:

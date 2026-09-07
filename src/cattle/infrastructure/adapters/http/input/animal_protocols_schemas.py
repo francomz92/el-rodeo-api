@@ -17,7 +17,7 @@ class AnimalProtocolsCreateSchema(BaseModel):
 
 
 class AnimalProtocolsUpdateSchema(BaseModel):
-    vaccinated: bool
-    vaccinated_date: date | None
-    sale_permission: bool
-    sale_permission_date: date | None
+    vaccinated: bool | None = None
+    vaccinated_date: date | None = None
+    sale_permission: bool | None = None
+    sale_permission_date: date | None = None

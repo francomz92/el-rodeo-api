@@ -126,16 +126,18 @@ class TestUpdateAnimalSuppliesService:
     def setup_method(self) -> None:
         self.service = UpdateAnimalSuppliesService()
 
-    async def test_validate_update_passes(self) -> None:
+    async def test_validate_update_passes_with_valid_data(self) -> None:
         from unittest.mock import AsyncMock
 
         supply = make_animal_supply_entity(amount=5.0, critical_amount=10.0)
+        data = make_animal_supply_update(amount=30.0, critical_amount=10.0)
         repo = AsyncMock()
         repo.get_by_id.return_value = supply
 
         await self.service.validate_update(
             UUID("00000000-0000-0000-0000-000000000001"),
-            repo,
+            data=data,
+            repository=repo,
         )
 
     async def test_update_animal_supplies_delegates_to_repo(self) -> None:

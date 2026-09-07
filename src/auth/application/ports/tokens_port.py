@@ -70,6 +70,15 @@ class ITokenService(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def generate_ws_token(self, user_id: str, tenant_id: str | None = None) -> str:
+        """Generate a short-lived JWT (5 min) with type='ws' and purpose='websocket'.
+
+        Used exclusively for WebSocket authentication so the main access token
+        never appears in URLs / query parameters.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     async def revoke_user_refresh_tokens(
         self,
         user_id: UUID,

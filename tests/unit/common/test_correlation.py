@@ -25,13 +25,13 @@ class TestCorrelationId:
 
     def test_set_with_explicit_value(self) -> None:
         """set_correlation_id('abc-123') stores and returns 'abc-123'."""
-        result = set_correlation_id("abc-123")
+        result = set_correlation_id("abc-123")[0]
         assert result == "abc-123"
         assert get_correlation_id() == "abc-123"
 
     def test_set_with_none_generates_uuid_hex(self) -> None:
         """set_correlation_id() with no argument generates a UUID hex string."""
-        result = set_correlation_id()
+        result = set_correlation_id()[0]
         assert isinstance(result, str)
         assert len(result) == 32
         # UUID hex is 32 hex chars (no dashes)
@@ -42,7 +42,7 @@ class TestCorrelationId:
 
         The hex string must represent a valid UUID (version nibble = 4).
         """
-        cid = set_correlation_id()
+        cid = set_correlation_id()[0]
         # Insert dashes to validate it as a UUID
         uuid_with_dashes = f"{cid[0:8]}-{cid[8:12]}-{cid[12:16]}-{cid[16:20]}-{cid[20:]}"
         parsed = uuid.UUID(uuid_with_dashes)
@@ -84,5 +84,5 @@ class TestCorrelationId:
 
     def test_generated_ids_are_unique(self) -> None:
         """Multiple calls to set_correlation_id(None) produce different values."""
-        ids = {set_correlation_id() for _ in range(100)}
+        ids = {set_correlation_id()[0] for _ in range(100)}
         assert len(ids) == 100

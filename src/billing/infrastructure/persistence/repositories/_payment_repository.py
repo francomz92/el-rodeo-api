@@ -8,14 +8,18 @@ from sqlalchemy import RowMapping, func, insert, select
 from src.billing.domain.entities._payment import Payment, PaymentMethod
 from src.billing.domain.entities._payment_status import PaymentStatus
 from src.billing.domain.repositories import IPaymentRepository
-from src.billing.infrastructure.persistence.models._payment_model import (
-    Payment as PaymentModel,
+from src.billing.infrastructure.persistence.models import Payment as PaymentModel
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
 )
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
 
 
-class PaymentRepository(IPaymentRepository, SessionMixin):
+class PaymentRepository(IPaymentRepository, TenantAwareRepository):
     """SQLAlchemy async implementation of IPaymentRepository."""
+
+    @property
+    def _model(self) -> type:
+        return PaymentModel
 
     async def create(self, payment: Payment) -> Payment:
         """Persist a new payment and return it."""
@@ -43,7 +47,7 @@ class PaymentRepository(IPaymentRepository, SessionMixin):
         )
         result = await self.db.execute(stmt)
         payment_id = result.scalar_one()
-        return await self.get_by_id(payment_id)  # type: ignore[return-value]
+        return await self.get_by_id(payment_id)  # type: ignore
 
     async def get_by_id(self, id: UUID) -> Payment | None:
         """Retrieve a payment by its UUID, or None."""
@@ -137,6 +141,7 @@ class PaymentRepository(IPaymentRepository, SessionMixin):
                 PaymentModel.updated_at,
             )
             .where(PaymentModel.tenant_id == tenant_id)
+            .order_by(PaymentModel.created_at)
             .offset(offset)
             .limit(per_page)
         )

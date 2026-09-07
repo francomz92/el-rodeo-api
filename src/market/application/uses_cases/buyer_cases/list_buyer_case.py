@@ -1,7 +1,12 @@
+from uuid import UUID
+
 from src.common.application.ports.uow import IUoW
 from src.market.domain.entities.buyers import BuyerEntity
 from src.market.domain.repositories.buyers import IBuyersRepository
-from src.market.domain.services.buyer_services.list_buyer_service import ListBuyerService
+from src.market.domain.services.buyer_services.list_buyer_service import (
+    BuyerOrderByField,
+    ListBuyerService,
+)
 from src.market.domain.value_objects.buyer_value_objects import BuyerListQueryParamsValueObject
 
 
@@ -15,7 +20,8 @@ class ListBuyerCase:
         filters: BuyerListQueryParamsValueObject,
         limit: int,
         offset: int,
-        order_by: str,
+        order_by: BuyerOrderByField,
+        user_id: UUID | None = None,
     ) -> list[BuyerEntity]:
         async with self.uow as uow:
             repository = uow.get_repository(IBuyersRepository)
@@ -25,4 +31,5 @@ class ListBuyerCase:
                 offset=offset,
                 order_by=order_by,
                 repository=repository,
+                user_id=user_id,
             )

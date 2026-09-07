@@ -67,7 +67,7 @@ class QuotaEnforcementService:
 
         # Get current usage from subscription metadata
         metadata = subscription.metadata or {}
-        current_usage = metadata.get(resource, 0)
+        current_usage = int(metadata.get(resource, 0))
 
         if current_usage + delta > quota.limit:
             raise QuotaExceededException(

@@ -3,11 +3,11 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Integer, String, Uuid, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 class WebhookSubscription(Model):
@@ -16,7 +16,12 @@ class WebhookSubscription(Model):
     __tablename__ = "webhook_subscriptions"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    tenant_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    tenant_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     url: Mapped[str] = mapped_column(String(500), nullable=False)
     secret: Mapped[str] = mapped_column(String(100), nullable=False)
     subscribed_events: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=False, default=list)

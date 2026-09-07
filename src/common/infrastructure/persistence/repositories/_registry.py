@@ -1,46 +1,63 @@
-from src.auth.domain.repositories.refresh_token_repository_port import (
-    IRefreshTokenRepository,
+from src.auth.infrastructure.persistence.repositories._registry import (
+    repositories_list as auth_repos,
 )
-from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
-from src.auth.infrastructure.persistence.repositories.refresh_token_repository import (
-    RefreshTokenRepository,
+from src.billing.infrastructure.persistence.repositories._registry import (
+    repositories_list as billing_repos,
 )
-from src.auth.infrastructure.persistence.repositories.tenant_repository import (
-    TenantRepository,
+from src.cattle.infrastructure.persistence.repositories._registry import (
+    repositories_list as cattle_repos,
 )
-from src.auth.infrastructure.persistence.repositories.user_repository import IUserRepository, UserRepository
-from src.billing.domain.repositories import IPaymentRepository, ISubscriptionRepository
-from src.billing.infrastructure.persistence.repositories import (
-    PaymentRepository,
-    SubscriptionRepository,
+from src.common.application.ports.gdpr_delete_port import IGDPRDeleteRepository
+from src.common.application.ports.gdpr_export_port import IGDPRExportRepository
+from src.common.domain.repositories.webhook_subscription_repository_port import (
+    IWebhookSubscriptionRepository,
 )
-from src.cattle.infrastructure.persistence.repositories.animal_protocol_repository import (
-    AnimalProtocolsRepository,
-    IAnimalProtocolsRepository,
-)
-from src.cattle.infrastructure.persistence.repositories.animal_repository import AnimalRepository, IAnimalsRepository
-from src.cattle.infrastructure.persistence.repositories.animal_type_repository import AnimalTypeRepository, IAnimalTypesRepository
-from src.cattle.infrastructure.persistence.repositories.schedule_event_repository import IScheduleEventRepository, ScheduleEventRepository
 from src.common.domain.repository import IRepository
-from src.finance.infrastructure.persistence.repositories.animal_supplies import AnimalSuppliesRepository, IAnimalSuppliesRepository
-from src.finance.infrastructure.persistence.repositories.animal_supply_types import ISupplyTypesRepository, SupplyTypesRepository
-from src.finance.infrastructure.persistence.repositories.purchases import IPurchasesRepository, PurchasesRepository
-from src.market.infrastructure.persistence.repositories.buyers import BuyersRepository, IBuyersRepository
-from src.market.infrastructure.persistence.repositories.sales import ISalesRepository, SalesRepository
+from src.common.infrastructure.persistence.repositories.gdpr_delete_repository import (
+    GDPRDeleteRepository,
+)
+from src.common.infrastructure.persistence.repositories.gdpr_export_repository import (
+    GDPRExportRepository,
+)
+from src.common.infrastructure.persistence.repositories.webhook_subscription_repository import (
+    WebhookSubscriptionRepository,
+)
+from src.finance.infrastructure.persistence.repositories._registry import (
+    repositories_list as finance_repos,
+)
+from src.market.infrastructure.persistence.repositories._registry import (
+    repositories_list as market_repos,
+)
+from src.reports.infrastructure.persistence.repositories._registry import (
+    repositories_list as reports_repos,
+)
+
+
+def _merge_registries(
+    *registries: dict[type[IRepository], type[IRepository]],
+) -> dict[type[IRepository], type[IRepository]]:
+    """Merge multiple repository registries, failing early on duplicate keys."""
+    result: dict[type[IRepository], type[IRepository]] = {}
+    for registry in registries:
+        duplicates = set(result.keys()) & set(registry.keys())
+        if duplicates:
+            raise ValueError(f"Duplicate repository interface keys across contexts: {duplicates}")
+        result.update(registry)
+    return result
+
 
 repositories_list: dict[type[IRepository], type[IRepository]] = {
-    IRefreshTokenRepository: RefreshTokenRepository,
-    ITenantRepository: TenantRepository,
-    IUserRepository: UserRepository,
-    IAnimalsRepository: AnimalRepository,
-    IAnimalTypesRepository: AnimalTypeRepository,
-    IAnimalSuppliesRepository: AnimalSuppliesRepository,
-    ISupplyTypesRepository: SupplyTypesRepository,
-    IPurchasesRepository: PurchasesRepository,
-    IBuyersRepository: BuyersRepository,
-    ISalesRepository: SalesRepository,
-    IScheduleEventRepository: ScheduleEventRepository,
-    IAnimalProtocolsRepository: AnimalProtocolsRepository,
-    IPaymentRepository: PaymentRepository,
-    ISubscriptionRepository: SubscriptionRepository,
+    IGDPRDeleteRepository: GDPRDeleteRepository,
+    IGDPRExportRepository: GDPRExportRepository,
+    IWebhookSubscriptionRepository: WebhookSubscriptionRepository,
 }
+repositories_list.update(
+    _merge_registries(
+        auth_repos,
+        cattle_repos,
+        market_repos,
+        finance_repos,
+        billing_repos,
+        reports_repos,
+    )
+)

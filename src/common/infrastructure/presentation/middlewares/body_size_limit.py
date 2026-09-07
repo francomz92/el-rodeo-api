@@ -9,9 +9,10 @@ body is read by downstream middleware) to reject oversized payloads
 before they are processed.
 """
 
+from fastapi import FastAPI
 from starlette.datastructures import Headers
 from starlette.responses import JSONResponse
-from starlette.status import HTTP_413_CONTENT_TOO_LARGE
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_413_CONTENT_TOO_LARGE
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.common.infrastructure.adapters.correlation import get_correlation_id
@@ -36,9 +37,9 @@ class BodySizeLimitMiddleware:
         app.add_middleware(BodySizeLimitMiddleware, max_size=10_485_760)
     """
 
-    def __init__(self, app: ASGIApp, max_size: int | None = None) -> None:
+    def __init__(self, app: ASGIApp, max_size: int) -> None:
         self.app = app
-        self.max_size = max_size or app_settings.MAX_REQUEST_BODY_SIZE
+        self.max_size = max_size
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -48,28 +49,60 @@ class BodySizeLimitMiddleware:
         headers = Headers(scope=scope)
         content_length = headers.get("content-length")
 
-        if content_length is not None and int(content_length) > self.max_size:
-            cid = get_correlation_id()
-            log.warning(
-                "Request body too large: {size} bytes (max {max})",
-                size=content_length,
-                max=self.max_size,
-                path=str(scope.get("path", "")),
-                correlation_id=cid,
-            )
-            response = StandardErrorResponse(
-                success=False,
-                error=ErrorPayloadSchema(
-                    code="request_entity_too_large",
-                    message=f"Request body exceeds maximum allowed size of {self.max_size} bytes",
-                ),
-                timestamp=get_current_datetime().isoformat(),
-            )
-            json_response = JSONResponse(
-                status_code=HTTP_413_CONTENT_TOO_LARGE,
-                content=response.model_dump(),
-            )
-            await json_response(scope, receive, send)
-            return
+        if content_length is not None:
+            try:
+                parsed_length = int(content_length)
+            except ValueError:
+                cid = get_correlation_id()
+                log.warning(
+                    "Invalid Content-Length header: {value}",
+                    value=content_length,
+                    path=str(scope.get("path", "")),
+                    correlation_id=cid,
+                )
+                response = StandardErrorResponse(
+                    success=False,
+                    error=ErrorPayloadSchema(
+                        code="bad_request",
+                        message="Invalid Content-Length header",
+                    ),
+                    timestamp=get_current_datetime().isoformat(),
+                )
+                json_response = JSONResponse(
+                    status_code=HTTP_400_BAD_REQUEST,
+                    content=response.model_dump(),
+                )
+                await json_response(scope, receive, send)
+                return
+            if parsed_length > self.max_size:
+                cid = get_correlation_id()
+                log.warning(
+                    "Request body too large: {size} bytes (max {max})",
+                    size=content_length,
+                    max=self.max_size,
+                    path=str(scope.get("path", "")),
+                    correlation_id=cid,
+                )
+                response = StandardErrorResponse(
+                    success=False,
+                    error=ErrorPayloadSchema(
+                        code="request_entity_too_large",
+                        message=f"Request body exceeds maximum allowed size of {self.max_size} bytes",
+                    ),
+                    timestamp=get_current_datetime().isoformat(),
+                )
+                json_response = JSONResponse(
+                    status_code=HTTP_413_CONTENT_TOO_LARGE,
+                    content=response.model_dump(),
+                )
+                await json_response(scope, receive, send)
+                return
 
         await self.app(scope, receive, send)
+
+
+def configure_body_size_limit(app: FastAPI) -> None:
+    app.add_middleware(
+        BodySizeLimitMiddleware,
+        max_size=app_settings.MAX_REQUEST_BODY_SIZE,
+    )  # type: ignore[arg-type]

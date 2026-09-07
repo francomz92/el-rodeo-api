@@ -41,7 +41,7 @@ class ISupplyTypesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(
+    async def update_data(
         self,
         id: UUID,
         data: AnimalSupplyTypeUpdateValueObject,

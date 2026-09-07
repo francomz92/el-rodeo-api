@@ -44,6 +44,12 @@ class TestISubscriptionRepository:
             async def list_active_near_period_end(self, days_ahead: int) -> list[Subscription]:
                 raise NotImplementedError
 
+            async def get_by_gateway_subscription_id(self, gateway_subscription_id: str) -> Subscription | None:
+                return None
+
+            async def list_by_tenant(self, tenant_id: UUID, status_filter: str | None = None) -> list[Subscription]:
+                return []
+
         repo = ConcreteSubscriptionRepository()
         assert isinstance(repo, ISubscriptionRepository)
         assert isinstance(repo, ABC)

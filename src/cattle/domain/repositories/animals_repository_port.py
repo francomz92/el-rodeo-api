@@ -22,7 +22,7 @@ class IAnimalsRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID) -> AnimalEntity | None:
+    async def get_by_id(self, id: UUID, lock: bool = False) -> AnimalEntity | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -60,6 +60,7 @@ class IAnimalsRepository(IRepository):
 
     @abstractmethod
     async def update_status(self, id: UUID, status: AnimalStatus) -> None:
+        # TODO: unused — remove if no caller emerges after refactoring
         raise NotImplementedError
 
     @abstractmethod

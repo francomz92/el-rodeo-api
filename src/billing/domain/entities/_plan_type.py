@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-class PlanType(StrEnum):
+class PlanTypeEntity(StrEnum):
     FREE = "free"
     PRO = "pro"
     ENTERPRISE = "enterprise"

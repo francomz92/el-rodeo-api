@@ -1,10 +1,8 @@
 from celery import Celery
 from celery.schedules import crontab
 
-from src.billing.infrastructure.workers._billing_tasks import (
-    expire_trials_task,
-    monthly_billing_task,
-)
+from src.billing.infrastructure.workers._expire_trials_task import expire_trials_task
+from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
 from src.cattle.infrastructure.workers.upcoming_events_tasks import notify_upcoming_events
 from src.common.infrastructure.workers.event_tasks import outbox_forwarder_task
 

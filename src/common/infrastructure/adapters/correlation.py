@@ -6,7 +6,7 @@ from a client-provided ``X-Request-ID`` header or auto-generated.
 """
 
 import uuid
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 
 correlation_id_var: ContextVar[str] = ContextVar("correlation_id", default="")
 
@@ -16,15 +16,20 @@ def get_correlation_id() -> str:
     return correlation_id_var.get()
 
 
-def set_correlation_id(value: str | None = None) -> str:
+def set_correlation_id(value: str | None = None) -> tuple[str, Token]:
     """Set and return a correlation ID for the current context.
 
     If *value* is ``None`` (default) a new UUID hex string is generated.
     Otherwise *value* is stored as-is.
     """
     cid = value if value is not None else uuid.uuid4().hex
-    correlation_id_var.set(cid)
-    return cid
+    token = correlation_id_var.set(cid)
+    return cid, token
 
 
-__all__ = ["correlation_id_var", "get_correlation_id", "set_correlation_id"]
+def reset_correlation_id(token: Token) -> None:
+    """Reset the correlation ID for the current context to ``""``."""
+    correlation_id_var.reset(token)
+
+
+__all__ = ["correlation_id_var", "get_correlation_id", "set_correlation_id", "reset_correlation_id"]

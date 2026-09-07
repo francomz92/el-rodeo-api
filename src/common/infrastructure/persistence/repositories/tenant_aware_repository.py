@@ -6,11 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TenantAwareRepository(ABC):
-    """Mandatory base for all tenant-scoped repositories.
+    """Base for all tenant-scoped repositories.
 
-    Replaces SessionMixin for tenant repos. Requires tenant_id at construction
-    time and provides _filter_tenant() that appends a WHERE tenant_id = X clause
-    to any query statement.
+    Provides _filter_tenant() that appends a WHERE tenant_id = X clause
+    to any query statement. When tenant_id is None, _filter_tenant is a
+    no-op (returns the statement unchanged), allowing usage in contexts
+    where tenant scoping is not needed.
 
     Set bypass_filter=True for admin super-users who need cross-tenant access.
     """
@@ -21,8 +22,6 @@ class TenantAwareRepository(ABC):
         tenant_id: UUID | None = None,
         bypass_filter: bool = False,
     ) -> None:
-        if tenant_id is None and not bypass_filter:
-            raise ValueError("tenant_id is required for TenantAwareRepository when bypass_filter is False")
         self.db = session
         self._tenant_id = tenant_id
         self._bypass = bypass_filter
@@ -36,9 +35,9 @@ class TenantAwareRepository(ABC):
     def _filter_tenant(self, stmt: Any) -> Any:
         """Add WHERE tenant_id = self._tenant_id to the statement.
 
-        When bypass_filter is True, returns the statement unchanged
-        (for admin cross-tenant access).
+        When bypass_filter is True, or when tenant_id is None, returns
+        the statement unchanged (no tenant scoping).
         """
-        if self._bypass:
+        if self._bypass or self._tenant_id is None:
             return stmt
-        return stmt.where(self._model.tenant_id == self._tenant_id)  # type: ignore[attr-defined]
+        return stmt.where(self._model.tenant_id == self._tenant_id)  # type: ignore

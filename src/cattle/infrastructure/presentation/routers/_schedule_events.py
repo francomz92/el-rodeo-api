@@ -25,6 +25,7 @@ from src.cattle.infrastructure.presentation.dependencies.schedule_events import 
     GetRegisterScheduleEventCase,
     GetUpdateScheduleEventCase,
 )
+from src.common.utils import log
 
 events_router = APIRouter(
     prefix="/schedule-events",
@@ -45,6 +46,7 @@ async def create_schedule_event(
     register_schedule_event_case: GetRegisterScheduleEventCase,
     data: ScheduleEventCreationSchema,
 ):
+    print(data)
     event_data = ScheduleEventCreationValueObject(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
@@ -81,7 +83,7 @@ async def update_event(
     summary="Delete a scheduled event in the database",
     dependencies=[require_role(UserRole.ADMIN)],
 )
-async def delete_evetn(
+async def delete_event(
     id: UUID,
     current_user: GetCurrentUser,
     delete_schedule_event_case: GetDeleteScheduleEventCase,
@@ -108,9 +110,6 @@ async def list_schedule_events(
             exclude={"limit", "offset", "order_by"},
         ),
     )
-    return await list_schedule_events_case.execute(
-        filters=filters,
-        limit=query_params.limit,
-        offset=query_params.offset,
-        order_by=query_params.order_by,
-    )
+    log.error(query_params.start)
+    log.error(query_params.end)
+    return await list_schedule_events_case.execute(filters=filters, order_by=query_params.order_by)

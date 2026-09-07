@@ -17,8 +17,8 @@ from src.common.infrastructure.adapters.http.output.gdpr_schemas import (
     GDPRExportResponse,
 )
 from src.common.infrastructure.presentation.dependencies.gdpr import (
-    GetGDPRDeleteService,
-    GetGDPRExportService,
+    GetGDPRDeleteUserDataCase,
+    GetGDPRExportUserDataCase,
 )
 
 gdpr_router = APIRouter()
@@ -34,10 +34,10 @@ gdpr_router = APIRouter()
 )
 async def export_my_data(
     current_user: GetCurrentUser,
-    gdpr_export_service: GetGDPRExportService,
+    gdpr_export_case: GetGDPRExportUserDataCase,
 ) -> GDPRExportResponse:
     """Export all data for the current authenticated user."""
-    data = await gdpr_export_service.export_user_data(current_user.id)
+    data = await gdpr_export_case.execute(current_user.id)
     if data is None:
         return GDPRExportResponse()
     return GDPRExportResponse(**data)
@@ -55,7 +55,7 @@ async def export_my_data(
 )
 async def delete_my_data(
     current_user: GetCurrentUser,
-    gdpr_delete_service: GetGDPRDeleteService,
+    gdpr_delete_case: GetGDPRDeleteUserDataCase,
 ) -> GDPRDeleteResponse:
     """Request anonymization of all data for the current authenticated user.
 
@@ -63,5 +63,5 @@ async def delete_my_data(
     The user account is disabled. Refresh tokens are revoked.
     Audit log entries are preserved as they are immutable by law.
     """
-    await gdpr_delete_service.delete_user_data(current_user.id)
+    await gdpr_delete_case.execute(current_user.id)
     return GDPRDeleteResponse()

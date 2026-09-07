@@ -45,20 +45,20 @@ Chain strategy: pending
 
 ## Phase 3: Webhooks + Celery + Payment
 
-- [ ] 3.1 Create `src/common/infrastructure/persistence/models/webhook_subscription.py` — tenant-scoped SQLA model (url, secret, subscribed_events, is_active, failure_count)
-- [ ] 3.2 Create `src/common/infrastructure/events/webhook_dispatcher.py` — HMAC-SHA256 + POST with exponential backoff (5 attempts) + dead-letter on 5 failures
-- [ ] 3.3 Create `src/common/infrastructure/workers/event_tasks.py` — Celery outbox forwarder (get_pending → dispatch → mark_sent/retry)
-- [ ] 3.4 Modify `cron_tasks_register.py` — register outbox_forwarder_task as periodic Celery beat task
-- [ ] 3.5 Modify `_payment_webhook_service.py` — emit PaymentReceived via IEventBus on APPROVED
-- [ ] 3.6 Add webhook CRUD routes — LIST/CREATE/UPDATE/DELETE WebhookSubscription per tenant
+- [x] 3.1 Create `src/common/infrastructure/persistence/models/webhook_subscription.py` — tenant-scoped SQLA model (url, secret, subscribed_events, is_active, failure_count)
+- [x] 3.2 Create `src/common/infrastructure/events/webhook_dispatcher.py` — HMAC-SHA256 + POST with exponential backoff (5 attempts) + dead-letter on 5 failures
+- [x] 3.3 Create `src/common/infrastructure/workers/event_tasks.py` — Celery outbox forwarder (get_pending → dispatch → mark_sent/retry)
+- [x] 3.4 Modify `cron_tasks_register.py` — register outbox_forwarder_task as periodic Celery beat task
+- [x] 3.5 Modify `_payment_webhook_service.py` — emit PaymentReceived via IEventBus on APPROVED
+- [x] 3.6 Add webhook CRUD routes — LIST/CREATE/UPDATE/DELETE WebhookSubscription per tenant
 
 ## Phase 4: Testing
 
-- [ ] 4.1 Unit: DomainEvent defaults, UUID generation, metadata passthrough
-- [ ] 4.2 Unit: InMemoryEventBus register+dispatch, handler isolation on exception, registration order
+- [x] 4.1 Unit: DomainEvent defaults, UUID generation, metadata passthrough
+- [x] 4.2 Unit: InMemoryEventBus register+dispatch, handler isolation on exception, registration order
 - [x] 4.3 Unit: OutboxRepository add/get_pending/mark_sent with in-memory impl
-- [x] 4.4 Unit: CacheInvalidationHandler — mock ICacheService, verify invalidate_pattern call
-- [ ] 4.5 Unit: WebhookDispatcher — HMAC signing, retry schedule, dead-letter after 5 failures
-- [ ] 4.6 Integration: UoW commit flushes outbox rows; rollback empties queue
-- [ ] 4.7 Integration: Celery forwarder processes PENDING → SENT status transition
-- [ ] 4.8 Integration: PaymentReceived emitted on APPROVED; not emitted on REJECTED
+- [x] 4.4 Unit: CacheInvalidationHandler — mock ICacheService, verify invalidation call
+- [x] 4.5 Unit: WebhookDispatcher — HMAC signing, retry schedule, dead-letter after 5 failures
+- [x] 4.6 Integration: UoW commit flushes outbox rows; rollback empties queue
+- [x] 4.7 Integration: Celery forwarder processes PENDING → SENT status transition
+- [x] 4.8 Integration: PaymentReceived emitted on APPROVED; not emitted on REJECTED

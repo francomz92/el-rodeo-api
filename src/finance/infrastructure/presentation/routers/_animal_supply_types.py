@@ -24,8 +24,9 @@ from src.finance.infrastructure.presentation.dependencies.animal_supply_type_dep
 )
 
 supply_type_router = APIRouter(
-    prefix="/supply-types",
+    prefix="/animal-supply-types",
     responses={401: {}, 403: {}},
+    dependencies=[require_role(UserRole.VIEWER)],
 )
 
 
@@ -59,7 +60,7 @@ async def update_supply_type(
     use_case: GetUpdateAnimalSupplyTypeCase,
 ):
     payload = AnimalSupplyTypeUpdateValueObject(
-        **data.model_dump(),
+        **data.model_dump(exclude_unset=True),
     )
     return await use_case.execute(id=id, data=payload)
 

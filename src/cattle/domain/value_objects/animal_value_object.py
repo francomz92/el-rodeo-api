@@ -23,7 +23,7 @@ class AnimalCreateValueObject:
     date_of_birth: date
     initial_weight: float
     initial_weight_date: date
-    last_weight: float
+    last_weight: float | None = None
     status: AnimalStatus = AnimalStatus.NOT_READY
 
 

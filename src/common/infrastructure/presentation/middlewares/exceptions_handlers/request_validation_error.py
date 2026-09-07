@@ -42,5 +42,5 @@ async def _request_validation_exception_handler(
     )
     return JSONResponse(
         status_code=422,
-        content={"detail": error_response.model_dump()},
+        content=error_response.model_dump(),
     )

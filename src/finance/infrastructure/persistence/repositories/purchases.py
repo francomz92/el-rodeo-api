@@ -99,7 +99,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         purchase_id = result.scalar_one()
         new_entity = await self.get_by_id(purchase_id)
         self._audit_create("purchase", purchase_id, kws)
-        return new_entity  # type: ignore[return-value]
+        return new_entity  # type: ignore
 
     async def update_data(
         self,

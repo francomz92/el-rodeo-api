@@ -29,7 +29,10 @@ class IBuyersRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
+        user_id: UUID | None = None,
     ) -> list[BuyerEntity]:
+        # NOTE: user_id is accepted for API/documentation purposes.
+        #       The infra implementation may not enforce it as a filter yet.
         raise NotImplementedError
 
     @abstractmethod
@@ -41,9 +44,9 @@ class IBuyersRepository(IRepository):
         self,
         id: UUID,
         data: BuyerUpdateValueObject,
-    ) -> BuyerEntity:
+    ) -> BuyerEntity | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: UUID) -> None:
+    async def delete(self, id: UUID) -> bool:
         raise NotImplementedError

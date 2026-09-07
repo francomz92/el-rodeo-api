@@ -95,7 +95,26 @@ class TestOutboxForwarderTask:
         if subscriptions is not None:
             mock_sub_result = MagicMock()
             mock_sub_result.scalars.return_value.all.return_value = subscriptions
-            session.execute.side_effect = [mock_event_result, mock_sub_result]
+            # Return event_result for query calls (select), sub_result for list_all_active
+            # Return a generic success result for mutation calls (update)
+            mock_update_result = MagicMock()
+            mock_update_result.rowcount = 1
+
+            call_count = 0
+
+            def _dynamic_side_effect(*args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                # Query calls: get_pending (0), list_all_active (1)
+                # Mutation calls: webhook_repo.update (2+)
+                if call_count == 1:
+                    return mock_event_result
+                elif call_count == 2:
+                    return mock_sub_result
+                else:
+                    return mock_update_result
+
+            session.execute.side_effect = _dynamic_side_effect
         else:
             session.execute.return_value = mock_event_result
 
@@ -134,6 +153,7 @@ class TestOutboxForwarderTask:
             url=self.webhook_url,
             secret=self.secret,
             payload=event.payload,
+            event_id=str(event.event_id),
         )
 
     def test_forwarder_skips_non_matching_subscriptions(self) -> None:

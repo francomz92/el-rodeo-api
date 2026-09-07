@@ -10,7 +10,7 @@ from src.common.domain.events.base import DomainEvent
 
 
 class OutboxScheduler:
-    """Synchronous handler that queues a domain event into the UoW outbox.
+    """Handler that queues a domain event into the UoW outbox.
 
     Usage::
 

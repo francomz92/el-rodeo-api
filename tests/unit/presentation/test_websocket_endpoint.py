@@ -49,7 +49,7 @@ class TestWebSocketEndpoint:
                 "type": "access",
                 "jti": str(uuid4()),
             }
-            with client.websocket_connect("/ws/notifications?token=valid.jwt.token") as ws:
+            with client.websocket_connect("/ws/notifications?token=valid.jwt.token"):
                 conns = manager.get_connections(tenant_id)
                 assert len(conns) == 1
 
@@ -61,8 +61,8 @@ class TestWebSocketEndpoint:
         with patch("src.common.infrastructure.adapters.security.tokens.pyjwt.decode") as mock_decode:
             mock_decode.side_effect = Exception("Invalid token")
 
-            with pytest.raises(Exception) as exc_info:
-                with client.websocket_connect("/ws/notifications?token=bad.token.here") as ws:
+            with pytest.raises(Exception):
+                with client.websocket_connect("/ws/notifications?token=bad.token.here"):
                     pass
 
             # Should not have any connections registered
@@ -72,7 +72,7 @@ class TestWebSocketEndpoint:
     def test_missing_token_query_param_closes_with_4001(self, client: TestClient, manager: ConnectionManager) -> None:
         """Missing token query parameter should close with code 4001."""
         with pytest.raises(Exception):
-            with client.websocket_connect("/ws/notifications") as ws:
+            with client.websocket_connect("/ws/notifications"):
                 pass
 
     def test_empty_token_closes_with_4001(self, client: TestClient, manager: ConnectionManager) -> None:
@@ -81,7 +81,7 @@ class TestWebSocketEndpoint:
             mock_decode.side_effect = Exception("Empty token")
 
             with pytest.raises(Exception):
-                with client.websocket_connect("/ws/notifications?token=") as ws:
+                with client.websocket_connect("/ws/notifications?token="):
                     pass
 
     def test_token_without_tenant_id_closes_with_4001(self, client: TestClient, manager: ConnectionManager) -> None:
@@ -92,8 +92,8 @@ class TestWebSocketEndpoint:
                 "jti": str(uuid4()),
             }
 
-            with pytest.raises(Exception) as exc_info:
-                with client.websocket_connect("/ws/notifications?token=no-tenant.jwt.token") as ws:
+            with pytest.raises(Exception):
+                with client.websocket_connect("/ws/notifications?token=no-tenant.jwt.token"):
                     pass
 
     def test_manager_connect_called_on_valid_token(self, client: TestClient, manager: ConnectionManager) -> None:
@@ -105,5 +105,5 @@ class TestWebSocketEndpoint:
                 "type": "access",
                 "jti": str(uuid4()),
             }
-            with client.websocket_connect("/ws/notifications?token=valid.jwt.token") as ws:
+            with client.websocket_connect("/ws/notifications?token=valid.jwt.token"):
                 assert len(manager.get_connections(tenant_id)) == 1

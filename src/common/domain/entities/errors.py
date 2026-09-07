@@ -3,6 +3,7 @@ from typing import Literal, TypedDict
 ErrorCode = Literal[
     "domain_error",
     "conflict_error",
+    "duplicated_error",
     "not_found_error",
     "validation_error",
     "invalid_credentials_error",

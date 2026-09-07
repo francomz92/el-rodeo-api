@@ -10,13 +10,13 @@ from tests.factories import (
 )
 from tests.mocks import MockUoW
 
-from src.finance.application.uses_cases.animal_supplies_cases.create_animal_supplies_cases import (
+from src.finance.application.uses_cases.animal_supplies_cases.create_animal_supplies_case import (
     CreateAnimalSuppliesCase,
 )
 from src.finance.application.uses_cases.animal_supplies_cases.delete_animal_supplies_case import (
     DeleteAnimalSuppliesCase,
 )
-from src.finance.application.uses_cases.animal_supplies_cases.get_animal_supplies_cases import (
+from src.finance.application.uses_cases.animal_supplies_cases.get_animal_supplies_case import (
     GetAnimalSuppliesCase,
 )
 from src.finance.application.uses_cases.animal_supplies_cases.list_animal_supplies_case import (
@@ -133,12 +133,14 @@ class TestUpdateAnimalSuppliesCase:
 
     async def test_execute_updates_successfully(self) -> None:
         supply_id = UUID("00000000-0000-0000-0000-000000000001")
-        data = make_animal_supply_update(amount=10.0, critical_amount=20.0)
+        data = make_animal_supply_update(amount=30.0, critical_amount=10.0)
         expected = make_animal_supply_entity(id=supply_id)
         supply_for_validation = make_animal_supply_entity(id=supply_id, amount=5.0, critical_amount=10.0)
         repo = self.uow.get_repository(IAnimalSuppliesRepository)
         repo.get_by_id.return_value = supply_for_validation
         repo.update_data.return_value = expected
+        type_repo = self.uow.get_repository(ISupplyTypesRepository)
+        type_repo.exists.return_value = True
 
         result = await self.case.execute(id=supply_id, data=data)
 

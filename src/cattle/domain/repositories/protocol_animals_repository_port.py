@@ -23,6 +23,10 @@ class IAnimalProtocolsRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def get_by_animal_id(self, animal_id: UUID) -> AnimalProtocolEntity | None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def list_for_user(
         self,
         filters: AnimalProtocolListQueryParamsValueObject,

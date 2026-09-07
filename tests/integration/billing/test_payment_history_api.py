@@ -86,7 +86,7 @@ async def _seed_payments(
     """Insert payment rows for a tenant and return their models."""
     if sub_id is None:
         sub_id = uuid4()
-    now = datetime.now(tz=timezone.utc)
+    datetime.now(tz=timezone.utc)
     payments = []
     for i in range(count):
         pm = PaymentModel(

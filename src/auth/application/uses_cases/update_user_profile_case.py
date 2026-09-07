@@ -4,7 +4,7 @@ from src.auth.domain.entities import UserEntity
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.value_objects.user_value_object import UserUpdateValueObject
 from src.common.application.ports.uow import IUoW
-from src.common.domain.exceptions import ConflictError
+from src.common.domain.exceptions import ConflictError, NotFoundError
 
 
 class UpdateUserProfileCase:
@@ -60,5 +60,5 @@ class UpdateUserProfileCase:
             updated = await repo.get_by_id(current_user.id)
             if updated is None:
                 msg = f"Usuario con ID '{current_user.id}' no encontrado después de actualizar"
-                raise ValueError(msg)
+                raise NotFoundError(msg)
             return updated

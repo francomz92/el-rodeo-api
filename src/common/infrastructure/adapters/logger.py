@@ -3,8 +3,8 @@
 Provides ``configure_logger()`` (cached) that sets up:
 
 - Stdout sink at ``LOG_LEVEL`` level, format determined by ``LOG_FORMAT``
-- ``logs/error.log`` — ERROR+, 10 MB rotation, 30-day retention
-- ``logs/app_{date}.log`` — INFO+, 10 MB rotation, 30-day retention (only non-DEBUG)
+- ``{project_root}/logs/error.log`` — ERROR+, 10 MB rotation, 30-day retention
+- ``{project_root}/logs/app_{date}.log`` — INFO+, 10 MB rotation, 30-day retention (only non-DEBUG)
 
 A ``correlation_filter`` function injects the active correlation ID
 into every log record's ``extra`` dict before formatting.
@@ -16,6 +16,7 @@ from datetime import datetime
 from functools import lru_cache
 
 from loguru import logger
+from loguru._logger import Logger
 
 from src.common.infrastructure.adapters.correlation import get_correlation_id
 from src.common.infrastructure.core import settings
@@ -86,7 +87,7 @@ def _json_format(record: dict) -> str:
 
 
 @lru_cache
-def configure_logger():
+def configure_logger() -> Logger:
     """Configure Loguru sinks.
 
     Call once at application startup. Subsequent calls are no-ops
@@ -97,7 +98,7 @@ def configure_logger():
     is_json = settings.LOG_FORMAT == "json"
 
     # --- Stdout sink -------------------------------------------------------
-    logger.add(  # type: ignore[call-overload]
+    logger.add(
         sys.stdout,
         level=settings.LOG_LEVEL,
         format=_json_format if is_json else _TEXT_FORMAT,  # type: ignore[arg-type]
@@ -105,14 +106,14 @@ def configure_logger():
         colorize=not is_json,
         enqueue=True,
         diagnose=settings.DEBUG,
-    )
+    )  # ty:ignore[no-matching-overload]
 
     # --- Error file sink ---------------------------------------------------
     logger.add(  # type: ignore[call-overload]
-        "logs/error.log",
+        settings.LOG_DIR / "error.log",
         level="ERROR",
-        format=_json_format if is_json else _TEXT_FORMAT,  # type: ignore[arg-type]
-        filter=correlation_filter,  # type: ignore[arg-type]
+        format=_json_format if is_json else _TEXT_FORMAT,  # ty:ignore[invalid-argument-type]
+        filter=correlation_filter,  # ty:ignore[invalid-argument-type]
         rotation="10 MB",
         retention="30 days",
         enqueue=True,
@@ -123,10 +124,10 @@ def configure_logger():
     # --- Application file sink (non-DEBUG only) ----------------------------
     if not settings.DEBUG:
         logger.add(  # type: ignore[call-overload]
-            "logs/app_{time:YYYY-MM-DD}.log",
+            settings.LOG_DIR / "app_{time:YYYY-MM-DD}.log",
             level="INFO",
-            format=_json_format if is_json else _TEXT_FORMAT,  # type: ignore[arg-type]
-            filter=correlation_filter,  # type: ignore[arg-type]
+            format=_json_format if is_json else _TEXT_FORMAT,  # ty:ignore[invalid-argument-type]
+            filter=correlation_filter,  # ty:ignore[invalid-argument-type]
             rotation="10 MB",
             retention="30 days",
             enqueue=True,
@@ -134,4 +135,4 @@ def configure_logger():
             diagnose=settings.DEBUG,
         )
 
-    return logger
+    return logger  # type: ignore

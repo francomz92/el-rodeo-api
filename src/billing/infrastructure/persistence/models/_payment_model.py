@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 class Payment(Model):

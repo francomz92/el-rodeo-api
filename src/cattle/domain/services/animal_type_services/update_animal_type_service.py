@@ -28,7 +28,7 @@ class UpdateAnimalTypeService:
             order_by="id",
         )
         if animal_type_list:
-            raise ConflictError("El tipo de animal que intenta crear ya existe.")
+            raise ConflictError("El tipo de animal que intenta actualizar ya existe.")
 
     async def update_animal_type(
         self,

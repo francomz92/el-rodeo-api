@@ -11,7 +11,7 @@ class DomainError(Exception):
 
 
 class DuplicatedError(DomainError):
-    error_code = "conflict_error"
+    error_code = "duplicated_error"
 
     def __init__(self, message: str) -> None:
         super().__init__(message, [])
@@ -47,3 +47,6 @@ class ConflictError(DomainError):
 
 class BusinessValidationError(DomainError):
     error_code = "validation_error"
+
+    def __init__(self, message: str, details: list[ErrorDetail] = []) -> None:
+        super().__init__(message, details)

@@ -196,8 +196,6 @@ class TestCorrelationIdSanitization:
         async def noop_receive() -> dict:
             return {"type": "http.request"}
 
-        captured_cid: list[str] = []
-
         async def capture_send(message: dict) -> None:
             pass
 

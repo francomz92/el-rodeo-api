@@ -14,10 +14,16 @@ from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
 )
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
 
 
-class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin, AuditableRepositoryMixin):
+class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    @property
+    def _model(self) -> type:
+        return AnimalType
+
     async def exists(self, id: UUID) -> bool:
         query = exists(AnimalType).where(AnimalType.id == id).select()
         result = await self.db.execute(query)
@@ -71,9 +77,9 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin, AuditableReposi
         query = insert(AnimalType).values(**kws).returning(AnimalType.id)
         result = await self.db.execute(query)
         animal_type_id = result.scalar_one()
-        entity = await self.get_by_id(animal_type_id)  # type: ignore
+        entity = await self.get_by_id(animal_type_id)
         self._audit_create("animal_type", animal_type_id, kws)
-        return entity  # type: ignore[return-value]
+        return entity  # type: ignore
 
     async def update(
         self,
@@ -96,7 +102,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, SessionMixin, AuditableReposi
         animal_type_id = result.scalar_one_or_none()
         entity = await self.get_by_id(animal_type_id)  # type: ignore
         self._audit_update("animal_type", id, old_values, kws)
-        return entity  # type: ignore[return-value]
+        return entity  # type: ignore
 
     def _build_animal_type(self, type_data: RowMapping) -> AnimalTypeEntity:
         return AnimalTypeEntity(

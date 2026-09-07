@@ -16,7 +16,7 @@ class ListPurchaseCase:
 
     async def execute(
         self,
-        filter: PurchaseListQueryParamValueObject,
+        filters: PurchaseListQueryParamValueObject,
         limit: int,
         offset: int,
         order_by: str,
@@ -25,7 +25,7 @@ class ListPurchaseCase:
             repository = uow.get_repository(IPurchasesRepository)
             return await self.service.get_purchases(
                 repository=repository,
-                query=filter,
+                query=filters,
                 limit=limit,
                 offset=offset,
                 order_by=order_by,

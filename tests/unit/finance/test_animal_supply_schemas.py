@@ -1,7 +1,7 @@
 """Unit tests for animal supplies input schemas (Phase 8 — API Hardening).
 
 Covers:
-- AnimalSuppliesCreateSchema: name must have max_length=100
+- AnimalSuppliesCreateSchema: name must have max_length=50
 """
 
 from uuid import uuid4
@@ -16,25 +16,25 @@ from src.finance.infrastructure.adapters.http.input.animal_supplies_schemas impo
 
 
 class TestAnimalSuppliesCreateSchemaConstraints:
-    """AnimalSuppliesCreateSchema must enforce max_length=100 on name."""
+    """AnimalSuppliesCreateSchema must enforce max_length=50 on name."""
 
     def test_name_within_limit_accepted(self) -> None:
-        """Name up to 100 characters passes validation."""
+        """Name up to 50 characters passes validation."""
         schema = AnimalSuppliesCreateSchema(
             type_id=uuid4(),
-            name="a" * 100,
+            name="a" * 50,
             amount=10.0,
             critical_amount=5.0,
             unit_of_measurement=UnitOfMeasurement.UNIT,
         )
-        assert len(schema.name) == 100
+        assert len(schema.name) == 50
 
     def test_name_exceeds_max_length_rejected(self) -> None:
-        """Name longer than 100 characters raises validation error."""
+        """Name longer than 50 characters raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
             AnimalSuppliesCreateSchema(
                 type_id=uuid4(),
-                name="a" * 101,
+                name="a" * 51,
                 amount=10.0,
                 critical_amount=5.0,
                 unit_of_measurement=UnitOfMeasurement.UNIT,

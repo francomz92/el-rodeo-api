@@ -5,6 +5,7 @@ from src.auth.domain.repositories.refresh_token_repository_port import (
 from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.common.application.ports.uow import IUoW
+from src.common.domain.exceptions import NotFoundError
 from src.common.domain.services.security import ISecurityService
 
 
@@ -40,19 +41,22 @@ class ChangePasswordCase:
         Raises:
             UnauthorizedError: If the current password is invalid.
         """
-        await self.change_password_service.validate_passwords(user, password, self.security_service)
         async with self.uow as uow:
             repository = uow.get_repository(IUserRepository)
+            fresh_user = await repository.get_by_id(user.id)
+            if not fresh_user:
+                raise NotFoundError("Usuario no encontrado")
+            await self.change_password_service.validate_passwords(fresh_user, password, self.security_service)
             await self.change_password_service.change_password(
-                user=user,
+                user=fresh_user,
                 password=password,
                 new_password=new_password,
                 confirmed_password=confirmed_password,
                 security_service=self.security_service,
                 repository=repository,
             )
-            await uow.commit()
 
             # Revoke all refresh tokens for security (forces re-login)
             refresh_repo = uow.get_repository(IRefreshTokenRepository)
             await refresh_repo.revoke_all_user_tokens(user.id)
+            await uow.commit()

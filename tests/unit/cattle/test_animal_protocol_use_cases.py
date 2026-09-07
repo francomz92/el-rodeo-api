@@ -4,6 +4,7 @@ from uuid import UUID
 
 import pytest
 from tests.factories import (
+    make_animal_entity,
     make_animal_protocol_entity,
     make_animal_protocol_list_params,
     make_animal_protocol_update,
@@ -65,6 +66,36 @@ class TestGetAnimalProtocolCase:
             await self.case.execute(
                 UUID("00000000-0000-0000-0000-000000000001"),
             )
+
+
+class TestGetProtocolByAnimalId:
+    """IAnimalProtocolsRepository.get_by_animal_id lookup."""
+
+    def setup_method(self) -> None:
+        self.uow = MockUoW()
+        self.repo = self.uow.get_repository(IAnimalProtocolsRepository)
+
+    async def test_get_by_animal_id_returns_protocol(self) -> None:
+        """get_by_animal_id returns the correct protocol entity for a given animal_id."""
+        animal_id = UUID("00000000-0000-0000-0000-00000000000a")
+        expected = make_animal_protocol_entity(animal=make_animal_entity(id=animal_id))
+        self.repo.get_by_animal_id.return_value = expected
+
+        result = await self.repo.get_by_animal_id(animal_id)
+
+        assert result == expected
+        assert result.animal.id == animal_id
+        self.repo.get_by_animal_id.assert_awaited_once_with(animal_id)
+
+    async def test_get_by_animal_id_returns_none_when_not_found(self) -> None:
+        """get_by_animal_id returns None when no protocol matches the animal_id."""
+        unknown_id = UUID("00000000-0000-0000-0000-0000000000bb")
+        self.repo.get_by_animal_id.return_value = None
+
+        result = await self.repo.get_by_animal_id(unknown_id)
+
+        assert result is None
+        self.repo.get_by_animal_id.assert_awaited_once_with(unknown_id)
 
 
 class TestListAnimalProtocolsCase:

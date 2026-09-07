@@ -1,12 +1,13 @@
 """Unit tests for AnimalCacheInvalidationHandler.
 
 Verifies that when the handler is called, it fires async cache
-invalidation via asyncio.create_task.
+invalidation.
 """
 
-import asyncio
 from unittest.mock import AsyncMock
 from uuid import UUID
+
+import pytest
 
 from src.cattle.infrastructure.events.handlers.cache_invalidation import (
     AnimalCacheInvalidationHandler,
@@ -24,6 +25,7 @@ class TestAnimalCacheInvalidationHandler:
             cache_service=self.cache_service,
         )
 
+    @pytest.mark.asyncio
     async def test_handler_invalidates_animal_cache_pattern(self) -> None:
         """Calling the handler triggers cache invalidation for the animal pattern."""
         event = DomainEvent(
@@ -31,11 +33,9 @@ class TestAnimalCacheInvalidationHandler:
             event_type="animal.created",
         )
 
-        self.handler(event)
-        # Yield control to the event loop so the create_task fires
-        await asyncio.sleep(0)
+        await self.handler(event)
 
-        self.cache_service.invalidate_pattern.assert_called_once_with(
+        self.cache_service.invalidate_pattern.assert_awaited_once_with(
             "cattle:animals:*",
         )
 

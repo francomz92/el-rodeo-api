@@ -27,8 +27,8 @@ def set_auth_cookies(
         value=access_token,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="strict",
-        path="/api",
+        samesite="lax",  # strict or lax depending on your needs
+        path="/",
         max_age=900,  # 15 minutes in seconds
         domain=settings.COOKIE_DOMAIN,
     )
@@ -37,32 +37,37 @@ def set_auth_cookies(
         value=refresh_token,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="strict",
-        path="/auth/refresh",
+        samesite="lax",  # strict or lax depending on your needs
+        path="/",
         max_age=604800,  # 7 days in seconds
         domain=settings.COOKIE_DOMAIN,
     )
 
 
-def clear_auth_cookies(response: Response) -> None:
+def clear_auth_cookies(response: Response, settings: Any) -> None:
     """Clear both auth cookies by setting empty values with max_age=0.
 
     Args:
         response: FastAPI Response to clear cookies on.
+        settings: Application settings (must have COOKIE_DOMAIN, COOKIE_SECURE).
     """
     response.set_cookie(
         key="access_token",
         value="",
         httponly=True,
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
         path="/api",
         max_age=0,
+        domain=settings.COOKIE_DOMAIN,
     )
     response.set_cookie(
         key="refresh_token",
         value="",
         httponly=True,
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
         path="/auth/refresh",
         max_age=0,
+        domain=settings.COOKIE_DOMAIN,
     )

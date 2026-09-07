@@ -11,7 +11,8 @@ class ChangePasswordService:
         password: str,
         security_service: ISecurityService,
     ):
-        if not await user.passwords_match(security_service, password):
+        password_matches = await user.passwords_match(security_service, password)
+        if not password_matches:
             raise UnauthorizedError("Las credenciales proporcionadas no son válidas")
 
     async def change_password(
@@ -29,4 +30,4 @@ class ChangePasswordService:
             new_password,
             confirmed_password,
         )
-        await repository.update_password(user.id, user._hashed_password)
+        await repository.update_password(user.id, user.hashed_password)

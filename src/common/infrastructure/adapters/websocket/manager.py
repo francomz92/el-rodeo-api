@@ -7,11 +7,10 @@ connections for real-time notification delivery.
 from __future__ import annotations
 
 import json
-import logging
 
 from fastapi import WebSocket
 
-logger = logging.getLogger(__name__)
+from src.common.utils import log
 
 
 class ConnectionManager:
@@ -31,8 +30,8 @@ class ConnectionManager:
         if tenant_id not in self._connections:
             self._connections[tenant_id] = set()
         self._connections[tenant_id].add(websocket)
-        logger.info(
-            "WebSocket connected: tenant=%s total=%d",
+        log.info(
+            "WebSocket connected: tenant={} total={}",
             tenant_id,
             self._total(),
         )
@@ -43,8 +42,8 @@ class ConnectionManager:
             self._connections[tenant_id].discard(websocket)
             if not self._connections[tenant_id]:
                 del self._connections[tenant_id]
-        logger.info(
-            "WebSocket disconnected: tenant=%s total=%d",
+        log.info(
+            "WebSocket disconnected: tenant={} total={}",
             tenant_id,
             self._total(),
         )
@@ -58,15 +57,17 @@ class ConnectionManager:
             return
         stale: set[WebSocket] = set()
         payload = json.dumps(message, default=str)
-        for ws in self._connections[tenant_id]:
+        for ws in list(self._connections[tenant_id]):
             try:
                 await ws.send_text(payload)
             except Exception:
                 stale.add(ws)
-        for ws in stale:
-            self._connections[tenant_id].discard(ws)
-        if not self._connections[tenant_id]:
-            del self._connections[tenant_id]
+        connections = self._connections.get(tenant_id)
+        if connections is not None:
+            for ws in stale:
+                connections.discard(ws)
+            if not connections:
+                del self._connections[tenant_id]
 
     def get_connections(self, tenant_id: str) -> set[WebSocket]:
         """Return the set of active connections for *tenant_id* (may be empty)."""
@@ -75,7 +76,7 @@ class ConnectionManager:
     async def close_all(self) -> None:
         """Close all connections (used during shutdown)."""
         for tenant_id, conns in list(self._connections.items()):
-            for ws in conns:
+            for ws in list(conns):
                 try:
                     await ws.close(code=1001, reason="Server shutting down")
                 except Exception:

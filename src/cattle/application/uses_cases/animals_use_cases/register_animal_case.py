@@ -49,5 +49,5 @@ class RegisterAnimalCase:
             await uow.commit()
 
         animal_created = AnimalCreated(aggregate_id=animal.id)
-        self.event_bus.dispatch(animal_created)
+        await self.event_bus.dispatch(animal_created)
         return animal

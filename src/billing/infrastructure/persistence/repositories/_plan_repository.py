@@ -1,17 +1,17 @@
-from decimal import Decimal
 from uuid import UUID
 
-from src.billing.domain.entities._feature import Feature
-from src.billing.domain.entities._plan import Plan
-from src.billing.domain.entities._plan_type import PlanType
-from src.billing.domain.entities._quota import Quota
-from src.billing.domain.repositories import IPlanRepository
-from src.billing.domain.value_objects import Money
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Deterministic UUIDs for seed data — stable across test runs and sessions.
-# These are namespace-based UUIDs derived from the plan type name.
+from src.billing.domain.entities._plan import PlanEntity
+from src.billing.domain.entities._plan_type import PlanTypeEntity
+from src.billing.domain.repositories import IPlanRepository
+from src.billing.infrastructure.persistence.models import Plan
+from src.billing.infrastructure.persistence.repositories._mappers import build_plan
+
+# Sequential deterministic UUIDs for seed data — stable across test runs and sessions.
 _FREE_PLAN_ID = UUID("00000000-0000-0000-0000-000000000001")
-_PRO_PLAN_ID = UUID("00000000-0000-0000-0000-000000000002")
+_PRO_PLAN_ID = UUID("b466e7e4-bcbe-42ec-9b11-126ae8a8e69c")
 _ENTERPRISE_PLAN_ID = UUID("00000000-0000-0000-0000-000000000003")
 
 
@@ -27,79 +27,90 @@ class PlanRepository(IPlanRepository):
     by ID work consistently across sessions.
     """
 
-    def __init__(self) -> None:
-        self._plans: dict[PlanType, Plan] = self._seed_plans()
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+        # self._plans: dict[PlanTypeEntity, PlanEntity] = self._seed_plans()
 
-    @staticmethod
-    def _seed_plans() -> dict[PlanType, Plan]:
-        return {
-            PlanType.FREE: Plan(
-                id=_FREE_PLAN_ID,
-                plan_type=PlanType.FREE,
-                name="Free",
-                description="Free tier — para pequeños productores",
-                features=[
-                    Feature(name="basic_tracking"),
-                ],
-                quotas=[
-                    Quota(name="tenants", limit=1, description="Máximo 1 tenant"),
-                    Quota(name="animals", limit=50, description="Máximo 50 animales"),
-                    Quota(name="sales", limit=100, description="Máximo 100 ventas/mes"),
-                    Quota(name="users", limit=5, description="Máximo 5 usuarios"),
-                ],
-                price_monthly=Money(amount=Decimal("0.00")),
-                price_yearly=None,
-            ),
-            PlanType.PRO: Plan(
-                id=_PRO_PLAN_ID,
-                plan_type=PlanType.PRO,
-                name="Pro",
-                description="Plan profesional para medianos productores",
-                features=[
-                    Feature(name="basic_tracking"),
-                    Feature(name="csv_export"),
-                    Feature(name="api_access"),
-                ],
-                quotas=[
-                    Quota(name="tenants", limit=3, description="Máximo 3 tenants"),
-                    Quota(name="animals", limit=500, description="Máximo 500 animales"),
-                    Quota(name="sales", limit=1000, description="Máximo 1000 ventas/mes"),
-                    Quota(name="users", limit=25, description="Máximo 25 usuarios"),
-                ],
-                price_monthly=Money(amount=Decimal("15.00")),
-                price_yearly=Money(amount=Decimal("150.00")),
-            ),
-            PlanType.ENTERPRISE: Plan(
-                id=_ENTERPRISE_PLAN_ID,
-                plan_type=PlanType.ENTERPRISE,
-                name="Enterprise",
-                description="Plan empresarial — acceso completo",
-                features=[
-                    Feature(name="basic_tracking"),
-                    Feature(name="csv_export"),
-                    Feature(name="api_access"),
-                    Feature(name="white_label"),
-                    Feature(name="priority_support"),
-                ],
-                quotas=[
-                    Quota(name="tenants", limit=-1, description="Ilimitado"),
-                    Quota(name="animals", limit=-1, description="Ilimitado"),
-                    Quota(name="sales", limit=-1, description="Ilimitado"),
-                    Quota(name="users", limit=-1, description="Ilimitado"),
-                ],
-                price_monthly=Money(amount=Decimal("50.00")),
-                price_yearly=Money(amount=Decimal("500.00")),
-            ),
-        }
+    # @staticmethod
+    # def _seed_plans() -> dict[PlanTypeEntity, PlanEntity]:
+    #     return {
+    #         PlanTypeEntity.FREE: PlanEntity(
+    #             id=_FREE_PLAN_ID,
+    #             plan_type=PlanTypeEntity.FREE,
+    #             name="Free",
+    #             description="Free tier — para pequeños productores",
+    #             features=[
+    #                 FeatureEntity(name="basic_tracking"),
+    #             ],
+    #             quotas=[
+    #                 QuotaEntity(name="tenants", limit=1, description="Máximo 1 tenant"),
+    #                 QuotaEntity(name="animals", limit=50, description="Máximo 50 animales"),
+    #                 QuotaEntity(name="sales", limit=100, description="Máximo 100 ventas/mes"),
+    #                 QuotaEntity(name="users", limit=5, description="Máximo 5 usuarios"),
+    #             ],
+    #             price_monthly=MoneyVO(amount=Decimal("0.00")),
+    #             price_yearly=None,
+    #         ),
+    #         PlanTypeEntity.PRO: PlanEntity(
+    #             id=_PRO_PLAN_ID,
+    #             plan_type=PlanTypeEntity.PRO,
+    #             name="Pro",
+    #             description="Plan profesional para medianos productores",
+    #             features=[
+    #                 FeatureEntity(name="basic_tracking"),
+    #                 FeatureEntity(name="csv_export"),
+    #                 FeatureEntity(name="api_access"),
+    #             ],
+    #             quotas=[
+    #                 QuotaEntity(name="tenants", limit=3, description="Máximo 3 tenants"),
+    #                 QuotaEntity(name="animals", limit=500, description="Máximo 500 animales"),
+    #                 QuotaEntity(name="sales", limit=1000, description="Máximo 1000 ventas/mes"),
+    #                 QuotaEntity(name="users", limit=25, description="Máximo 25 usuarios"),
+    #             ],
+    #             price_monthly=MoneyVO(amount=Decimal("15.00")),
+    #             price_yearly=MoneyVO(amount=Decimal("150.00")),
+    #         ),
+    #         PlanTypeEntity.ENTERPRISE: PlanEntity(
+    #             id=_ENTERPRISE_PLAN_ID,
+    #             plan_type=PlanTypeEntity.ENTERPRISE,
+    #             name="Enterprise",
+    #             description="Plan empresarial — acceso completo",
+    #             features=[
+    #                 FeatureEntity(name="basic_tracking"),
+    #                 FeatureEntity(name="csv_export"),
+    #                 FeatureEntity(name="api_access"),
+    #                 FeatureEntity(name="white_label"),
+    #                 FeatureEntity(name="priority_support"),
+    #             ],
+    #             quotas=[
+    #                 QuotaEntity(name="tenants", limit=-1, description="Ilimitado"),
+    #                 QuotaEntity(name="animals", limit=-1, description="Ilimitado"),
+    #                 QuotaEntity(name="sales", limit=-1, description="Ilimitado"),
+    #                 QuotaEntity(name="users", limit=-1, description="Ilimitado"),
+    #             ],
+    #             price_monthly=MoneyVO(amount=Decimal("50.00")),
+    #             price_yearly=MoneyVO(amount=Decimal("500.00")),
+    #         ),
+    #     }
 
-    async def get_by_plan_type(self, plan_type: PlanType) -> Plan:
-        return self._plans[plan_type]
+    async def get_by_plan_type(self, plan_type: PlanTypeEntity) -> PlanEntity | None:
+        query = select(*Plan.__table__.columns).where(Plan.plan_type == plan_type.value)
+        result = await self.db.execute(query)
+        plan_model = result.mappings().one_or_none()
+        if plan_model is None:
+            return None
+        return build_plan(plan_model)
 
-    async def get_by_id(self, id: UUID) -> Plan | None:
-        for plan in self._plans.values():
-            if plan.id == id:
-                return plan
-        return None
+    async def get_by_id(self, id: UUID) -> PlanEntity | None:
+        query = select(*Plan.__table__.columns).where(Plan.id == id)
+        result = await self.db.execute(query)
+        plan_model = result.mappings().one_or_none()
+        if plan_model is None:
+            return None
+        return build_plan(plan_model)
 
-    async def list_all(self) -> list[Plan]:
-        return list(self._plans.values())
+    async def list_all(self) -> list[PlanEntity]:
+        query = select(*Plan.__table__.columns)
+        result = await self.db.execute(query)
+        plan_models = result.mappings().all()
+        return [build_plan(plan_model) for plan_model in plan_models]

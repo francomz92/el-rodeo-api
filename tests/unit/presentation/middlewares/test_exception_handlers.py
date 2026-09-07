@@ -12,26 +12,20 @@ from io import StringIO
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.wrappers import Limit
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.common.infrastructure.adapters.correlation import set_correlation_id
-
-# Pre-import all handler modules so configure_logger() runs BEFORE
-# _capture_logs() adds its handler. This prevents configure_logger()
-# calling logger.remove() which would remove our capture sink.
-from src.common.infrastructure.presentation.middlewares.exceptions_handlers.application_errors import (  # noqa: F401, E501
-    application_exception_handler,
-)
-from src.common.infrastructure.presentation.middlewares.exceptions_handlers.domain_errors import (  # noqa: F401, E501
-    domain_exception_handler,
-)
-from src.common.infrastructure.presentation.middlewares.exceptions_handlers.request_validation_error import (  # noqa: F401, E501
-    _request_validation_exception_handler,
-)
-from src.common.infrastructure.presentation.middlewares.exceptions_handlers.server_error import (  # noqa: F401, E501
-    server_exception_handler,
-)
+# NOTE: Handler modules (server_error, domain_errors, etc.) are NOT imported
+# at module level.  ``test_db.py:_fresh_db_module`` clears ALL ``src.*``
+# modules from ``sys.modules`` during test runs, which causes stale module
+# references and mismatched ``ContextVar`` copies.  Instead, each test class
+# imports its handler **inline** so that all imports resolve from the same
+# ``sys.modules`` state.
+# The :mod:`tests.unit.presentation.conftest` :func:`_fresh_modules` fixture
+# pre-imports these modules so their ``configure_logger()`` call runs
+# BEFORE ``_capture_logs()`` creates its temporary sink.
 
 # ── Log capture helper ─────────────────────────────────────────────────────────
 
@@ -103,6 +97,10 @@ class TestServerErrorHandler:
 
     @staticmethod
     def _handler():
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.server_error import (  # noqa: E501
+            server_exception_handler,
+        )
+
         request = _make_request()
         exc = ValueError("something broke")
         return asyncio.run(server_exception_handler(request, exc))
@@ -123,6 +121,8 @@ class TestServerErrorHandler:
 
     def test_includes_correlation_id(self):
         """Correlation ID is included in the ERROR log record."""
+        from src.common.infrastructure.adapters.correlation import set_correlation_id
+
         set_correlation_id("srv-err-cid-999")
         try:
             records = _capture_logs(self._handler)
@@ -145,6 +145,10 @@ class TestApplicationErrorHandler:
         request = _make_request()
         # AppValidationError has error_code="validation_error" and status_code=422
         exc = AppValidationError(message="Invalid token", details=[])
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.application_errors import (  # noqa: E501
+            application_exception_handler,
+        )
+
         return asyncio.run(application_exception_handler(request, exc))
 
     def test_logs_at_error_level(self):
@@ -162,6 +166,8 @@ class TestApplicationErrorHandler:
 
     def test_includes_correlation_id(self):
         """Correlation ID is included in the ERROR log record."""
+        from src.common.infrastructure.adapters.correlation import set_correlation_id
+
         set_correlation_id("app-err-cid-888")
         try:
             records = _capture_logs(self._handler)
@@ -186,6 +192,10 @@ class TestDomainErrorHandler:
 
         request = _make_request()
         exc = NotFoundError(message="Resource not found")
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.domain_errors import (  # noqa: E501
+            domain_exception_handler,
+        )
+
         return domain_exception_handler(request, exc)
 
     def test_logs_at_warning_level(self):
@@ -203,6 +213,8 @@ class TestDomainErrorHandler:
 
     def test_includes_correlation_id(self):
         """Correlation ID is included in the WARNING log record."""
+        from src.common.infrastructure.adapters.correlation import set_correlation_id
+
         set_correlation_id("domain-err-cid-777")
         try:
             records = _capture_logs(self._handler)
@@ -215,72 +227,8 @@ class TestDomainErrorHandler:
         assert "domain-err-cid-777" in cids, f"Expected correlation_id in: {cids}"
 
 
-class TestRequestValidationErrorHandler:
-    """request_validation_error.py — ``_request_validation_exception_handler``"""
-
-    @staticmethod
-    def _handler():
-
-        request = _make_request()
-        exc = RequestValidationError(
-            errors=[
-                {"loc": ("body", "email"), "msg": "field required", "type": "value_error.missing"},
-            ]
-        )
-        return asyncio.run(_request_validation_exception_handler(request, exc))
-
-    def test_logs_at_warning_level(self):
-        """Validation errors are logged at WARNING level."""
-        records = _capture_logs(self._handler)
-        assert any(r["level"]["name"] == "WARNING" for r in records), f"No WARNING log found in: {[r['level']['name'] for r in records]}"
-
-    def test_logs_validation_details(self):
-        """Validation error details appear in the log."""
-        records = _capture_logs(self._handler)
-        warning_logs = [r for r in records if r["level"]["name"] == "WARNING"]
-        assert len(warning_logs) >= 1
-        combined = " ".join(r["message"] for r in warning_logs)
-        assert "field required" in combined or "email" in combined
-
-    def test_includes_correlation_id(self):
-        """Correlation ID is included in the WARNING log record."""
-        set_correlation_id("val-err-cid-666")
-        try:
-            records = _capture_logs(self._handler)
-        finally:
-            set_correlation_id()
-
-        warning_logs = [r for r in records if r["level"]["name"] == "WARNING"]
-        assert len(warning_logs) >= 1
-        cids = {r["extra"].get("correlation_id", "") for r in warning_logs}
-        assert "val-err-cid-666" in cids, f"Expected correlation_id in: {cids}"
-
-
-class TestRateLimitExceededHandler:
-    """rate_limiter.py — ``_rate_limit_handler`` (429 handler)"""
-
-    def _get_handler_and_request(self, path="/api/login"):
-        """Get the rate limit handler registered via configure_rate_limiter
-        and a properly scoped Request."""
-        from unittest.mock import MagicMock
-
-        from fastapi import FastAPI
-
-        app = FastAPI()
-        app.state = MagicMock()
-        from src.common.infrastructure.presentation.middlewares.rate_limiter import (
-            configure_rate_limiter,
-        )
-
-        mock_settings = MagicMock()
-        configure_rate_limiter(app, mock_settings)
-
-        # The handler is registered with status code 429
-        handler = app.exception_handlers.get(429)
-        assert handler is not None, "Rate limit handler (429) not registered"
-
-        request = _make_request(path)
-        return handler, request
+class TestRateLimitErrorResponseFormat:
+    """rate_limit_errors.py — Response format: error.code at top level."""
 
     @staticmethod
     def _make_limit(limit_str: str) -> Limit:
@@ -304,28 +252,157 @@ class TestRateLimitExceededHandler:
             override_defaults=False,
         )
 
+    @staticmethod
+    def _handler():
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.rate_limit_errors import (  # noqa: E501
+            _rate_limit_handler,
+        )
+
+        request = _make_request()
+        from slowapi.errors import RateLimitExceeded
+
+        exc = RateLimitExceeded(limit=TestRateLimitErrorResponseFormat._make_limit("5/minute"))
+        return asyncio.run(_rate_limit_handler(request, exc))
+
+    def test_error_code_at_top_level_not_nested(self):
+        """``$.error.code`` exists and ``$.detail.error.code`` does not."""
+        result = self._handler()
+        body = json.loads(result.body)
+        # error.code must be at top level
+        assert "error" in body
+        assert "code" in body["error"]
+        assert body["error"]["code"] == "rate_limit_exceeded_error"
+        # Must NOT be nested under detail
+        assert "detail" not in body or "error" not in body.get("detail", {})
+
+    def test_response_is_429(self):
+        """Response status is 429."""
+        result = self._handler()
+        assert result.status_code == 429
+
+
+class TestRequestValidationErrorResponseFormat:
+    """request_validation_error.py — Response format: error.code at top level."""
+
+    @staticmethod
+    def _handler():
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.request_validation_error import (  # noqa: E501
+            _request_validation_exception_handler,
+        )
+
+        request = _make_request()
+        exc = RequestValidationError(
+            errors=[
+                {"loc": ("body", "email"), "msg": "field required", "type": "value_error.missing"},
+            ]
+        )
+        return asyncio.run(_request_validation_exception_handler(request, exc))
+
+    def test_error_code_at_top_level_not_nested(self):
+        """``$.error.code`` exists and ``$.detail.error.code`` does not."""
+        result = self._handler()
+        body = json.loads(result.body)
+        assert "error" in body
+        assert "code" in body["error"]
+        assert body["error"]["code"] == "validation_error"
+        assert "detail" not in body or "error" not in body.get("detail", {})
+
+    def test_response_is_422(self):
+        """Response status is 422."""
+        result = self._handler()
+        assert result.status_code == 422
+
+
+class TestRequestValidationErrorHandlerLogging:
+    """request_validation_error.py — ``_request_validation_exception_handler`` logging"""
+
+    @staticmethod
+    def _handler():
+
+        request = _make_request()
+        exc = RequestValidationError(
+            errors=[
+                {"loc": ("body", "email"), "msg": "field required", "type": "value_error.missing"},
+            ]
+        )
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.request_validation_error import (  # noqa: E501
+            _request_validation_exception_handler,
+        )
+
+        return asyncio.run(_request_validation_exception_handler(request, exc))
+
+    def test_logs_at_warning_level(self):
+        """Validation errors are logged at WARNING level."""
+        records = _capture_logs(self._handler)
+        assert any(r["level"]["name"] == "WARNING" for r in records), f"No WARNING log found in: {[r['level']['name'] for r in records]}"
+
+    def test_logs_validation_details(self):
+        """Validation error details appear in the log."""
+        records = _capture_logs(self._handler)
+        warning_logs = [r for r in records if r["level"]["name"] == "WARNING"]
+        assert len(warning_logs) >= 1
+        combined = " ".join(r["message"] for r in warning_logs)
+        assert "field required" in combined or "email" in combined
+
+    def test_includes_correlation_id(self):
+        """Correlation ID is included in the WARNING log record."""
+        from src.common.infrastructure.adapters.correlation import set_correlation_id
+
+        set_correlation_id("val-err-cid-666")
+        try:
+            records = _capture_logs(self._handler)
+        finally:
+            set_correlation_id()
+
+        warning_logs = [r for r in records if r["level"]["name"] == "WARNING"]
+        assert len(warning_logs) >= 1
+        cids = {r["extra"].get("correlation_id", "") for r in warning_logs}
+        assert "val-err-cid-666" in cids, f"Expected correlation_id in: {cids}"
+
+
+class TestRateLimitExceededHandler:
+    """rate_limit_errors.py — ``_rate_limit_handler`` (429 handler)"""
+
+    @staticmethod
+    def _make_limit(limit_str: str) -> Limit:
+        """Create a slowapi Limit object from a limit string like '5/minute'."""
+        from limits import parse as limit_parse
+
+        from src.common.infrastructure.presentation.middlewares.ip_utils import (
+            get_client_ip,
+        )
+
+        item = limit_parse(limit_str)
+        return Limit(
+            limit=item,
+            key_func=get_client_ip,
+            scope=None,
+            per_method=False,
+            methods=None,
+            error_message=None,
+            exempt_when=None,
+            cost=1,
+            override_defaults=False,
+        )
+
+    @staticmethod
+    def _handler(path="/api/login"):
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.rate_limit_errors import (  # noqa: E501
+            _rate_limit_handler,
+        )
+
+        request = _make_request(path)
+        exc = RateLimitExceeded(limit=TestRateLimitExceededHandler._make_limit("5/minute"))
+        return asyncio.run(_rate_limit_handler(request, exc))
+
     def test_logs_at_warning_level(self):
         """Rate limit exceeded is logged at WARNING level."""
-        handler, request = self._get_handler_and_request()
-
-        exc = RateLimitExceeded(limit=self._make_limit("5/minute"))
-
-        def _run():
-            asyncio.run(handler(request, exc))
-
-        records = _capture_logs(_run)
+        records = _capture_logs(lambda: self._handler())
         assert any(r["level"]["name"] == "WARNING" for r in records), f"No WARNING log found in: {[r['level']['name'] for r in records]}"
 
     def test_logs_path(self):
         """The rate limited path appears in the log."""
-        handler, request = self._get_handler_and_request("/api/login")
-
-        exc = RateLimitExceeded(limit=self._make_limit("5/minute"))
-
-        def _run():
-            asyncio.run(handler(request, exc))
-
-        records = _capture_logs(_run)
+        records = _capture_logs(lambda: self._handler("/api/login"))
         warning_logs = [r for r in records if r["level"]["name"] == "WARNING"]
         assert len(warning_logs) >= 1
         combined = " ".join(r["message"] for r in warning_logs)
@@ -333,17 +410,11 @@ class TestRateLimitExceededHandler:
 
     def test_includes_correlation_id(self):
         """Correlation ID is included in the WARNING log record."""
-        handler, request = self._get_handler_and_request()
-
-        exc = RateLimitExceeded(limit=self._make_limit("5/minute"))
+        from src.common.infrastructure.adapters.correlation import set_correlation_id
 
         set_correlation_id("rate-cid-555")
         try:
-
-            def _run():
-                asyncio.run(handler(request, exc))
-
-            records = _capture_logs(_run)
+            records = _capture_logs(lambda: self._handler())
         finally:
             set_correlation_id()
 
@@ -351,3 +422,47 @@ class TestRateLimitExceededHandler:
         assert len(warning_logs) >= 1
         cids = {r["extra"].get("correlation_id", "") for r in warning_logs}
         assert "rate-cid-555" in cids, f"Expected correlation_id in: {cids}"
+
+
+class TestStarletteHttpExceptionHandler:
+    """server_error.py — ``starlette_http_exception_handler``"""
+
+    @staticmethod
+    def _handler():
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.server_error import (  # noqa: E501
+            starlette_http_exception_handler,
+        )
+
+        request = _make_request()
+        exc = StarletteHTTPException(status_code=404, detail="not found")
+        return asyncio.run(starlette_http_exception_handler(request, exc))
+
+    def test_returns_404_status_code(self):
+        """HTTPException(404) returns 404, not 500."""
+        result = self._handler()
+        assert isinstance(result, JSONResponse)
+        assert result.status_code == 404
+
+    def test_uses_standard_error_response_body(self):
+        """Response body uses StandardErrorResponse format."""
+        result = self._handler()
+        body = json.loads(result.body)
+        assert "error" in body
+        assert body["error"]["code"] == "client_error"
+        assert "not found" in body["error"]["message"] or "not found" in str(body)
+        assert "timestamp" in body
+
+    def test_generic_exception_still_returns_500(self):
+        """ValueError (non-HTTPException) still returns 500 via server_exception_handler."""
+        from src.common.infrastructure.presentation.middlewares.exceptions_handlers.server_error import (  # noqa: E501
+            server_exception_handler,
+        )
+
+        request = _make_request()
+        exc = ValueError("generic error")
+        result = asyncio.run(server_exception_handler(request, exc))
+
+        assert isinstance(result, JSONResponse)
+        assert result.status_code == 500
+        body = json.loads(result.body)
+        assert body["error"]["code"] == "server_error"

@@ -68,7 +68,7 @@ class TestWebhookDispatcher:
         assert "X-Webhook-Signature" in headers
 
         # Verify the signature is correct
-        body = kwargs["content"]
+        kwargs["content"]
         expected_sig = self._compute_expected_signature(secret, payload)
         assert headers["X-Webhook-Signature"] == expected_sig
 
@@ -180,7 +180,7 @@ class TestWebhookDispatcher:
             await original_sleep(0)  # Don't actually wait
 
         with (
-            unittest_mock.patch("asyncio.sleep", tracking_sleep) as mock_sleep,
+            unittest_mock.patch("asyncio.sleep", tracking_sleep),
         ):
             result = await self.dispatcher.dispatch(
                 url="https://example.com/webhook",

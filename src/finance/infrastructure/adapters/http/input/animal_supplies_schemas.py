@@ -14,17 +14,17 @@ class AnimalSuppliesListQueryParamsSchema(StandardQueryParams):
 
 class AnimalSuppliesCreateSchema(BaseModel):
     type_id: UUID
-    name: str = Field(..., max_length=100)
-    amount: float
-    critical_amount: float
-    unit_of_measurement: UnitOfMeasurement
-    description: str = ""
-
-
-class AnimalSuppliesUpdateSchema(BaseModel):
-    type_id: UUID
     name: str = Field(..., min_length=1, max_length=50)
     amount: float = Field(..., gt=0)
     critical_amount: float = Field(..., gt=0)
     unit_of_measurement: UnitOfMeasurement
+    description: str = Field("", max_length=500)
+
+
+class AnimalSuppliesUpdateSchema(BaseModel):
+    type_id: UUID | None = None
+    name: str | None = Field(None, min_length=1, max_length=50)
+    amount: float | None = Field(None, gt=0)
+    critical_amount: float | None = Field(None, gt=0)
+    unit_of_measurement: UnitOfMeasurement | None = None
     description: str | None = Field(None, max_length=500)

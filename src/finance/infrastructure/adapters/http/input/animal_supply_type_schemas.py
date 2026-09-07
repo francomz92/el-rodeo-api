@@ -12,4 +12,4 @@ class AnimalSupplyTypeCreateSchema(BaseModel):
 
 
 class AnimalSupplyTypeUpdateSchema(BaseModel):
-    name: str = Field(..., min_length=1, max_length=50)
+    name: str | None = Field(None, min_length=1, max_length=50)

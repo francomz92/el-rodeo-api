@@ -28,7 +28,7 @@ class LoginUserCase:
         self.login_service = login_service
 
     async def execute(self, dni: str, password: str) -> tuple[str, str]:
-        """Authenticate user and return (access_token, refresh_token) pair.
+        """Authenticate user and return (access_token, refresh_token).
 
         Validates credentials, generates both tokens, and persists the
         refresh token in the database for rotation support.
@@ -55,7 +55,7 @@ class LoginUserCase:
 
             # Decode refresh token to get its claims for DB persistence
             refresh_payload = self.token_service.decode_refresh_token(refresh_token_raw)
-            refresh_token_id_str: str = refresh_payload.get("refresh_token_id", refresh_payload["jti"])
+            refresh_token_id_str: str = refresh_payload.get("refresh_token_id", refresh_payload.get("jti", ""))
 
             # Persist refresh token entity in DB
             refresh_repo = uow.get_repository(IRefreshTokenRepository)

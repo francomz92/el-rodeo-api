@@ -24,6 +24,7 @@ class CreatePurchaseCase:
                 user_id=data.user_id,
                 data=data,
                 repository=repository,
+                supply_repository=supply_repository,
             )
             await supply_repository.increase_stock(
                 id=data.supply_id,

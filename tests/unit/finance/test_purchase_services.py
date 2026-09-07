@@ -86,8 +86,10 @@ class TestCreatePurchaseService:
         expected_entity = make_purchase_entity()
         repo = AsyncMock()
         repo.create.return_value = expected_entity
+        supply_repo = AsyncMock()
+        supply_repo.get_by_id.return_value = make_purchase_entity()
 
-        result = await self.service.create_new_purchase(user_id, data, repo)
+        result = await self.service.create_new_purchase(user_id, data, repo, supply_repository=supply_repo)
 
         assert result == expected_entity
         repo.create.assert_awaited_once_with(user_id=user_id, data=data)

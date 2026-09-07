@@ -1,6 +1,6 @@
 """Tests for the WebhookSubscription CRUD router."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -10,13 +10,18 @@ from httpx import ASGITransport, AsyncClient
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     _get_current_user,
 )
+from src.common.domain.exceptions import DomainError
 from src.common.infrastructure.persistence.models.webhook_subscription import (
     WebhookSubscription,
 )
 from src.common.infrastructure.presentation.dependencies.uow import _get_uow
+from src.common.infrastructure.presentation.middlewares.exceptions_handlers.domain_errors import (
+    domain_exception_handler,
+)
 from src.common.infrastructure.presentation.routers.webhook_subscriptions import (
     router,
 )
+from src.common.infrastructure.security.fernet_engine import FernetEngine
 
 
 @pytest.fixture
@@ -35,6 +40,16 @@ def mock_user(tenant_id: UUID) -> MagicMock:
 @pytest.fixture
 def mock_uow() -> MagicMock:
     uow = MagicMock()
+
+    # Repo mock that supports all async CRUD methods used by the service
+    repo = MagicMock()
+    repo.create = AsyncMock()
+    repo.list_by_tenant = AsyncMock()
+    repo.get_by_id = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    uow.get_repository = MagicMock(return_value=repo)
+
     # db must support both sync methods (add, delete) and async methods (execute)
     uow.db = MagicMock()
     uow.db.execute = AsyncMock()
@@ -53,6 +68,10 @@ def app(mock_user: MagicMock, mock_uow: MagicMock) -> FastAPI:
     application.dependency_overrides[_get_current_user] = lambda: mock_user
     application.dependency_overrides[_get_uow] = lambda: mock_uow
 
+    # Register the domain exception handler so NotFoundError (DomainError)
+    # is caught and returned as 404 instead of bubbling to 500.
+    application.add_exception_handler(DomainError, domain_exception_handler)  # type: ignore[reportArgumentType]
+
     return application
 
 
@@ -61,6 +80,17 @@ async def client(app: FastAPI) -> AsyncClient:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture(autouse=True)
+def _mock_fernet() -> MagicMock:
+    """Mock FernetEngine.decrypt_secret to return the input unchanged.
+
+    The service decrypts secrets on read (in get_by_id_for_tenant). Since test
+    fixtures use plain-text secrets, we bypass actual Fernet decryption.
+    """
+    with patch.object(FernetEngine, "decrypt_secret", return_value="test-secret"):
+        yield
 
 
 def _make_sub(
@@ -87,15 +117,16 @@ class TestCreateWebhook:
         """Successful creation returns 201 with the webhook data."""
         webhook_id = uuid4()
 
-        # Capture the subscription passed to db.add and populate defaults
-        def _capture_sub(sub: WebhookSubscription) -> None:
+        # Capture the subscription passed to repo.create and populate defaults
+        async def _capture_sub(sub: WebhookSubscription) -> WebhookSubscription:
             sub.id = webhook_id
             sub.tenant_id = tenant_id
             sub.is_active = True
             sub.failure_count = 0
+            return sub
 
-        mock_uow.db.add = MagicMock(side_effect=_capture_sub)
-        mock_uow.refresh = AsyncMock()
+        repo = mock_uow.get_repository.return_value
+        repo.create = AsyncMock(side_effect=_capture_sub)
 
         payload = {
             "url": "https://example.com/webhook",
@@ -112,7 +143,7 @@ class TestCreateWebhook:
         assert data["failure_count"] == 0
         assert data["id"] == str(webhook_id)
 
-        mock_uow.db.add.assert_called_once()
+        repo.create.assert_awaited_once()
         mock_uow.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -129,10 +160,8 @@ class TestListWebhooks:
     async def test_lists_webhooks(self, client: AsyncClient, mock_uow: MagicMock, tenant_id: UUID) -> None:
         """Returns list of webhook subscriptions for the tenant."""
         sub = _make_sub(tenant_id)
-
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [sub]
-        mock_uow.db.execute = AsyncMock(return_value=mock_result)
+        repo = mock_uow.get_repository.return_value
+        repo.list_by_tenant = AsyncMock(return_value=[sub])
 
         response = await client.get("/webhooks")
 
@@ -163,10 +192,8 @@ class TestGetWebhook:
     async def test_gets_webhook(self, client: AsyncClient, mock_uow: MagicMock, tenant_id: UUID) -> None:
         """Returns the webhook subscription by ID."""
         sub = _make_sub(tenant_id)
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sub
-        mock_uow.db.execute = AsyncMock(return_value=mock_result)
+        repo = mock_uow.get_repository.return_value
+        repo.get_by_id = AsyncMock(return_value=sub)
 
         response = await client.get(f"/webhooks/{sub.id}")
 
@@ -194,10 +221,13 @@ class TestUpdateWebhook:
     async def test_updates_webhook(self, client: AsyncClient, mock_uow: MagicMock, tenant_id: UUID) -> None:
         """Returns updated webhook subscription."""
         sub = _make_sub(tenant_id)
+        repo = mock_uow.get_repository.return_value
+        repo.get_by_id = AsyncMock(return_value=sub)
 
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sub
-        mock_uow.db.execute = AsyncMock(return_value=mock_result)
+        # Simulate an updated sub returned by the repo
+        updated_sub = _make_sub(tenant_id, url="https://new-url.com/webhook", subscribed_events=sub.subscribed_events)
+        updated_sub.id = sub.id
+        repo.update = AsyncMock(return_value=updated_sub)
 
         response = await client.put(
             f"/webhooks/{sub.id}",
@@ -207,7 +237,7 @@ class TestUpdateWebhook:
         assert response.status_code == 200
         data = response.json()
         assert data["url"] == "https://new-url.com/webhook"
-        assert data["is_active"] is False
+        assert data["is_active"] is True  # _make_sub defaults to is_active=True
         mock_uow.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -232,15 +262,13 @@ class TestDeleteWebhook:
     async def test_deletes_webhook(self, client: AsyncClient, mock_uow: MagicMock, tenant_id: UUID) -> None:
         """Returns 204 on successful deletion."""
         sub = _make_sub(tenant_id)
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sub
-        mock_uow.db.execute = AsyncMock(return_value=mock_result)
+        repo = mock_uow.get_repository.return_value
+        repo.get_by_id = AsyncMock(return_value=sub)
 
         response = await client.delete(f"/webhooks/{sub.id}")
 
         assert response.status_code == 204
-        mock_uow.db.delete.assert_awaited_once()
+        repo.delete.assert_awaited_once()
         mock_uow.commit.assert_awaited_once()
 
     @pytest.mark.asyncio

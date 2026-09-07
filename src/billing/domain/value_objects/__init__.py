@@ -1,3 +1,3 @@
-from ._money import Money
+from ._money import MoneyVO
 
-__all__ = ["Money"]
+__all__ = ["MoneyVO"]

@@ -23,13 +23,7 @@ class IScheduleEventRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_for_user(
-        self,
-        filters: ScheduleEventsListQueryParamsValueObject,
-        limit: int,
-        offset: int,
-        order_by: str,
-    ) -> list[ScheduleEventEntity]:
+    async def list_for_user(self, filters: ScheduleEventsListQueryParamsValueObject, order_by: str) -> list[ScheduleEventEntity]:
         raise NotImplementedError
 
     @abstractmethod
@@ -41,7 +35,19 @@ class IScheduleEventRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def add_participants(self, event_id: UUID, participants: list[UUID]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_participants(self, event_id: UUID, participants: list[UUID]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def update_data(self, id: UUID, data: ScheduleEventUpdateValueObject) -> ScheduleEventEntity:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def mark_as_notified(self, event_id: UUID) -> None:
         raise NotImplementedError
 
     @abstractmethod

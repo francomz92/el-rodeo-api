@@ -144,7 +144,7 @@ class TokenService(ITokenService):
 
         # Revoke old token in DB
         if stored_entity:
-            await repo.revoke_token(token_id)
+            await repo.revoke_token(stored_entity)
 
         # Persist new token entity
         new_entity = RefreshTokenEntity(
@@ -171,7 +171,22 @@ class TokenService(ITokenService):
 
         stored_entity = await repo.find_by_id(token_id)
         if stored_entity:
-            await repo.revoke_token(token_id)
+            await repo.revoke_token(stored_entity)
+
+    def generate_ws_token(self, user_id: str, tenant_id: str | None = None) -> str:
+        current_datetime = get_current_datetime()
+        expire_datetime = current_datetime + timedelta(minutes=settings.WS_TOKEN_EXPIRE_MINUTES)
+        payload: dict = {
+            "user_id": user_id,
+            "type": "ws",
+            "purpose": "websocket",
+            "jti": str(uuid4()),
+            "exp": expire_datetime,
+            "iat": current_datetime,
+        }
+        if tenant_id is not None:
+            payload["tenant_id"] = tenant_id
+        return pyjwt.encode(payload, self.secret, self.algorithm)
 
     async def revoke_user_refresh_tokens(
         self,

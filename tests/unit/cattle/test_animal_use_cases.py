@@ -1,6 +1,6 @@
 """Unit tests for animal use cases."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest
@@ -201,7 +201,7 @@ class TestRegisterAnimalCase:
     def setup_method(self) -> None:
         self.service = MagicMock(spec=RegisterAnimalService)
         self.protocol_service = MagicMock(spec=CreateAnimalProtocolService)
-        self.event_bus = MagicMock()
+        self.event_bus = AsyncMock()
         self.uow = MockUoW()
         self.case = RegisterAnimalCase(
             uow=self.uow,
@@ -261,9 +261,9 @@ class TestRegisterAnimalCase:
 
         original_dispatch = self.event_bus.dispatch
 
-        def tracking_dispatch(event):
+        async def tracking_dispatch(event):
             call_order.append("dispatch")
-            original_dispatch(event)
+            await original_dispatch(event)
 
         self.event_bus.dispatch = tracking_dispatch
 

@@ -1,6 +1,14 @@
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from uuid import UUID
+
+from src.cattle.domain.constants.animal_scheduled_event import AnimalEventType
+
+
+@dataclass
+class ScheduleEventParticipantEntity:
+    id: UUID
+    name: str
 
 
 @dataclass
@@ -11,8 +19,11 @@ class ScheduleEventEntity:
     created_at: datetime
     title: str
     description: str
-    event_date: date
+    start: datetime
+    end: datetime
     pending: bool
+    type: AnimalEventType
+    participants: list[ScheduleEventParticipantEntity]
 
     def can_update(self) -> bool:
         return self.pending
@@ -22,10 +33,17 @@ class ScheduleEventEntity:
 
 
 @dataclass
+class ScheduleEventRemindedParticipantEntity:
+    name: UUID
+    email: str
+
+
+@dataclass
 class ScheduleEventRemindedEntity:
-    user_name: str
-    user_email: str
+    event_id: UUID
     title: str
     description: str
-    event_date: date
+    start: datetime
+    end: datetime
     pending: bool
+    participants: list[ScheduleEventRemindedParticipantEntity]

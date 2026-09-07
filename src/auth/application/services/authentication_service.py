@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from src.auth.application.exceptions.authentication import InvalidCredentialError
 from src.auth.application.ports.token_blacklist_port import ITokenBlacklistService
 from src.auth.application.ports.tokens_port import ITokenService
 from src.auth.domain.entities import UserEntity
@@ -27,8 +28,12 @@ class AuthService:
 
         # Set tenant context from JWT payload for downstream use cases
         tid = payload.get("tenant_id")
-        uow.tenant_id = UUID(tid) if tid else None
+        try:
+            uow.tenant_id = UUID(tid) if tid else None
+        except ValueError:
+            raise InvalidCredentialError("No autorizado para realizar esta acción")
 
+        uow.bypass_filter = False
         async with uow as _uow:
             repository = _uow.get_repository(IUserRepository)
             user = await repository.get_by_id(payload["user_id"])

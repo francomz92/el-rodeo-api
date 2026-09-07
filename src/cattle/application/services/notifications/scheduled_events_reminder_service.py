@@ -13,7 +13,7 @@ class ScheduledEventsReminderService:
     ) -> list[ScheduleEventRemindedEntity]:
         return await repository.get_pending_events(tenant_id=tenant_id)
 
-    def send_reminder(
+    async def send_reminder(
         self,
         notifier: IEmailNotifier,
         repository: IScheduleEventRepository,
@@ -24,7 +24,8 @@ class ScheduledEventsReminderService:
                 to=[event.user_email],
                 subject=f"Proximo evento: {event.title}",
                 body=f"""
-                El siguiente evento esta muy cerca:\n{event.title} - {event.event_date}\n\n
+                El siguiente evento esta muy cerca:\n{event.title} - {event.start.date()}\n\n
                 Descripción: {event.description}\n
                 """,
             )
+            await repository.mark_as_notified(event.event_id)

@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.cattle.domain.constants.animal import AnimalStatus
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 
 
 class AnimalType(Model):
@@ -31,7 +31,7 @@ class Animal(Model):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_types.id", ondelete="SET NULL"), nullable=True)
     caravana: Mapped[str] = mapped_column(String(50), unique=True)
-    tag: Mapped[str] = mapped_column(String(50), default=str)
+    tag: Mapped[str] = mapped_column(String(50), default="")
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     initial_weight: Mapped[float] = mapped_column(Float)
     initial_weight_date: Mapped[date] = mapped_column(Date)

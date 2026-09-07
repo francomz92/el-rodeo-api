@@ -1,7 +1,5 @@
 """Router for payment history operations."""
 
-import logging
-
 from fastapi import APIRouter, Query, status
 
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
@@ -15,8 +13,6 @@ from src.billing.infrastructure.adapters.http.output.payment_schemas import (
 from src.billing.infrastructure.presentation.dependencies._billing_dependencies import (
     GetPaymentHistoryService,
 )
-
-logger = logging.getLogger(__name__)
 
 payment_router = APIRouter(
     tags=["Billing / Payments"],

@@ -4,17 +4,18 @@ These tests verify that Settings loads correct defaults and
 honours environment variable overrides for security-related config.
 """
 
-import logging
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
+from loguru import logger
 
 from src.common.infrastructure.core._config import Settings
 
 # Minimal env vars required for Settings to instantiate (required fields).
 _REQUIRED_ENV = {
     "DB_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
-    "SECRET": "test-secret-key-for-testing",
+    "SECRET": "test-secret-key-for-testing-32chars!!",
     "JWT_ALGORITHM": "HS256",
     "SMTP_SERVER": "smtp.test.com",
     "SMTP_PORT": "587",
@@ -23,6 +24,7 @@ _REQUIRED_ENV = {
     "DOMAIN": "http://test.com",
     "BROKER_URL": "redis://localhost:6380/0",
     "RESULT_BACKEND_URL": "redis://localhost:6380/0",
+    "REDIS_URL": "redis://localhost:6380/0",
 }
 
 
@@ -84,10 +86,10 @@ class TestSecuritySettings:
         settings = _make_settings(RATE_LIMIT_LOGIN="10/minute")
         assert settings.RATE_LIMIT_LOGIN == "10/minute"
 
-    def test_cors_origins_defaults_to_wildcard(self) -> None:
-        """CORS_ORIGINS defaults to ['*']."""
+    def test_cors_origins_defaults_to_localhost(self) -> None:
+        """CORS_ORIGINS defaults to ['http://localhost:5173']."""
         settings = _make_settings()
-        assert settings.CORS_ORIGINS == ["*"]
+        assert settings.CORS_ORIGINS == ["http://localhost:5173"]
 
     def test_cors_origins_can_be_overridden(self) -> None:
         """CORS_ORIGINS accepts custom origins."""
@@ -153,27 +155,172 @@ class TestSecuritySettings:
         assert expected.issubset(settings.CSP_DIRECTIVES.keys())
 
 
+class TestSecretValidation:
+    """SECRET field validation — minimum length and weak value rejection."""
+
+    def test_secret_too_short_in_non_dev_raises(self) -> None:
+        """SECRET < 32 characters raises ValueError in staging/production."""
+        with pytest.raises(ValueError, match="SECRET must be at least 32 characters"):
+            _make_settings(
+                ENVIRONMENT="production",
+                SECRET="short-key",
+                CORS_ORIGINS='["https://example.com"]',
+                TRUSTED_HOSTS='["example.com"]',
+            )
+
+    def test_secret_valid_in_non_dev_passes(self) -> None:
+        """SECRET >= 32 characters passes validation in staging/production."""
+        settings = _make_settings(
+            ENVIRONMENT="production",
+            DEBUG="false",
+            SECRET="a" * 32,
+            CORS_ORIGINS='["https://example.com"]',
+            TRUSTED_HOSTS='["example.com"]',
+        )
+        assert len(settings.SECRET) >= 32
+
+    def test_secret_short_in_dev_passes(self) -> None:
+        """SECRET < 32 characters is allowed in development."""
+        settings = _make_settings(ENVIRONMENT="development", SECRET="short-key")
+        assert settings.SECRET == "short-key"
+
+    def test_secret_rejects_weak_value_in_non_dev(self) -> None:
+        """Well-known weak SECRET value raises ValueError in staging/production."""
+        with pytest.raises(ValueError, match="SECRET contains a known weak value"):
+            _make_settings(
+                ENVIRONMENT="staging",
+                SECRET="change-me-to-a-secure-random-secret",
+                CORS_ORIGINS='["https://example.com"]',
+                TRUSTED_HOSTS='["example.com"]',
+            )
+
+    def test_secret_weak_value_in_dev_passes(self) -> None:
+        """Weak SECRET is allowed in development."""
+        settings = _make_settings(
+            ENVIRONMENT="development",
+            SECRET="change-me-to-a-secure-random-secret",
+        )
+        assert settings.SECRET == "change-me-to-a-secure-random-secret"
+
+
+class TestDebugValidation:
+    """DEBUG/ENVIRONMENT cross-validation."""
+
+    def test_debug_true_in_production_raises(self) -> None:
+        """DEBUG=True in production raises ValueError."""
+        with pytest.raises(ValueError, match="DEBUG must not be True"):
+            _make_settings(
+                ENVIRONMENT="production",
+                DEBUG="true",
+                CORS_ORIGINS='["https://example.com"]',
+                TRUSTED_HOSTS='["example.com"]',
+                SECRET="a" * 32,
+            )
+
+    def test_debug_true_in_staging_raises(self) -> None:
+        """DEBUG=True in staging raises ValueError."""
+        with pytest.raises(ValueError, match="DEBUG must not be True"):
+            _make_settings(
+                ENVIRONMENT="staging",
+                DEBUG="true",
+                CORS_ORIGINS='["https://example.com"]',
+                TRUSTED_HOSTS='["example.com"]',
+                SECRET="a" * 32,
+            )
+
+    def test_debug_true_in_dev_passes(self) -> None:
+        """DEBUG=True in development is allowed."""
+        settings = _make_settings(ENVIRONMENT="development", DEBUG="true")
+        assert settings.DEBUG is True
+
+    def test_debug_false_in_production_passes(self) -> None:
+        """DEBUG=False in production passes validation."""
+        settings = _make_settings(
+            ENVIRONMENT="production",
+            DEBUG="false",
+            CORS_ORIGINS='["https://example.com"]',
+            TRUSTED_HOSTS='["example.com"]',
+            SECRET="a" * 32,
+        )
+        assert settings.DEBUG is False
+
+
+class TestCspValidation:
+    """CSP directive validation."""
+
+    def test_csp_enabled_default(self) -> None:
+        """CSP_DIRECTIVES_ENABLED defaults to True."""
+        settings = _make_settings()
+        assert settings.CSP_DIRECTIVES_ENABLED is True
+
+    def test_csp_enabled_can_be_disabled(self) -> None:
+        """CSP_DIRECTIVES_ENABLED can be set to False."""
+        settings = _make_settings(CSP_DIRECTIVES_ENABLED="false")
+        assert settings.CSP_DIRECTIVES_ENABLED is False
+
+    def test_csp_disabled_in_production_warns(self) -> None:
+        """Log warning when CSP disabled in production."""
+        with patch("src.common.infrastructure.core._config.logging.getLogger") as mock_get_logger:
+            mock_logger = mock_get_logger.return_value
+            _make_settings(
+                ENVIRONMENT="production",
+                CSP_DIRECTIVES_ENABLED="false",
+                CORS_ORIGINS='["https://example.com"]',
+                TRUSTED_HOSTS='["example.com"]',
+                SECRET="a" * 32,
+                DEBUG="false",
+            )
+        mock_get_logger.assert_called_once()
+        mock_logger.warning.assert_called_once()
+        args, _ = mock_logger.warning.call_args
+        assert "CSP is disabled" in args[0]
+
+    def test_csp_disabled_in_dev_does_not_warn(self) -> None:
+        """No CSP warning when disabled in development."""
+        with patch("src.common.utils.log.warning") as mock_warning:
+            _make_settings(ENVIRONMENT="development", CSP_DIRECTIVES_ENABLED="false")
+        mock_warning.assert_not_called()
+
+
 class TestConfigValidation:
     """Validation logic in Settings."""
 
-    def test_wildcard_cors_logs_critical_in_production(self, caplog: pytest.LogCaptureFixture) -> None:
-        """CRITICAL is logged in production when CORS_ORIGINS contains '*'."""
-        caplog.set_level(logging.CRITICAL)
-        _make_settings(ENVIRONMENT="production", CORS_ORIGINS='["*"]')
-        assert any("CORS_ORIGINS contains '*'" in record.getMessage() for record in caplog.records)
+    def _capture_loguru(self) -> tuple[StringIO, int]:
+        """Add a Loguru sink that captures messages into a buffer.
 
-    def test_wildcard_trusted_hosts_logs_critical_in_production(self, caplog: pytest.LogCaptureFixture) -> None:
-        """CRITICAL is logged in production when TRUSTED_HOSTS contains '*'."""
-        caplog.set_level(logging.CRITICAL)
-        _make_settings(ENVIRONMENT="production", TRUSTED_HOSTS='["*"]')
-        assert any("TRUSTED_HOSTS contains '*'" in record.getMessage() for record in caplog.records)
+        Returns (buffer, sink_id) so the caller can remove the sink
+        after the assertion.
+        """
+        buf = StringIO()
+        sink_id = logger.add(buf, format="{message}", level="CRITICAL")
+        return buf, sink_id
 
-    def test_no_critical_logged_in_dev_with_wildcard(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_wildcard_cors_raises_in_production(self) -> None:
+        """ValueError is raised in production when CORS_ORIGINS contains '*'."""
+        with pytest.raises(ValueError, match="CORS_ORIGINS contains '\\*'"):
+            _make_settings(
+                ENVIRONMENT="production",
+                CORS_ORIGINS='["*"]',
+                DEBUG="false",
+            )
+
+    def test_wildcard_trusted_hosts_raises_in_production(self) -> None:
+        """ValueError is raised in production when TRUSTED_HOSTS contains '*'."""
+        with pytest.raises(ValueError, match="TRUSTED_HOSTS contains '\\*'"):
+            _make_settings(
+                ENVIRONMENT="production",
+                TRUSTED_HOSTS='["*"]',
+                DEBUG="false",
+            )
+
+    def test_no_critical_logged_in_dev_with_wildcard(self) -> None:
         """No CRITICAL warning is logged in development mode with wildcard."""
-        caplog.set_level(logging.CRITICAL)
-        _make_settings(ENVIRONMENT="development", CORS_ORIGINS='["*"]', TRUSTED_HOSTS='["*"]')
-        critical_records = [r for r in caplog.records if r.levelno == logging.CRITICAL]
-        assert len(critical_records) == 0
+        buf, sink_id = self._capture_loguru()
+        try:
+            _make_settings(ENVIRONMENT="development", CORS_ORIGINS='["*"]', TRUSTED_HOSTS='["*"]')
+            assert buf.getvalue() == ""
+        finally:
+            logger.remove(sink_id)
 
 
 class TestPoolSettings:

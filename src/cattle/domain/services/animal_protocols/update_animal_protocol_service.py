@@ -27,8 +27,16 @@ class UpdateAnimalProtocolService:
 
     async def update_protocols(
         self,
+        animal_id: UUID,
         id: UUID,
-        data,
+        data: AnimalProtocolUpdateValueObject,
         repository: IAnimalProtocolsRepository,
     ) -> AnimalProtocolEntity:
+        protocol = await repository.get_by_animal_id(animal_id)
+        if not protocol:
+            raise NotFoundError("El protocolo que deseas actualizar no existe")
+        if not data.vaccinated:
+            data.vaccinated_date = None
+        if not data.sale_permission:
+            data.sale_permission_date = None
         return await repository.update_data(id, data)

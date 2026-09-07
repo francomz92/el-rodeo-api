@@ -7,14 +7,74 @@ Phase 3 — Implementation makes them pass (GREEN).
 
 import datetime
 import json
+import sys
 from unittest.mock import patch
 
 import pytest
 from loguru import logger
 
-from src.common.infrastructure.adapters.correlation import correlation_id_var, set_correlation_id
-from src.common.infrastructure.adapters.logger import configure_logger
 from src.common.infrastructure.core._config import Settings
+
+# NOTE: ``correlation_id_var``, ``set_correlation_id`` and ``configure_logger``
+# are NOT imported at module level because ``test_db.py:_fresh_db_module``
+# clears ALL ``src.*`` modules from ``sys.modules`` during collection,
+# which causes stale module references.  See ``_ensure_fresh_modules`` for
+# the complete explanation and the fixture that resolves imports dynamically.
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _ensure_fresh_modules():
+    """Ensure ``logger`` and ``correlation`` modules are in ``sys.modules``.
+
+    ``test_db.py:_fresh_db_module`` clears ALL ``src.*`` modules from
+    ``sys.modules`` to force fresh imports under patched environment
+    variables.  This creates a problem: when a downstream test file has
+    module-level imports like::
+
+        from src.common.infrastructure.adapters.logger import configure_logger
+
+    and later does ``unittest.mock.patch("…logger.settings", …)``, the
+    ``patch`` call internally re-imports the module (creating a **second**
+    copy with its own ``@lru_cache`` and ``ContextVar``), while the
+    function call still uses the first copy from the module-level import.
+
+    By deferring ALL imports to fixture time and explicitly re-importing
+    stale modules before every test, we guarantee every code path
+    (``set_correlation_id``, ``correlation_filter``, ``configure_logger``)
+    resolves to the **same** module object.
+
+    Call this at the start of every test's ``_reset_loguru`` fixture.
+    """
+    for name in (
+        "src.common.infrastructure.adapters.logger",
+        "src.common.infrastructure.adapters.correlation",
+    ):
+        if name not in sys.modules:
+            # Prune stale entries so re-import is clean
+            for k in list(sys.modules):
+                if k.startswith("src.common.infrastructure.adapters"):
+                    if k in ("src.common.infrastructure.adapters",):
+                        continue
+                    sys.modules.pop(k, None)
+            # Re-import in dependency order
+            import src.common.infrastructure.adapters.correlation  # noqa: F401
+            import src.common.infrastructure.adapters.logger  # noqa: F401
+
+            break
+
+
+def _correlation() -> type(sys):
+    """Return the canonical ``correlation`` module from ``sys.modules``."""
+    _ensure_fresh_modules()
+    return sys.modules["src.common.infrastructure.adapters.correlation"]
+
+
+def _logger_mod():
+    """Return the canonical ``logger`` module from ``sys.modules``."""
+    _ensure_fresh_modules()
+    return sys.modules["src.common.infrastructure.adapters.logger"]
+
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -26,13 +86,16 @@ def _reset_loguru():
     Clears Loguru handlers, the ``@lru_cache`` on ``configure_logger``,
     and the correlation_id contextvar so every test gets a fresh slate.
     """
+    _ensure_fresh_modules()
+    logger_mod = _logger_mod()
+    corr = _correlation()
     logger.remove()
-    configure_logger.cache_clear()
-    correlation_id_var.set("")
+    logger_mod.configure_logger.cache_clear()
+    corr.correlation_id_var.set("")
     yield
     logger.remove()
-    configure_logger.cache_clear()
-    correlation_id_var.set("")
+    logger_mod.configure_logger.cache_clear()
+    corr.correlation_id_var.set("")
 
 
 @pytest.fixture
@@ -65,9 +128,10 @@ class TestCorrelationFilter:
 
     def test_filter_injects_id_when_set(self) -> None:
         """When correlation_id is set in context, the filter injects it into extra."""
+        corr = _correlation()
         from src.common.infrastructure.adapters.logger import correlation_filter
 
-        set_correlation_id("abc-123")
+        corr.set_correlation_id("abc-123")
         record = {"extra": {}}
         result = correlation_filter(record)
         assert result is True
@@ -99,11 +163,12 @@ class TestJsonSerialization:
     def test_json_format_emits_valid_json(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
         """A log entry produces valid JSON when LOG_FORMAT=json."""
         self._patch_json(monkeypatch)
+        logger_mod = _logger_mod()
         from src.common.infrastructure.core._config import Settings as S
 
         with patch.object(S, "_env_file", None, create=True):
             with patch("src.common.infrastructure.adapters.logger.settings", S()):
-                configure_logger()
+                logger_mod.configure_logger()
 
                 logger.info("hello json")
                 logger.complete()
@@ -121,13 +186,15 @@ class TestJsonSerialization:
     def test_json_includes_correlation_id(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
         """JSON output includes correlation_id when set in context."""
         self._patch_json(monkeypatch)
+        logger_mod = _logger_mod()
+        corr = _correlation()
         from src.common.infrastructure.core._config import Settings as S
 
         with patch.object(S, "_env_file", None, create=True):
             with patch("src.common.infrastructure.adapters.logger.settings", S()):
-                configure_logger()
+                logger_mod.configure_logger()
 
-                set_correlation_id("corr-456")
+                corr.set_correlation_id("corr-456")
                 logger.info("with correlation")
                 logger.complete()
                 captured = capsys.readouterr()
@@ -139,11 +206,12 @@ class TestJsonSerialization:
     def test_json_empty_correlation_id(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
         """JSON output shows empty string for correlation_id when not set."""
         self._patch_json(monkeypatch)
+        logger_mod = _logger_mod()
         from src.common.infrastructure.core._config import Settings as S
 
         with patch.object(S, "_env_file", None, create=True):
             with patch("src.common.infrastructure.adapters.logger.settings", S()):
-                configure_logger()
+                logger_mod.configure_logger()
 
                 logger.info("no correlation")
                 logger.complete()
@@ -162,8 +230,9 @@ class TestTextFormat:
 
     def test_text_format_outputs_message(self, dev_settings: Settings, capsys) -> None:
         """Text format produces visible log output with the message."""
+        logger_mod = _logger_mod()
         with patch("src.common.infrastructure.adapters.logger.settings", dev_settings):
-            configure_logger()
+            logger_mod.configure_logger()
 
             logger.info("text msg")
             logger.complete()
@@ -173,9 +242,10 @@ class TestTextFormat:
             assert "text msg" in out
 
     def test_text_format_level_routing(self, dev_settings: Settings, capsys) -> None:
-        """Log level is visible in the text output."""
+        """Text format produces visible log output with the message."""
+        logger_mod = _logger_mod()
         with patch("src.common.infrastructure.adapters.logger.settings", dev_settings):
-            configure_logger()
+            logger_mod.configure_logger()
 
             logger.warning("warning msg")
             logger.complete()
@@ -238,20 +308,23 @@ class TestLoggerConfiguration:
 
     def test_configure_logger_adds_sinks(self, dev_settings: Settings) -> None:
         """configure_logger adds at least one sink to the logger."""
+        logger_mod = _logger_mod()
         with patch("src.common.infrastructure.adapters.logger.settings", dev_settings):
-            configure_logger()
+            logger_mod.configure_logger()
             # After configure_logger, logger should have handlers registered
             assert len(logger._core.handlers) > 0
 
     def test_configure_logger_returns_logger(self, dev_settings: Settings) -> None:
         """configure_logger() returns the loguru logger instance."""
+        logger_mod = _logger_mod()
         with patch("src.common.infrastructure.adapters.logger.settings", dev_settings):
-            result = configure_logger()
+            result = logger_mod.configure_logger()
             assert result is logger
 
     def test_configure_logger_is_cached(self, dev_settings: Settings) -> None:
         """configure_logger is decorated with @lru_cache — second call is no-op."""
+        logger_mod = _logger_mod()
         with patch("src.common.infrastructure.adapters.logger.settings", dev_settings):
-            result1 = configure_logger()
-            result2 = configure_logger()
+            result1 = logger_mod.configure_logger()
+            result2 = logger_mod.configure_logger()
             assert result1 is result2

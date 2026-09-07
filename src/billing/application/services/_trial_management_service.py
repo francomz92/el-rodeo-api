@@ -10,8 +10,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
-from src.billing.domain.entities._plan_type import PlanType
+from src.billing.domain.entities._plan_type import PlanTypeEntity
 from src.billing.domain.entities._subscription import Subscription
 from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.billing.domain.repositories import IPlanRepository, ISubscriptionRepository
@@ -21,28 +20,21 @@ from src.common.infrastructure.core._config import settings
 class TrialManagementService:
     """Application service that manages trial subscription lifecycle."""
 
-    def __init__(
-        self,
-        plan_repo: IPlanRepository,
-        subscription_repo: ISubscriptionRepository,
-        tenant_repo: ITenantRepository,
-    ) -> None:
-        self._plan_repo = plan_repo
-        self._subscription_repo = subscription_repo
-        self._tenant_repo = tenant_repo
-
     async def start_trial(
         self,
         tenant_id: UUID,
-        plan_type: PlanType = PlanType.PRO,
+        plan_repository: IPlanRepository,
+        subscription_repository: ISubscriptionRepository,
+        plan_type: PlanTypeEntity = PlanTypeEntity.PRO,
     ) -> Subscription:
         """Create a trial subscription for the given tenant.
 
         Fetches the plan by type, creates a TRIAL status subscription
-        with trial_end = now + TRIAL_DAYS, persists it, and updates
-        the tenant's plan_id.
+        with trial_end = now + TRIAL_DAYS, and persists it.
         """
-        plan = await self._plan_repo.get_by_plan_type(plan_type)
+        plan = await plan_repository.get_by_plan_type(plan_type)
+        if plan is None:
+            raise ValueError(f"Plan not found: {plan_type.value}")
         now = datetime.now(timezone.utc)
         trial_end = now + timedelta(days=settings.TRIAL_DAYS)
 
@@ -56,43 +48,51 @@ class TrialManagementService:
             trial_end=trial_end,
         )
 
-        created = await self._subscription_repo.create(subscription)
-        await self._tenant_repo.update(tenant_id, plan_id=plan.id)
-        return created
+        return await subscription_repository.create(subscription)
 
-    async def cancel_subscription(self, tenant_id: UUID) -> Subscription:
+    async def cancel_subscription(self, tenant_id: UUID, subscription_repository: ISubscriptionRepository) -> Subscription:
         """Cancel the current subscription for a tenant.
 
         Sets status to CANCELED and records the cancellation timestamp.
+        Idempotent: if already canceled or expired, returns the subscription
+        unchanged.
         """
-        subscription = await self._subscription_repo.get_by_tenant(tenant_id)
+        subscription = await subscription_repository.get_by_tenant(tenant_id)
         if subscription is None:
             raise ValueError(f"No subscription found for tenant {tenant_id}")
+
+        # Idempotent guard: skip if already canceled or expired
+        if not subscription.can_cancel():
+            return subscription
 
         updated = replace(
             subscription,
             status=SubscriptionStatus.CANCELED,
             canceled_at=datetime.now(timezone.utc),
         )
-        return await self._subscription_repo.update(updated)
+        return await subscription_repository.update(updated)
 
-    async def expire_trial(self, tenant_id: UUID) -> Subscription:
+    async def expire_trial(
+        self,
+        tenant_id: UUID,
+        subscription_repository: ISubscriptionRepository,
+        plan_repository: IPlanRepository,
+    ) -> Subscription:
         """Expire a trial subscription and downgrade to FREE plan.
 
-        Sets status to EXPIRED, plan_id to the FREE plan, and updates
-        the tenant's plan_id accordingly.
+        Sets status to EXPIRED and plan_id to the FREE plan.
         """
-        subscription = await self._subscription_repo.get_by_tenant(tenant_id)
+        subscription = await subscription_repository.get_by_tenant(tenant_id)
         if subscription is None:
             raise ValueError(f"No subscription found for tenant {tenant_id}")
 
-        free_plan = await self._plan_repo.get_by_plan_type(PlanType.FREE)
+        free_plan = await plan_repository.get_by_plan_type(PlanTypeEntity.FREE)
+        if free_plan is None:
+            raise ValueError("FREE plan not found")
 
         updated = replace(
             subscription,
             status=SubscriptionStatus.EXPIRED,
             plan_id=free_plan.id,
         )
-        result = await self._subscription_repo.update(updated)
-        await self._tenant_repo.update(tenant_id, plan_id=free_plan.id)
-        return result
+        return await subscription_repository.update(updated)

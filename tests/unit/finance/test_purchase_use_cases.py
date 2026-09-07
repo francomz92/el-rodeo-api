@@ -1,5 +1,6 @@
 """Unit tests for purchase use cases."""
 
+from unittest.mock import ANY
 from uuid import UUID
 
 import pytest
@@ -69,6 +70,34 @@ class TestCreatePurchaseCase:
         supply_repo.increase_stock.assert_awaited_once()
         self.uow.commit.assert_awaited_once()
 
+    async def test_execute_increases_stock_effect(self) -> None:
+        """increase_stock must be called with the purchase amount, and the
+        amount must be positive so that stock actually increases (not decreases)."""
+        from datetime import date
+
+        data = make_purchase_create(
+            amount=10.0,
+            price=1000.0,
+            unit_price=100.0,
+            purchase_date=date(2024, 6, 15),
+        )
+        expected = make_purchase_entity()
+        repo = self.uow.get_repository(IPurchasesRepository)
+        supply_repo = self.uow.get_repository(IAnimalSuppliesRepository)
+        repo.create.return_value = expected
+        supply_repo.get_by_id.return_value = make_purchase_entity()
+
+        await self.case.execute(data=data)
+
+        # Verify increase_stock was called with the purchase amount (not just "was called")
+        supply_repo.increase_stock.assert_awaited_once_with(
+            id=ANY,
+            amount_to_increase=data.amount,
+        )
+        # The amount_to_increase must be positive — if the repo subtracts instead
+        # of adds, the stock decreases. This assertion ensures we pass a positive delta.
+        assert data.amount > 0
+
 
 class TestGetPurchaseCase:
     """GetPurchaseCase retrieves a purchase."""
@@ -114,7 +143,7 @@ class TestListPurchaseCase:
         repo.list_for_user.return_value = expected
 
         result = await self.case.execute(
-            filter=filters,
+            filters=filters,
             limit=10,
             offset=0,
             order_by="purchase_date",

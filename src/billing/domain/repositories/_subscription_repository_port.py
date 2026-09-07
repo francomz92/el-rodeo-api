@@ -2,6 +2,7 @@ from abc import abstractmethod
 from uuid import UUID
 
 from src.billing.domain.entities._subscription import Subscription
+from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.common.domain.repository import IRepository
 
 
@@ -38,5 +39,31 @@ class ISubscriptionRepository(IRepository):
 
         This is used by the Celery monthly billing task to proactively create
         payment preferences before the current period ends.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_gateway_subscription_id(self, gateway_subscription_id: str) -> Subscription | None:
+        """Retrieve a subscription by its gateway subscription ID, or None.
+
+        Used by the webhook handler to resolve gateway subscription notifications
+        to local Subscription entities.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_by_tenant(
+        self,
+        tenant_id: UUID,
+        status_filter: SubscriptionStatus | None = None,
+    ) -> list[Subscription]:
+        """List subscriptions for a tenant, optionally filtered by status.
+
+        Args:
+            tenant_id: The tenant UUID.
+            status_filter: Optional subscription status to filter by.
+
+        Returns:
+            A list of Subscription entities (may be empty).
         """
         raise NotImplementedError

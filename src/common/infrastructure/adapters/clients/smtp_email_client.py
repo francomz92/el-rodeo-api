@@ -1,3 +1,4 @@
+import ssl
 from email.message import EmailMessage
 from smtplib import SMTP_SSL
 
@@ -11,6 +12,7 @@ class SMTPClient(IEmailClient):
             host=settings.SMTP_SERVER,
             port=settings.SMTP_PORT,
             timeout=30,
+            context=ssl.create_default_context(),
         )
 
     def send_email(self, to: list[str], subject: str, body: str):

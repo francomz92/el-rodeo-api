@@ -13,8 +13,9 @@ downstream middleware and route handlers have access to the correlation ID.
 import re
 from typing import Any
 
-from src.common.infrastructure.adapters.correlation import set_correlation_id
-from src.common.infrastructure.core import settings as app_settings
+from fastapi import FastAPI
+
+from src.common.infrastructure.adapters.correlation import reset_correlation_id, set_correlation_id
 
 # Validation pattern: alphanumeric + hyphens, max 64 chars.
 _VALID_CID_RE = re.compile(r"^[a-zA-Z0-9\-]{1,64}$")
@@ -28,9 +29,8 @@ class CorrelationIdMiddleware:
         app.add_middleware(CorrelationIdMiddleware)
     """
 
-    def __init__(self, app: Any, settings: Any = None) -> None:
+    def __init__(self, app: Any) -> None:
         self.app = app
-        self.settings = settings or app_settings
 
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope["type"] != "http":
@@ -38,15 +38,20 @@ class CorrelationIdMiddleware:
             return
 
         # ── Extract or generate correlation ID ──────────────────────────────
-        headers = {k.decode(): v.decode() for k, v in scope.get("headers", [])}
+        headers = {}
+        for k, v in scope.get("headers", []):
+            try:
+                headers[k.decode()] = v.decode()
+            except UnicodeDecodeError:
+                pass  # Skip malformed header bytes
         raw_request_id = headers.get("x-request-id", "").strip()
 
         # Validate: only alphanumeric + hyphens, max 64 chars.
         # If invalid or missing, let set_correlation_id() generate a fresh UUID.
         if raw_request_id and _VALID_CID_RE.match(raw_request_id):
-            cid = set_correlation_id(raw_request_id)
+            cid, token = set_correlation_id(raw_request_id)
         else:
-            cid = set_correlation_id()  # generates UUID hex
+            cid, token = set_correlation_id()  # generates UUID hex
 
         # ── Wrap send to inject X-Request-ID into response headers ─────────
         async def send_with_cid(message: dict) -> None:
@@ -56,4 +61,11 @@ class CorrelationIdMiddleware:
                 message["headers"] = resp_headers
             await send(message)
 
-        await self.app(scope, receive, send_with_cid)
+        try:
+            await self.app(scope, receive, send_with_cid)
+        finally:
+            reset_correlation_id(token)
+
+
+def configure_correlation_id_middleware(app: FastAPI) -> None:
+    app.add_middleware(CorrelationIdMiddleware)

@@ -2,6 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Feature:
+class FeatureEntity:
     name: str
     enabled: bool = True

@@ -35,10 +35,6 @@ from src.billing.domain.repositories import (
     PreferenceResult,
 )
 from src.billing.domain.value_objects._money import Money
-from src.billing.infrastructure.workers._billing_tasks import (
-    expire_trials_task,
-    monthly_billing_task,
-)
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -136,9 +132,11 @@ def _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls):
 class TestExpireTrialsTask:
     """Task 5.3 — expire_trials_task tests."""
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
+    EXPIRE_MODULE = "src.billing.infrastructure.workers._expire_trials_task"
+
+    @patch("{}.AsyncSessionMaker".format(EXPIRE_MODULE))
+    @patch("{}.UnitOfWork".format(EXPIRE_MODULE))
+    @patch("{}.PlanRepository".format(EXPIRE_MODULE))
     def test_expires_expired_trials(
         self,
         mock_plan_repo_cls: MagicMock,
@@ -147,6 +145,8 @@ class TestExpireTrialsTask:
         free_plan: Plan,
     ):
         """Should transition TRIAL → EXPIRED and assign FREE plan."""
+        from src.billing.infrastructure.workers._expire_trials_task import expire_trials_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         plan_repo_instance.get_by_plan_type = AsyncMock(return_value=free_plan)
 
@@ -162,9 +162,9 @@ class TestExpireTrialsTask:
         assert updated.status == SubscriptionStatus.EXPIRED
         assert updated.plan_id == free_plan.id
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
+    @patch("{}.AsyncSessionMaker".format(EXPIRE_MODULE))
+    @patch("{}.UnitOfWork".format(EXPIRE_MODULE))
+    @patch("{}.PlanRepository".format(EXPIRE_MODULE))
     def test_no_expired_trials_returns_empty(
         self,
         mock_plan_repo_cls: MagicMock,
@@ -173,6 +173,8 @@ class TestExpireTrialsTask:
         free_plan: Plan,
     ):
         """Should return zeroes when no expired trials exist."""
+        from src.billing.infrastructure.workers._expire_trials_task import expire_trials_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         plan_repo_instance.get_by_plan_type = AsyncMock(return_value=free_plan)
         sub_repo.list_expired_trials = AsyncMock(return_value=[])
@@ -182,9 +184,9 @@ class TestExpireTrialsTask:
         assert result == {"processed": 0, "succeeded": 0, "failed": 0}
         sub_repo.update.assert_not_called()
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
+    @patch("{}.AsyncSessionMaker".format(EXPIRE_MODULE))
+    @patch("{}.UnitOfWork".format(EXPIRE_MODULE))
+    @patch("{}.PlanRepository".format(EXPIRE_MODULE))
     def test_active_trials_not_affected(
         self,
         mock_plan_repo_cls: MagicMock,
@@ -193,6 +195,8 @@ class TestExpireTrialsTask:
         free_plan: Plan,
     ):
         """Should skip subscriptions whose trial_end is still in the future."""
+        from src.billing.infrastructure.workers._expire_trials_task import expire_trials_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         plan_repo_instance.get_by_plan_type = AsyncMock(return_value=free_plan)
         sub_repo.list_expired_trials = AsyncMock(return_value=[])
@@ -201,9 +205,9 @@ class TestExpireTrialsTask:
 
         assert result == {"processed": 0, "succeeded": 0, "failed": 0}
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
+    @patch("{}.AsyncSessionMaker".format(EXPIRE_MODULE))
+    @patch("{}.UnitOfWork".format(EXPIRE_MODULE))
+    @patch("{}.PlanRepository".format(EXPIRE_MODULE))
     def test_handles_update_error_gracefully(
         self,
         mock_plan_repo_cls: MagicMock,
@@ -212,6 +216,8 @@ class TestExpireTrialsTask:
         free_plan: Plan,
     ):
         """Should count as failed when update raises."""
+        from src.billing.infrastructure.workers._expire_trials_task import expire_trials_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         plan_repo_instance.get_by_plan_type = AsyncMock(return_value=free_plan)
 
@@ -232,10 +238,12 @@ class TestExpireTrialsTask:
 class TestMonthlyBillingTask:
     """Task 5.4 — monthly_billing_task tests."""
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
-    @patch("src.billing.infrastructure.workers._billing_tasks.MercadoPagoHttpClient")
+    MONTHLY_MODULE = "src.billing.infrastructure.workers._monthly_billing_task"
+
+    @patch("{}.AsyncSessionMaker".format(MONTHLY_MODULE))
+    @patch("{}.UnitOfWork".format(MONTHLY_MODULE))
+    @patch("{}.PlanRepository".format(MONTHLY_MODULE))
+    @patch("{}.MercadoPagoHttpClient".format(MONTHLY_MODULE))
     def test_creates_preferences_for_active_near_end(
         self,
         mock_mp_cls: MagicMock,
@@ -245,6 +253,8 @@ class TestMonthlyBillingTask:
         pro_plan: Plan,
     ):
         """Should create MP preference and persist PENDING payment."""
+        from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
+
         _, sub_repo, payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
 
         mock_gateway = MagicMock()
@@ -280,10 +290,10 @@ class TestMonthlyBillingTask:
         assert payment.mp_preference_id == "pref-999"
         assert payment.amount == Decimal("15.00")
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
-    @patch("src.billing.infrastructure.workers._billing_tasks.MercadoPagoHttpClient")
+    @patch("{}.AsyncSessionMaker".format(MONTHLY_MODULE))
+    @patch("{}.UnitOfWork".format(MONTHLY_MODULE))
+    @patch("{}.PlanRepository".format(MONTHLY_MODULE))
+    @patch("{}.MercadoPagoHttpClient".format(MONTHLY_MODULE))
     def test_no_subs_near_end_returns_empty(
         self,
         mock_mp_cls: MagicMock,
@@ -292,6 +302,8 @@ class TestMonthlyBillingTask:
         mock_session_maker: MagicMock,
     ):
         """Should return zeroes when no subscriptions are near period end."""
+        from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         mock_gateway = MagicMock()
         mock_mp_cls.return_value = mock_gateway
@@ -300,10 +312,10 @@ class TestMonthlyBillingTask:
         result = monthly_billing_task()
         assert result == {"processed": 0, "succeeded": 0, "failed": 0}
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
-    @patch("src.billing.infrastructure.workers._billing_tasks.MercadoPagoHttpClient")
+    @patch("{}.AsyncSessionMaker".format(MONTHLY_MODULE))
+    @patch("{}.UnitOfWork".format(MONTHLY_MODULE))
+    @patch("{}.PlanRepository".format(MONTHLY_MODULE))
+    @patch("{}.MercadoPagoHttpClient".format(MONTHLY_MODULE))
     def test_handles_mp_error_gracefully(
         self,
         mock_mp_cls: MagicMock,
@@ -313,6 +325,8 @@ class TestMonthlyBillingTask:
         pro_plan: Plan,
     ):
         """Should count as failed when MP gateway raises."""
+        from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
+
         _, sub_repo, payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
 
         mock_gateway = MagicMock()
@@ -331,10 +345,10 @@ class TestMonthlyBillingTask:
         assert result == {"processed": 1, "succeeded": 0, "failed": 1}
         payment_repo.create.assert_not_called()
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
-    @patch("src.billing.infrastructure.workers._billing_tasks.MercadoPagoHttpClient")
+    @patch("{}.AsyncSessionMaker".format(MONTHLY_MODULE))
+    @patch("{}.UnitOfWork".format(MONTHLY_MODULE))
+    @patch("{}.PlanRepository".format(MONTHLY_MODULE))
+    @patch("{}.MercadoPagoHttpClient".format(MONTHLY_MODULE))
     def test_skips_free_plan_subscriptions(
         self,
         mock_mp_cls: MagicMock,
@@ -344,6 +358,8 @@ class TestMonthlyBillingTask:
         free_plan: Plan,
     ):
         """Should skip subscriptions with zero/no price plans."""
+        from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
+
         _, sub_repo, payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         mock_gateway = MagicMock()
         mock_mp_cls.return_value = mock_gateway
@@ -362,10 +378,10 @@ class TestMonthlyBillingTask:
         mock_gateway.create_preference.assert_not_called()
         payment_repo.create.assert_not_called()
 
-    @patch("src.billing.infrastructure.workers._billing_tasks.AsyncSessionMaker")
-    @patch("src.billing.infrastructure.workers._billing_tasks.UnitOfWork")
-    @patch("src.billing.infrastructure.workers._billing_tasks.PlanRepository")
-    @patch("src.billing.infrastructure.workers._billing_tasks.MercadoPagoHttpClient")
+    @patch("{}.AsyncSessionMaker".format(MONTHLY_MODULE))
+    @patch("{}.UnitOfWork".format(MONTHLY_MODULE))
+    @patch("{}.PlanRepository".format(MONTHLY_MODULE))
+    @patch("{}.MercadoPagoHttpClient".format(MONTHLY_MODULE))
     def test_handles_missing_plan_gracefully(
         self,
         mock_mp_cls: MagicMock,
@@ -374,6 +390,8 @@ class TestMonthlyBillingTask:
         mock_session_maker: MagicMock,
     ):
         """Should count as failed when a subscription's plan is not found."""
+        from src.billing.infrastructure.workers._monthly_billing_task import monthly_billing_task
+
         _, sub_repo, _payment_repo, plan_repo_instance = _patch_task_deps(mock_session_maker, mock_uow_cls, mock_plan_repo_cls)
         mock_gateway = MagicMock()
         mock_mp_cls.return_value = mock_gateway

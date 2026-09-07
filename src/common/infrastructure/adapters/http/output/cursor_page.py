@@ -9,7 +9,7 @@ import base64
 import json
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 T = TypeVar("T")
 
@@ -36,16 +36,13 @@ class CursorPage(BaseModel, Generic[T]):
         description="Opaque cursor for the next page (null if last page)",
     )
     total: int = Field(description="Total number of items matching the query")
-    has_next: bool = Field(
-        default=False,
-        description="Whether there are more pages after this one",
-    )
-
     model_config = ConfigDict(ser_json_timedelta="iso8601")
 
-    def model_post_init(self, __context: object) -> None:
-        """Derive ``has_next`` from ``next_cursor`` after construction."""
-        self.has_next = self.next_cursor is not None
+    @computed_field
+    @property
+    def has_next(self) -> bool:
+        """Whether there are more pages after this one."""
+        return self.next_cursor is not None
 
 
 def encode_cursor(id: str, sort_value: str | None = None) -> str:
@@ -56,7 +53,7 @@ def encode_cursor(id: str, sort_value: str | None = None) -> str:
     for both (single-column sort by id).
     """
     payload = json.dumps(
-        {"id": str(id), "sort_value": str(sort_value or id)},
+        {"id": str(id), "sort_value": str(sort_value) if sort_value is not None else str(id)},
         separators=(",", ":"),
     )
     return base64.urlsafe_b64encode(payload.encode()).decode()

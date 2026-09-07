@@ -39,12 +39,8 @@ class TestHandlerCall:
             metadata={"tenant_id": str(tenant_id)},
         )
 
-        handler(event)
+        await handler(event)
 
-        # Give the async task a moment to complete
-        import asyncio
-
-        await asyncio.sleep(0.02)
         mock_redis.publish.assert_awaited_once()
         call_args = mock_redis.publish.await_args
         assert call_args is not None
@@ -60,11 +56,8 @@ class TestHandlerCall:
             metadata={"tenant_id": str(tenant_id)},
         )
 
-        handler(event)
+        await handler(event)
 
-        import asyncio
-
-        await asyncio.sleep(0.02)
         mock_redis.publish.assert_awaited_once()
         call_args = mock_redis.publish.await_args
         assert call_args is not None
@@ -85,31 +78,20 @@ class TestHandlerCall:
             metadata={},
         )
 
-        handler(event)
+        await handler(event)
 
-        import asyncio
-
-        await asyncio.sleep(0.02)
         mock_redis.publish.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_skips_event_with_none_metadata(self, handler: WebSocketBroadcastHandler, mock_redis: MagicMock) -> None:
-        event = DomainEvent(
-            aggregate_id=uuid4(),
-            event_type="animal.created",
-        )
-        # Override metadata to None
         event_with_none_meta = DomainEvent(
             aggregate_id=uuid4(),
             event_type="animal.created",
             metadata={},
         )
-        # Simulate metadata being missing in __dict__
-        handler(event_with_none_meta)
 
-        import asyncio
+        await handler(event_with_none_meta)
 
-        await asyncio.sleep(0.02)
         mock_redis.publish.assert_not_awaited()
 
     @pytest.mark.asyncio
@@ -124,9 +106,6 @@ class TestHandlerCall:
         )
 
         # Should not raise
-        handler(event)
+        await handler(event)
 
-        import asyncio
-
-        await asyncio.sleep(0.02)
         mock_redis.publish.assert_awaited_once()

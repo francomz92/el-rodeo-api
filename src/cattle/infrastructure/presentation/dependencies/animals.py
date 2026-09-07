@@ -16,25 +16,17 @@ from src.cattle.domain.services.animals.update_animal_service import UpdateAnima
 from src.cattle.infrastructure.events.handlers.cache_invalidation import (
     AnimalCacheInvalidationHandler,
 )
-from src.common.domain.ports.cache_service import ICacheService
 from src.common.domain.ports.event_bus import IEventBus
-from src.common.infrastructure.adapters.cache_service import RedisCacheService
 from src.common.infrastructure.events.bus import InMemoryEventBus
 from src.common.infrastructure.events.handlers.outbox_scheduler import OutboxScheduler
 from src.common.infrastructure.events.handlers.ws_broadcast import (
     WebSocketBroadcastHandler,
 )
+
+# TODO: inject via DI instead of direct singleton import
 from src.common.infrastructure.persistence.connections.redis import _redis_client
-from src.common.infrastructure.presentation.dependencies.redis import GetRedisClient
+from src.common.infrastructure.presentation.dependencies.cache import GetCacheService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
-
-
-def _get_cache_service(redis: GetRedisClient) -> ICacheService:  # type: ignore[reportInvalidTypeForm]
-    """Build a Redis-backed cache service."""
-    return RedisCacheService(redis=redis)
-
-
-GetCacheService = Annotated[ICacheService, Depends(_get_cache_service)]
 
 
 def _get_event_bus(
@@ -46,10 +38,12 @@ def _get_event_bus(
     bus.register("*", OutboxScheduler(uow))
     bus.register("*", WebSocketBroadcastHandler(_redis_client))
     bus.register("animal.created", AnimalCacheInvalidationHandler(cache_service))
+    bus.register("animal.updated", AnimalCacheInvalidationHandler(cache_service))
+    bus.register("animal.deleted", AnimalCacheInvalidationHandler(cache_service))
     return bus
 
 
-GetEventBus = Annotated[IEventBus, Depends(_get_event_bus)]
+GetAnimalEventBus = Annotated[IEventBus, Depends(_get_event_bus)]
 
 
 def _get_register_animals_case(
@@ -59,8 +53,8 @@ def _get_register_animals_case(
         CreateAnimalProtocolService,
         Depends(),
     ],
-    event_bus: GetEventBus,
-):
+    event_bus: GetAnimalEventBus,
+) -> RegisterAnimalCase:
     return RegisterAnimalCase(
         uow=uow,
         service=service,
@@ -72,28 +66,30 @@ def _get_register_animals_case(
 def _get_update_animal_case(
     uow: GetUnitOfWork,
     service: Annotated[UpdateAnimalService, Depends()],
-):
-    return UpdateAnimalCase(uow, service)
+    event_bus: GetAnimalEventBus,
+) -> UpdateAnimalCase:
+    return UpdateAnimalCase(uow=uow, service=service, event_bus=event_bus)
 
 
 def _get_delete_animal_case(
     uow: GetUnitOfWork,
     service: Annotated[DeleteAnimalService, Depends()],
-):
-    return DeleteAnimalCase(uow=uow, service=service)
+    event_bus: GetAnimalEventBus,
+) -> DeleteAnimalCase:
+    return DeleteAnimalCase(uow=uow, service=service, event_bus=event_bus)
 
 
 def _get_list_animal_case(
     uow: GetUnitOfWork,
     service: Annotated[ListAnimalService, Depends()],
-):
+) -> ListAnimalsCase:
     return ListAnimalsCase(uow=uow, service=service)
 
 
 def _get_obtain_animal_case(
     uow: GetUnitOfWork,
     service: Annotated[GetAnimalService, Depends()],
-):
+) -> ObtainAnimalCase:
     return ObtainAnimalCase(uow, service)
 
 

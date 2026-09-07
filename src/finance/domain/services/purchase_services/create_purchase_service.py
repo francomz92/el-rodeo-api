@@ -10,10 +10,10 @@ from src.finance.domain.value_objects.purchase_value_objects import PurchaseCrea
 
 class CreatePurchaseService:
     def validate_data(self, data: PurchaseCreateValueObject):
-        comon_message = "Hay datos ingresados que no son válidos"
+        common_message = "Hay datos ingresados que no son válidos"
         if data.amount <= 0:
             raise BusinessValidationError(
-                message=comon_message,
+                message=common_message,
                 details=[
                     {
                         "field": "amount",
@@ -23,7 +23,7 @@ class CreatePurchaseService:
             )
         if data.price <= 0:
             raise BusinessValidationError(
-                message=comon_message,
+                message=common_message,
                 details=[
                     {
                         "field": "price",
@@ -33,7 +33,7 @@ class CreatePurchaseService:
             )
         if data.unit_price <= 0:
             raise BusinessValidationError(
-                message=comon_message,
+                message=common_message,
                 details=[
                     {
                         "field": "unit_price",
@@ -43,7 +43,7 @@ class CreatePurchaseService:
             )
         if data.purchase_date > get_current_datetime().date():
             raise BusinessValidationError(
-                message=comon_message,
+                message=common_message,
                 details=[
                     {
                         "field": "purchase_date",
@@ -74,5 +74,8 @@ class CreatePurchaseService:
         user_id: UUID,
         data: PurchaseCreateValueObject,
         repository: IPurchasesRepository,
+        supply_repository: IAnimalSuppliesRepository,
     ) -> PurchaseEntity:
+        self.validate_data(data)
+        await self.validate_supply(data.supply_id, supply_repository)
         return await repository.create(user_id=user_id, data=data)

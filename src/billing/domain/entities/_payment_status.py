@@ -6,5 +6,5 @@ class PaymentStatus(StrEnum):
     APPROVED = "approved"
     REJECTED = "rejected"
     REFUNDED = "refunded"
-    CANCELLED = "cancelled"
+    CANCELED = "canceled"
     CHARGED_BACK = "charged_back"

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.common.domain.exceptions import BusinessValidationError
+from src.common.domain.exceptions import NotFoundError
 from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
 
 
@@ -11,12 +11,6 @@ class GetSupplyTypeService:
         repository: ISupplyTypesRepository,
     ) -> None:
         if not await repository.exists(id):
-            raise BusinessValidationError(
-                message="El tipo de suministro es requerido.",
-                details=[
-                    {
-                        "field": "type_id",
-                        "message": "El tipo de suministro seleccionado no exists.",
-                    }
-                ],
+            raise NotFoundError(
+                "El tipo de suministro seleccionado no existe.",
             )

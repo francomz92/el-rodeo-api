@@ -8,10 +8,10 @@ from src.common.domain.exceptions import NotFoundError
 class GetAnimalProtocolService:
     async def get_animal_protocol(
         self,
-        id: UUID,
+        animal_id: UUID,
         repository: IAnimalProtocolsRepository,
     ) -> AnimalProtocolEntity:
-        protocol = await repository.get_by_id(id)
+        protocol = await repository.get_by_animal_id(animal_id)
         if protocol is None:
             raise NotFoundError("No existen protocolos para este animal")
         return protocol

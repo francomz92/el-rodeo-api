@@ -43,7 +43,6 @@ class TestChangePlanService:
             plan_repo=self.plan_repo,
             sub_repo=self.sub_repo,
             mercado_pago_service=self.mp_service,
-            uow_factory=self.uow,
         )
 
         self.tenant_id = uuid4()
@@ -211,7 +210,6 @@ class TestChangePlanService:
             plan_repo=self.plan_repo,
             sub_repo=self.sub_repo,
             mercado_pago_service=None,
-            uow_factory=self.uow,
         )
         self.sub_repo.get_by_tenant = AsyncMock(return_value=self.active_subscription)
         self.plan_repo.get_by_id = AsyncMock(return_value=self.pro_plan)

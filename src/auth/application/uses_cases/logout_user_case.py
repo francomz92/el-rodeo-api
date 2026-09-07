@@ -1,6 +1,7 @@
 import time
 from uuid import UUID
 
+from src.auth.application.exceptions.authentication import InvalidCredentialError
 from src.auth.application.ports.token_blacklist_port import ITokenBlacklistService
 from src.auth.application.ports.tokens_port import ITokenService
 from src.auth.domain.repositories.refresh_token_repository_port import (
@@ -33,8 +34,17 @@ class LogoutUserCase:
         self.blacklist_service = blacklist_service
         self.uow = uow
 
-    async def execute(self, token: str) -> None:
-        payload = self.token_service.decode(token)
+    async def execute(self, token: str, refresh_token: str, close_all_sessions: bool = False) -> None:
+        try:
+            payload = self.token_service.decode(token)
+        except InvalidCredentialError:
+            return  # Already invalid, logout is a no-op
+
+        try:
+            refresh_payload = self.token_service.decode_refresh_token(refresh_token)
+            refresh_token_id: str = refresh_payload.get("refresh_token_id", "")
+        except InvalidCredentialError:
+            return  # Already invalid, logout is a no-op
 
         # Blacklist the access token
         jti = payload.get("jti")
@@ -51,9 +61,15 @@ class LogoutUserCase:
         await self.blacklist_service.blacklist(jti, remaining)
 
         # Revoke all refresh tokens for the user
+        # TODO: Revoke all devices sessions in necessary.?
         user_id_str: str = payload.get("user_id")
-        if user_id_str:
-            async with self.uow as uow:
-                refresh_repo = uow.get_repository(IRefreshTokenRepository)
+        async with self.uow as uow:
+            refresh_repo = uow.get_repository(IRefreshTokenRepository)
+            if close_all_sessions and user_id_str:
                 await refresh_repo.revoke_all_user_tokens(UUID(user_id_str))
                 await uow.commit()
+            else:
+                refresh_t = await refresh_repo.find_by_id(token_id=UUID(refresh_token_id))
+                if refresh_t:
+                    await refresh_repo.revoke_token(refresh_t)
+                    await uow.commit()

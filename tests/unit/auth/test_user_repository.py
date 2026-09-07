@@ -1,47 +1,43 @@
-"""Unit tests for UserRepository role mapping.
+"""Unit tests for UserRepository role mapping (now in _mappers.py).
 
-UserRepository._build_user() must correctly convert the string 'role'
-column from the database into a UserRole enum value.
+The build_user() function in _mappers.py must correctly convert the
+string 'role' column from the database into a UserRole enum value.
+This test was previously testing UserRepository._build_user() directly;
+it now tests the extracted standalone function.
 """
 
 from unittest.mock import MagicMock
 
 from src.auth.domain.entities._user_role import UserRole
-from src.auth.infrastructure.persistence.repositories.user_repository import (
-    UserRepository,
-)
+from src.auth.infrastructure.persistence.repositories._mappers import build_user
 
 
-class TestUserRepositoryBuildUser:
-    """UserRepository._build_user maps role string column to UserRole enum."""
-
-    def setup_method(self) -> None:
-        self.db = MagicMock()
-        self.repo = UserRepository(self.db)
+class TestBuildUser:
+    """build_user maps role string column to UserRole enum."""
 
     def test_viewer_string_mapped_to_viewer_enum(self) -> None:
         """role='viewer' in DB → UserRole.VIEWER."""
-        user = self.repo._build_user(_make_row(role="viewer"))
+        user = build_user(_make_row(role="viewer"))
         assert user.role == UserRole.VIEWER
 
     def test_editor_string_mapped_to_editor_enum(self) -> None:
         """role='editor' in DB → UserRole.EDITOR."""
-        user = self.repo._build_user(_make_row(role="editor"))
+        user = build_user(_make_row(role="editor"))
         assert user.role == UserRole.EDITOR
 
     def test_admin_string_mapped_to_admin_enum(self) -> None:
         """role='admin' in DB → UserRole.ADMIN."""
-        user = self.repo._build_user(_make_row(role="admin"))
+        user = build_user(_make_row(role="admin"))
         assert user.role == UserRole.ADMIN
 
     def test_owner_string_mapped_to_owner_enum(self) -> None:
         """role='owner' in DB → UserRole.OWNER."""
-        user = self.repo._build_user(_make_row(role="owner"))
+        user = build_user(_make_row(role="owner"))
         assert user.role == UserRole.OWNER
 
     def test_empty_role_falls_back_to_viewer(self) -> None:
         """role=None or empty string → UserRole.VIEWER (safe fallback)."""
-        user = self.repo._build_user(_make_row(role=None))
+        user = build_user(_make_row(role=None))
         assert user.role == UserRole.VIEWER
 
     def test_all_user_fields_are_mapped_correctly(self) -> None:
@@ -62,7 +58,7 @@ class TestUserRepositoryBuildUser:
             tenant_id=tenant_id,
             created_at=now,
         )
-        user = self.repo._build_user(row)
+        user = build_user(row)
 
         assert user.id == user_id
         assert user.name == "John Doe"
@@ -75,7 +71,7 @@ class TestUserRepositoryBuildUser:
 
     def test_super_admin_string_mapped_to_super_admin_enum(self) -> None:
         """role='super_admin' in DB → UserRole.SUPER_ADMIN."""
-        user = self.repo._build_user(_make_row(role="super_admin"))
+        user = build_user(_make_row(role="super_admin"))
         assert user.role == UserRole.SUPER_ADMIN
 
 

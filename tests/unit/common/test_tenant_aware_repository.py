@@ -85,6 +85,33 @@ class TestFilterTenant:
         assert self.tenant_id.hex in compiled
 
 
+class TestTenantIdNone:
+    """TenantAwareRepository tolerates tenant_id=None (no-op filter)."""
+
+    def test_tenant_id_none_does_not_raise(self) -> None:
+        """tenant_id=None should NOT raise ValueError."""
+        repo = _make_concrete_repo(tenant_id=None)
+        assert repo._tenant_id is None  # type: ignore[attr-defined]
+
+    def test_filter_tenant_noop_when_tenant_id_none(self) -> None:
+        """_filter_tenant returns stmt unchanged when tenant_id=None."""
+        repo = _make_concrete_repo(tenant_id=None)
+        stmt = select(TestModel)
+        filtered = repo._filter_tenant(stmt)
+
+        compiled = str(filtered.compile(compile_kwargs={"literal_binds": True}))
+        assert "WHERE" not in compiled.upper() or "tenant_id" not in compiled
+
+    def test_filter_tenant_noop_even_without_bypass(self) -> None:
+        """tenant_id=None means no filtering even when bypass_filter=False."""
+        repo = _make_concrete_repo(tenant_id=None, bypass=False)
+        stmt = select(TestModel)
+        filtered = repo._filter_tenant(stmt)
+
+        compiled = str(filtered.compile(compile_kwargs={"literal_binds": True}))
+        assert "WHERE" not in compiled.upper() or "tenant_id" not in compiled
+
+
 class TestConcreteRepository:
     """Concrete subclass must define _model property."""
 
@@ -106,7 +133,7 @@ class TestConcreteRepository:
 # ── Helpers ──────────────────────────────────────────────────────────────
 
 
-def _make_concrete_repo(tenant_id: UUID, bypass: bool = False) -> TenantAwareRepository:
+def _make_concrete_repo(tenant_id: UUID | None, bypass: bool = False) -> TenantAwareRepository:
     """Build a concrete tenant-aware repository for testing."""
 
     class ConcreteRepo(TenantAwareRepository):

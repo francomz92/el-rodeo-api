@@ -2,17 +2,17 @@ import asyncio
 from uuid import UUID
 
 from celery import Task, shared_task
-from loguru import logger
 
 from src.cattle.application.services.notifications.scheduled_events_reminder_service import (
     ScheduledEventsReminderService,
 )
-from src.cattle.application.uses_cases.schedule_events_use_cases.norifi_upcoming_events_case import (
+from src.cattle.application.uses_cases.schedule_events_use_cases.notify_upcoming_events_case import (
     NotifyUpcomingEventsCase,
 )
 from src.common.infrastructure.adapters.workers.email_workers import EmailNotifier
 from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
 from src.common.infrastructure.persistence.uow import UnitOfWork
+from src.common.utils import log
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -26,7 +26,7 @@ def notify_upcoming_events(self: Task, tenant_id: str | None = None) -> None:
         tenant_id: Optional UUID string identifying a single tenant.
                    When None, all tenants are processed.
     """
-    logger.info(
+    log.info(
         "notify_upcoming_events called",
         tenant_id=tenant_id or "all-tenants",
     )
@@ -43,28 +43,24 @@ def notify_upcoming_events(self: Task, tenant_id: str | None = None) -> None:
 
     async def _run_all_tenants() -> None:
         """Iterate all tenants and process each one."""
-        from sqlalchemy import select
-
-        from src.auth.infrastructure.persistence.models._tenant_model import Tenant
+        from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
 
         async with AsyncSessionMaker() as session:
-            result = await session.execute(select(Tenant.id))
-            tenant_ids = [row[0] for row in result.all()]
+            uow = UnitOfWork(session=session, bypass_filter=True)
+            tenant_repo = uow.get_repository(ITenantRepository)
+            tenants = await tenant_repo.list_all()
+            tenant_ids = [t.id for t in tenants]
 
         if not tenant_ids:
-            logger.warning("No tenants found — skipping upcoming events notification")
+            log.warning("No tenants found — skipping upcoming events notification")
             return
 
         for tid in tenant_ids:
-            logger.info("Processing tenant", tenant_id=str(tid))
+            log.info("Processing tenant", tenant_id=str(tid))
             try:
                 await _run_single_tenant(tid)
             except Exception:
-                logger.exception(
-                    "Failed to process tenant — will retry",
-                    tenant_id=str(tid),
-                )
-                raise
+                log.exception("Failed to process tenant %s", tid)
 
     try:
         if tenant_id is not None:
@@ -72,5 +68,5 @@ def notify_upcoming_events(self: Task, tenant_id: str | None = None) -> None:
         else:
             asyncio.run(_run_all_tenants())
     except Exception as exc:
-        logger.exception("notify_upcoming_events failed")
+        log.exception("notify_upcoming_events failed")
         raise self.retry(exc=exc)

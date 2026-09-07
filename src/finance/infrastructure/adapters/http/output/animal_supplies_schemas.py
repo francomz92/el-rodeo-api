@@ -15,6 +15,7 @@ class AnimalSupplySchema(BaseModel):
     unit_of_measurement: UnitOfMeasurement
     created_at: datetime
     description: str
+    user_id: UUID | None = None
     type: SupplyTypeSchema
 
     model_config = ConfigDict(from_attributes=True)

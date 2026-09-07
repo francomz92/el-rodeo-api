@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
+from src.common.domain.types import Sentinel
 from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
@@ -27,13 +28,15 @@ class UpdateAnimalSuppliesCase:
     ) -> AnimalSupplyEntity:
         async with self.uow as uow:
             supply_type_repository = uow.get_repository(ISupplyTypesRepository)
-            await self.get_supply_type_service.validate_exists(
-                id=data.type_id,
-                repository=supply_type_repository,
-            )
+            if data.type_id is not Sentinel.UNSET:
+                await self.get_supply_type_service.validate_exists(
+                    id=data.type_id,
+                    repository=supply_type_repository,
+                )
             repository = uow.get_repository(IAnimalSuppliesRepository)
             await self.service.validate_update(
                 id=id,
+                data=data,
                 repository=repository,
             )
             animal_supply = await self.service.update_supply(

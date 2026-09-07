@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from uuid import UUID
 
+from src.common.domain.exceptions import BusinessValidationError
 from src.common.domain.types import Sentinel
 
 
@@ -17,6 +18,18 @@ class BuyerCreateValueObject:
     description: str = field(default_factory=str)
     contact_number: str = field(default_factory=str)
     contact_address: str = field(default_factory=str)
+
+    def __post_init__(self) -> None:
+        if len(self.contact_number) > 10:
+            raise BusinessValidationError(
+                message="El número de contacto no puede tener más de 10 caracteres.",
+                details=[{"field": "contact_number", "message": f"Se encontraron {len(self.contact_number)} caracteres, máximo 10."}],
+            )
+        if len(self.contact_address) > 100:
+            raise BusinessValidationError(
+                message="La dirección de contacto no puede tener más de 100 caracteres.",
+                details=[{"field": "contact_address", "message": f"Se encontraron {len(self.contact_address)} caracteres, máximo 100."}],
+            )
 
 
 @dataclass

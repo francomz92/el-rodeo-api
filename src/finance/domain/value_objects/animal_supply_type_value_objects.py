@@ -15,4 +15,4 @@ class AnimalSupplyTypeCreateValueObject:
 
 @dataclass
 class AnimalSupplyTypeUpdateValueObject:
-    name: str
+    name: str | Sentinel = Sentinel.UNSET

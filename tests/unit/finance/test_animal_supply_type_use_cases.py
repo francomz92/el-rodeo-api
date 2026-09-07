@@ -106,11 +106,11 @@ class TestUpdateAnimalSupplyTypeCase:
         repo = self.uow.get_repository(ISupplyTypesRepository)
         repo.get_by_id.return_value = make_supply_type_entity(id=type_id)
         repo.get_by_name.return_value = None
-        repo.update.return_value = expected
+        repo.update_data.return_value = expected
 
         await self.case.execute(id=type_id, data=data)
 
-        repo.update.assert_awaited_once()
+        repo.update_data.assert_awaited_once()
         self.uow.commit.assert_awaited_once()
 
 

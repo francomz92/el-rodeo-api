@@ -15,10 +15,10 @@ class GetAnimalProtocolCase:
         self.uow = uow
         self.service = service
 
-    async def execute(self, id: UUID) -> AnimalProtocolEntity:
+    async def execute(self, animal_id: UUID) -> AnimalProtocolEntity:
         async with self.uow as uow:
-            respository = uow.get_repository(IAnimalProtocolsRepository)
+            repository = uow.get_repository(IAnimalProtocolsRepository)
             return await self.service.get_animal_protocol(
-                id,
-                respository,
+                animal_id,
+                repository,
             )

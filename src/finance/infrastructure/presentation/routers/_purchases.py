@@ -82,7 +82,7 @@ async def get_purchases(
         )
     )
     return await list_purchases_case.execute(
-        filter=payload,
+        filters=payload,
         limit=filters.limit,
         offset=filters.offset,
         order_by=filters.order_by,

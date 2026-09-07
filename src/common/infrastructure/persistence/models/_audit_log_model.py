@@ -1,37 +1,31 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, PrimaryKeyConstraint, String, Uuid, text
+from sqlalchemy import DateTime, ForeignKey, Index, String, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.common.infrastructure.persistence.models import Model
+from src.common.infrastructure.persistence.models.base import Model
 from src.common.utils.date_utils import get_current_datetime
 
 
 class AuditLog(Model):
-    """Partitioned audit log table for immutable CUD event tracking.
+    """Immutable audit log table for CUD event tracking.
 
-    Partitioned by RANGE on created_at (monthly) to support efficient
-    data retention purges. The primary key includes created_at because
-    PostgreSQL requires the partition key to be part of the PK.
+    Data retention uses batch DELETE via the purge task
+    (``retention_purge`` module) rather than partition DROP.
     """
 
     __tablename__ = "audit_log"
     __table_args__ = (
-        PrimaryKeyConstraint("id", "created_at"),
         Index("ix_audit_log_tenant_entity", "tenant_id", "entity_type", "entity_id"),
         Index("ix_audit_log_tenant_created_at", "tenant_id", text("created_at DESC")),
         Index("ix_audit_log_user_id", "user_id"),
-        {
-            "postgresql_partition_by": "RANGE (created_at)",
-        },
     )
 
-    # Override inherited id/created_at to control PK — composite PK
-    # (id, created_at) is required for partitioning.
     id: Mapped[UUID] = mapped_column(
         Uuid,
+        primary_key=True,
         default=uuid4,
         nullable=False,
     )
@@ -39,11 +33,19 @@ class AuditLog(Model):
         DateTime(timezone=True),
         nullable=False,
         default=get_current_datetime,
+        index=True,
+    )
+    # Override base Model.updated_at to remove onupdate — AuditLog is
+    # immutable and should never silently set updated_at on UPDATE.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=get_current_datetime,
     )
 
     tenant_id: Mapped[UUID | None] = mapped_column(
         Uuid,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
+        ForeignKey("tenants.id", ondelete="SET NULL"),
         nullable=True,
     )
     user_id: Mapped[UUID | None] = mapped_column(

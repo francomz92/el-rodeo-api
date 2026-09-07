@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import RowMapping, func, insert, select, update
@@ -11,10 +10,18 @@ from src.auth.infrastructure.persistence.models import RefreshToken
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
 )
-from src.common.infrastructure.persistence.repositories.mixins import SessionMixin
+from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
+    TenantAwareRepository,
+)
+from src.common.utils.date_utils import get_current_datetime
 
 
-class RefreshTokenRepository(IRefreshTokenRepository, SessionMixin, AuditableRepositoryMixin):
+class RefreshTokenRepository(IRefreshTokenRepository, TenantAwareRepository, AuditableRepositoryMixin):
+    # Required by TenantAwareRepository ABC; filtering is a no-op at tenant_id=None.
+    @property
+    def _model(self) -> type:
+        return RefreshToken
+
     async def save(self, token: RefreshTokenEntity) -> None:
         """Persist a new refresh token."""
         stmt = insert(RefreshToken).values(
@@ -80,30 +87,32 @@ class RefreshTokenRepository(IRefreshTokenRepository, SessionMixin, AuditableRep
         rows = result.mappings().all()
         return [self._build_entity(row) for row in rows]
 
-    async def revoke_token(self, token_id: UUID) -> None:
+    async def revoke_token(self, token: RefreshTokenEntity) -> None:
         """Revoke a single token by setting its revoked_at timestamp."""
+
         # Capture old values before update
-        old_row = await self.db.execute(select(RefreshToken.__table__).where(RefreshToken.id == token_id))
-        old_values = dict(old_row.mappings().one_or_none() or {}) if old_row else None
+        old_values = vars(token)
         stmt = (
             update(RefreshToken)
-            .where(RefreshToken.id == token_id)
+            .where(RefreshToken.id == token.id)
             .values(
-                revoked_at=datetime.now(timezone.utc),
+                revoked_at=get_current_datetime(),
                 updated_at=func.now(),
             )
         )
         await self.db.execute(stmt)
-        self._audit_update("refresh_token", token_id, old_values, {"revoked_at": "now"})
+        self._audit_update("refresh_token", token.id, old_values, {"revoked_at": "now"})
 
     async def revoke_family(self, family_id: UUID) -> None:
         """Revoke every token in a family (reuse detection scenario)."""
         # Capture old values before update
         old_rows = await self.db.execute(
-            select(RefreshToken.__table__).where(
+            select(RefreshToken.__table__)
+            .where(
                 RefreshToken.family_id == family_id,
                 RefreshToken.revoked_at.is_(None),
             )
+            .with_for_update()
         )
         old_tokens = old_rows.mappings().all()
         stmt = (
@@ -111,7 +120,7 @@ class RefreshTokenRepository(IRefreshTokenRepository, SessionMixin, AuditableRep
             .where(RefreshToken.family_id == family_id)
             .where(RefreshToken.revoked_at.is_(None))
             .values(
-                revoked_at=datetime.now(timezone.utc),
+                revoked_at=get_current_datetime(),
                 updated_at=func.now(),
             )
         )
@@ -128,10 +137,12 @@ class RefreshTokenRepository(IRefreshTokenRepository, SessionMixin, AuditableRep
         """Revoke every active refresh token belonging to a user."""
         # Capture old values before update
         old_rows = await self.db.execute(
-            select(RefreshToken.__table__).where(
+            select(RefreshToken.__table__)
+            .where(
                 RefreshToken.user_id == user_id,
                 RefreshToken.revoked_at.is_(None),
             )
+            .with_for_update()
         )
         old_tokens = old_rows.mappings().all()
         stmt = (
@@ -139,7 +150,7 @@ class RefreshTokenRepository(IRefreshTokenRepository, SessionMixin, AuditableRep
             .where(RefreshToken.user_id == user_id)
             .where(RefreshToken.revoked_at.is_(None))
             .values(
-                revoked_at=datetime.now(timezone.utc),
+                revoked_at=get_current_datetime(),
                 updated_at=func.now(),
             )
         )

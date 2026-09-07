@@ -5,7 +5,7 @@ from uuid import UUID
 from src.common.utils.date_utils import get_current_datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class AuditLogEntry:
     """Immutable audit log entry representing a single CUD operation.
 

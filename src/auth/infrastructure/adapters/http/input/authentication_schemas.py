@@ -6,10 +6,12 @@ class LoginSchema(BaseModel):
     password: str = Field(..., alias="password", min_length=8, max_length=50)
 
 
-class RegisterSchema(BaseModel):
+class CreateTenantSchema(BaseModel):
+    tenant_name: str = Field(..., max_length=100)
+    slug: str = Field(..., max_length=100, pattern=r"^[a-z0-9-]+$")
     name: str = Field(..., max_length=50)
-    dni: str = Field(..., alias="dni", max_length=10)
-    email: EmailStr = Field(..., alias="email", max_length=100)
+    dni: str = Field(..., max_length=10)
+    email: EmailStr
 
 
 class ChangePasswordSchema(BaseModel):

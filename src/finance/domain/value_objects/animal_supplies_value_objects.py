@@ -25,9 +25,9 @@ class AnimalSuppliesCreateValueObject:
 
 @dataclass
 class AnimalSuppliesUpdateValueObject:
-    type_id: UUID
-    name: str
-    amount: float
-    critical_amount: float
-    unit_of_measurement: UnitOfMeasurement
+    type_id: UUID | Sentinel = Sentinel.UNSET
+    name: str | Sentinel = Sentinel.UNSET
+    amount: float | Sentinel = Sentinel.UNSET
+    critical_amount: float | Sentinel = Sentinel.UNSET
+    unit_of_measurement: UnitOfMeasurement | Sentinel = Sentinel.UNSET
     description: str | Sentinel = Sentinel.UNSET

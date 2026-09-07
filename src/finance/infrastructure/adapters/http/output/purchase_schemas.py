@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -17,5 +17,6 @@ class PurchaseSchema(BaseModel):
     user_name: str
     supply_id: UUID
     supply_name: str
+    created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)

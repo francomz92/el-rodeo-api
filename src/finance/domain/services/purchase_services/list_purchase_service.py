@@ -1,11 +1,12 @@
 from src.finance.domain.repositories.purchases import IPurchasesRepository
+from src.finance.domain.value_objects.purchase_value_objects import PurchaseListQueryParamValueObject
 
 
 class ListPurchaseService:
     async def get_purchases(
         self,
         repository: IPurchasesRepository,
-        query,
+        query: PurchaseListQueryParamValueObject,
         limit: int,
         offset: int,
         order_by: str,
