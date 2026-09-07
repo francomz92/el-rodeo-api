@@ -21,7 +21,7 @@ backlog.md
 .atl/
 .coverage
 
-tests
+# tests
 errors.json
 logs/*
 openspec
