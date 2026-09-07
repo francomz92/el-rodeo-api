@@ -18,7 +18,6 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
     is_authenticated_current_user,
     require_role,
 )
-from src.reports.application.use_cases.get_sales_summary import GetSalesSummaryUseCase
 from src.reports.infrastructure.adapters.http.input.report_schemas import (
     SalesSummaryQuery,
 )
@@ -31,6 +30,7 @@ from src.reports.infrastructure.adapters.http.output.report_schemas import (
 from src.reports.infrastructure.presentation.dependencies.reports import (
     GetExportSalesSummaryCase,
     GetObtainInventorySummaryCase,
+    GetObtainSalesSumaryCase,
 )
 
 CACHE_TTL = 300
@@ -70,7 +70,7 @@ async def inventory_summary(
 async def sales_summary(
     query: SalesSummaryQuery,
     current_user: GetCurrentUser,
-    sales_summary_case: GetSalesSummaryUseCase,
+    sales_summary_case: GetObtainSalesSumaryCase,
     response: Response,
 ) -> ReportWrapper[SalesSummaryData]:
     """Return sales aggregated by week and month within a date range."""
