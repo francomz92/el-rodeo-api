@@ -112,8 +112,8 @@ class ReportsRepository(IReportsRepository):
                 Sale.sale_date >= from_date,
                 Sale.sale_date <= to_date,
             )
-            .group_by(func.date_trunc("week", Sale.sale_date))
-            .order_by(func.date_trunc("week", Sale.sale_date))
+            .group_by("week_start")
+            .order_by("week_start")
         )
         week_rows = await self.db.execute(week_stmt)
         weekly = [
@@ -141,8 +141,8 @@ class ReportsRepository(IReportsRepository):
                 Sale.sale_date >= from_date,
                 Sale.sale_date <= to_date,
             )
-            .group_by(func.date_trunc("month", Sale.sale_date))
-            .order_by(func.date_trunc("month", Sale.sale_date))
+            .group_by("month_start")
+            .order_by("month_start")
         )
         month_rows = await self.db.execute(month_stmt)
         monthly = [

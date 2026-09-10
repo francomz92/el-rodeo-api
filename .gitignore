@@ -26,3 +26,4 @@ errors.json
 logs/*
 openspec
 sdd
+.codegraph

@@ -9,7 +9,9 @@ Three read-only endpoints under ``/reports`` — all require ``ADMIN`` role:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Response
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Response
 from fastapi.responses import StreamingResponse
 
 from src.auth.domain.entities._user_role import UserRole
@@ -53,8 +55,8 @@ async def inventory_summary(
 ) -> ReportWrapper[InventorySummaryData]:
     """Return animal inventory grouped by status and type."""
     data = await inventory_summary_case.execute(current_user.tenant_id)
-
-    response.headers["Cache-Control"] = f"private, max-age={CACHE_TTL}"
+    # response.headers["Cache-Control"] = f"private, max-age={CACHE_TTL}"
+    setattr(response.headers, "Cache-Control", f"private, max-age={CACHE_TTL}")
 
     return ReportWrapper(
         data=InventorySummaryData(
@@ -68,7 +70,7 @@ async def inventory_summary(
 
 @router.get("/sales-summary")
 async def sales_summary(
-    query: SalesSummaryQuery,
+    query: Annotated[SalesSummaryQuery, Query()],
     current_user: GetCurrentUser,
     sales_summary_case: GetObtainSalesSumaryCase,
     response: Response,
@@ -76,7 +78,8 @@ async def sales_summary(
     """Return sales aggregated by week and month within a date range."""
     data = await sales_summary_case.execute(current_user.tenant_id, query.from_date, query.to_date)
 
-    response.headers["Cache-Control"] = f"private, max-age={CACHE_TTL}"
+    # response.headers["Cache-Control"] = f"private, max-age={CACHE_TTL}"
+    setattr(response.headers, "Cache-Control", f"private, max-age={CACHE_TTL}")
 
     return ReportWrapper(
         data=SalesSummaryData(
