@@ -4,6 +4,9 @@ from src.auth.infrastructure.persistence.repositories._registry import (
 from src.billing.infrastructure.persistence.repositories._registry import (
     repositories_list as billing_repos,
 )
+from src.calendar.infrastructure.persistence.repositories._registry import (
+    repositories_list as calendar_repos,
+)
 from src.cattle.infrastructure.persistence.repositories._registry import (
     repositories_list as cattle_repos,
 )
@@ -59,5 +62,6 @@ repositories_list.update(
         finance_repos,
         billing_repos,
         reports_repos,
+        calendar_repos,
     )
 )

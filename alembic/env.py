@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Import all models so Alembic can detect them
 import src.auth.infrastructure.persistence.models  # noqa: F401
 import src.billing.infrastructure.persistence.models  # noqa: F401
+import src.calendar.infrastructure.persistence.models  # noqa: F401
 import src.cattle.infrastructure.persistence.models  # noqa: F401
 import src.common.infrastructure.persistence.models  # noqa: F401
 import src.finance.infrastructure.persistence.models  # noqa: F401

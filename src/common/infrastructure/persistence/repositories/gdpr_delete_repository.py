@@ -11,10 +11,10 @@ from src.auth.infrastructure.persistence.models import (
     RefreshToken,
     User,
 )
+from src.calendar.infrastructure.persistence.models import CalendarEvent
 from src.cattle.infrastructure.persistence.models import (
     Animal,
     AnimalProtocols,
-    ScheduledEvent,
 )
 from src.common.application.ports.gdpr_delete_port import IGDPRDeleteRepository
 from src.finance.infrastructure.persistence.models import AnimalSupply, Purchase
@@ -26,7 +26,7 @@ USER_ID_TABLES = [
     Animal.__table__,
     AnimalProtocols.__table__,
     AnimalSupply.__table__,
-    ScheduledEvent.__table__,
+    CalendarEvent.__table__,
     Buyer.__table__,
 ]
 

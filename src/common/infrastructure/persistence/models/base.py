@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Uuid, func
+from sqlalchemy import DateTime, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from src.common.utils.date_utils import get_current_datetime
@@ -17,6 +17,6 @@ class Model(DeclarativeBase):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=func.now(),
-        onupdate=func.now(),
+        default=get_current_datetime,
+        onupdate=get_current_datetime,
     )

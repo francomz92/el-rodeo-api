@@ -27,12 +27,12 @@ class User(Model):
         index=True,
     )
 
-    event_links: Mapped[list["ScheduledEventParticipant"]] = relationship(  # type: ignore  # noqa: F821
+    event_links: Mapped[list["CalendarEventParticipant"]] = relationship(  # type: ignore  # noqa: F821
         back_populates="user",
         cascade="all, delete-orphan",
     )
 
-    events: Mapped[list["ScheduledEvent"]] = relationship(  # type: ignore  # noqa: F821
-        secondary="scheduled_event_participants",
+    events: Mapped[list["CalendarEvent"]] = relationship(  # type: ignore  # noqa: F821
+        secondary="calendar_event_participants",
         back_populates="participants",
     )

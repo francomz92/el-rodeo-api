@@ -8,10 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.infrastructure.persistence.models import User
+from src.calendar.infrastructure.persistence.models import CalendarEvent
 from src.cattle.infrastructure.persistence.models import (
     Animal,
     AnimalProtocols,
-    ScheduledEvent,
 )
 from src.common.application.ports.gdpr_export_port import IGDPRExportRepository
 from src.common.infrastructure.persistence.models import AuditLog
@@ -62,7 +62,7 @@ class GDPRExportRepository(IGDPRExportRepository):
         return await self._fetch_all(AnimalSupply, user_id)
 
     async def fetch_schedule_events(self, user_id: UUID) -> list[dict]:
-        return await self._fetch_all(ScheduledEvent, user_id)
+        return await self._fetch_all(CalendarEvent, user_id)
 
     async def fetch_audit_log(self, user_id: UUID) -> list[dict]:
         rows = await self.db.execute(
