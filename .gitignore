@@ -27,3 +27,4 @@ logs/*
 openspec
 sdd
 .codegraph
+celerybeat-schedule
