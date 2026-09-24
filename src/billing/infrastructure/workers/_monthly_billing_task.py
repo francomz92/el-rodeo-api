@@ -26,9 +26,8 @@ from src.billing.domain.repositories import (
     ItemData,
 )
 from src.billing.infrastructure.payment_gateway._client import MercadoPagoHttpClient
-from src.billing.infrastructure.persistence.repositories._plan_repository import PlanRepository
 from src.common.infrastructure.core._config import settings
-from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
+from src.common.infrastructure.persistence.connections.db import WorkerSessionMaker
 from src.common.infrastructure.persistence.uow import UnitOfWork
 
 
@@ -50,15 +49,10 @@ def monthly_billing_task() -> dict:
     logger.info("monthly_billing_task started")
 
     async def _run() -> dict:
-        async with AsyncSessionMaker() as session:
-            uow = UnitOfWork(session=session)
-            sub_repo: ISubscriptionRepository = uow.get_repository(
-                ISubscriptionRepository  # type: ignore[assignment]
-            )
-            plan_repo: IPlanRepository = PlanRepository()
-            payment_repo: IPaymentRepository = uow.get_repository(
-                IPaymentRepository  # type: ignore[assignment]
-            )
+        async with UnitOfWork(session=WorkerSessionMaker()) as uow:
+            sub_repo: ISubscriptionRepository = uow.get_repository(ISubscriptionRepository)
+            plan_repo: IPlanRepository = uow.get_repository(IPlanRepository)
+            payment_repo: IPaymentRepository = uow.get_repository(IPaymentRepository)
 
             # Guard: MP client may raise if access token is missing
             try:

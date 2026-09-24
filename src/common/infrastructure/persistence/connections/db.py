@@ -1,3 +1,4 @@
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.common.infrastructure.core import settings
@@ -33,6 +34,21 @@ engine = create_async_engine(
 
 AsyncSessionMaker = async_sessionmaker(
     bind=engine,
+    class_=AsyncSession,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
+
+worker_session_engine = create_async_engine(
+    url=settings.DB_URL,
+    poolclass=NullPool,
+    echo=False,
+    echo_pool=False,
+)
+
+WorkerSessionMaker = async_sessionmaker(
+    bind=worker_session_engine,
     class_=AsyncSession,
     autoflush=False,
     autocommit=False,

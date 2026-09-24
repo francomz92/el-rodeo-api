@@ -3,13 +3,13 @@ from uuid import UUID
 
 from celery import Task, shared_task
 
-from src.auth.infrastructure.persistence.repositories.tenant_repository import TenantRepository
+from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
 from src.calendar.application.services.notifications.calendar_events_reminder_service import CalendarEventsReminderService
 from src.calendar.application.uses_cases.calendar_events_use_cases.notify_upcoming_events_case import (
     NotifyUpcomingEventsCase,
 )
 from src.common.infrastructure.adapters.workers.email_workers import EmailNotifier
-from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
+from src.common.infrastructure.persistence.connections.db import WorkerSessionMaker
 from src.common.infrastructure.persistence.uow import UnitOfWork
 from src.common.utils import log
 
@@ -31,8 +31,7 @@ def notify_upcoming_events(self: Task, tenant_id: str | None = None) -> None:
     )
 
     async def _run_single_tenant(tid: UUID | None) -> None:
-        async with AsyncSessionMaker() as session:
-            uow = UnitOfWork(session=session, tenant_id=tid)
+        async with UnitOfWork(session=WorkerSessionMaker(), tenant_id=tid) as uow:
             case = NotifyUpcomingEventsCase(
                 uow=uow,
                 notifier=EmailNotifier(),
@@ -43,10 +42,8 @@ def notify_upcoming_events(self: Task, tenant_id: str | None = None) -> None:
     async def _run_all_tenants() -> None:
         """Iterate all tenants and process each one."""
 
-        async with AsyncSessionMaker() as session:
-            # uow = UnitOfWork(session=session, bypass_filter=True)
-            # tenant_repo = uow.get_repository(ITenantRepository)
-            tenant_repo = TenantRepository(session=session, bypass_filter=True)
+        async with UnitOfWork(session=WorkerSessionMaker(), bypass_filter=True) as uow:
+            tenant_repo: ITenantRepository = uow.get_repository(ITenantRepository)
             tenants = await tenant_repo.list_all()
             tenant_ids = [t.id for t in tenants]
 

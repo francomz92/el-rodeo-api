@@ -22,9 +22,6 @@ from src.billing.domain.repositories import (
     ISubscriptionRepository,
 )
 from src.billing.infrastructure.payment_gateway._client import MercadoPagoHttpClient
-from src.billing.infrastructure.persistence.repositories._plan_repository import (
-    PlanRepository,
-)
 from src.common.infrastructure.presentation.dependencies.notifier import (
     GetNotifierClient,
 )
@@ -36,9 +33,9 @@ from src.common.infrastructure.presentation.dependencies.uow import (
 # ── Repository factories ─────────────────────────────────────────────────
 
 
-def _get_plan_repository() -> IPlanRepository:
+def _get_plan_repository(uow: GetUnitOfWork) -> IPlanRepository:
     """Return an in-memory PlanRepository (seed data, no DB needed)."""
-    return PlanRepository()
+    return uow.get_repository(IPlanRepository)  # type: ignore
 
 
 def _get_payment_repository(uow: GetUnitOfWork) -> IPaymentRepository:

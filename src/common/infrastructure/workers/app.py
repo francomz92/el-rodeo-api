@@ -1,8 +1,11 @@
+import asyncio
+
 from celery import Celery
-from celery.signals import worker_ready
+from celery.signals import worker_process_init, worker_ready
 
 from src.common.infrastructure.adapters.logger import configure_logger
 from src.common.infrastructure.core import settings
+from src.common.infrastructure.persistence.connections.db import worker_session_engine
 
 from .cron_tasks_register import register_cron_tasks
 
@@ -40,3 +43,8 @@ def _setup_worker_logging(**kwargs) -> None:
     fork, so every child process gets its own Loguru configuration.
     """
     configure_logger()
+
+
+@worker_process_init.connect(weak=False)
+def _setup_engine_recicle(**kwargs) -> None:
+    asyncio.run(worker_session_engine.dispose())

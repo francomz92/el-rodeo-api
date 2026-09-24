@@ -25,4 +25,6 @@ class NotifyUpcomingEventsCase:
                 repository=repository,
                 tenant_id=tenant_id,
             )
-            await self.service.send_reminder(self.notifier, repository, pending_events)
+            self.service.send_reminder(self.notifier, pending_events)
+            for event in pending_events:
+                await repository.mark_as_notified(event.event_id)

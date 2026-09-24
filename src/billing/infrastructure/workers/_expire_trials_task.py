@@ -21,8 +21,7 @@ from src.billing.domain.repositories import (
     IPlanRepository,
     ISubscriptionRepository,
 )
-from src.billing.infrastructure.persistence.repositories._plan_repository import PlanRepository
-from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
+from src.common.infrastructure.persistence.connections.db import WorkerSessionMaker
 from src.common.infrastructure.persistence.uow import UnitOfWork
 
 
@@ -44,12 +43,9 @@ def expire_trials_task() -> dict:
     logger.info("expire_trials_task started")
 
     async def _run() -> dict:
-        async with AsyncSessionMaker() as session:
-            uow = UnitOfWork(session=session)
-            sub_repo: ISubscriptionRepository = uow.get_repository(
-                ISubscriptionRepository  # type: ignore[assignment]
-            )
-            plan_repo: IPlanRepository = PlanRepository()
+        async with UnitOfWork(session=WorkerSessionMaker()) as uow:
+            sub_repo: ISubscriptionRepository = uow.get_repository(ISubscriptionRepository)
+            plan_repo: IPlanRepository = uow.get_repository(IPlanRepository)
 
             free_plan = await plan_repo.get_by_plan_type(PlanTypeEntity.FREE)
             if free_plan is None:
@@ -81,6 +77,7 @@ def expire_trials_task() -> dict:
                     )
                     succeeded += 1
                 except Exception:
+                    await uow.rollback()
                     logger.exception(
                         "expire_trials_task — failed for subscription",
                         tenant_id=str(sub.tenant_id),
