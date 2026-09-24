@@ -2,12 +2,8 @@
 
 from loguru import logger
 
-from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.billing.application.events._payment_failed_email_handler import (
-    PaymentFailedEmailHandler,
-)
-from src.billing.application.events.payment_confirmation_email_handler import (
-    PaymentConfirmationEmailHandler,
+from src.billing.application.ports.payment_event_bus_factory import (
+    IPaymentEventBusFactory,
 )
 from src.billing.application.services.payment_notification_handler import (
     PaymentNotificationHandler,
@@ -20,12 +16,9 @@ from src.billing.application.services.subscription_preapproval_handler import (
 )
 from src.billing.domain.exceptions import PaymentGatewayError
 from src.billing.domain.repositories import IPaymentGateway, IPlanRepository
-from src.common.application.ports.email_notifier import IEmailNotifier
-from src.common.application.ports.uow import IUoWFactory
+from src.common.application.ports.uow import IUoW, IUoWFactory
 from src.common.domain.ports.event_bus import IEventBus
 from src.common.infrastructure.core._config import settings
-from src.common.infrastructure.events.bus import InMemoryEventBus
-from src.common.infrastructure.events.handlers.outbox_scheduler import OutboxScheduler
 
 
 class PaymentWebhookService:
@@ -44,12 +37,12 @@ class PaymentWebhookService:
         gateway: IPaymentGateway,
         plan_repo: IPlanRepository,
         uow_factory: IUoWFactory,
-        email_notifier: IEmailNotifier,
+        event_bus_factory: IPaymentEventBusFactory,
     ) -> None:
         self._gateway = gateway
         self._plan_repo = plan_repo
         self._uow_factory = uow_factory
-        self._email_notifier = email_notifier
+        self._event_bus_factory = event_bus_factory
         self._subscription_preapproval_handler = SubscriptionPreapprovalHandler(
             gateway=self._gateway,
             uow_factory=self._uow_factory,
@@ -150,25 +143,6 @@ class PaymentWebhookService:
         """Delegate subscription_authorized_payment handling to its application handler."""
         await self._subscription_authorized_payment_handler.handle(authorized_payment_id)
 
-    def _build_event_bus(self, uow) -> IEventBus:
-        """Build an event bus with handlers wired to *uow* repos.
-
-        All handlers share the same UoW session so they can safely
-        read/write within the current transaction.
-        """
-        bus = InMemoryEventBus()
-        bus.register("*", OutboxScheduler(uow))
-
-        user_repo = uow.get_repository(IUserRepository)
-        email_handler = PaymentConfirmationEmailHandler(
-            user_repo=user_repo,
-            email_notifier=self._email_notifier,
-        )
-        bus.register("payment.received", email_handler)
-
-        failed_email_handler = PaymentFailedEmailHandler(
-            user_repo=user_repo,
-            email_notifier=self._email_notifier,
-        )
-        bus.register("payment.failed", failed_email_handler)
-        return bus
+    def _build_event_bus(self, uow: IUoW) -> IEventBus:
+        """Build the event bus for *uow* through the configured factory."""
+        return self._event_bus_factory.build(uow)

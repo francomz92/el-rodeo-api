@@ -21,6 +21,9 @@ from src.billing.domain.repositories import (
     IPlanRepository,
     ISubscriptionRepository,
 )
+from src.billing.infrastructure.adapters.payment_event_bus_factory import (
+    PaymentEventBusFactory,
+)
 from src.billing.infrastructure.payment_gateway._client import MercadoPagoHttpClient
 from src.common.infrastructure.presentation.dependencies.notifier import (
     GetNotifierClient,
@@ -91,7 +94,8 @@ def _get_payment_webhook_service(
     uow_factory: GetUoWFactory,
     notifier: GetNotifierClient,
 ) -> PaymentWebhookService:
-    return PaymentWebhookService(gateway, plan_repo, uow_factory, notifier)
+    event_bus_factory = PaymentEventBusFactory(notifier)
+    return PaymentWebhookService(gateway, plan_repo, uow_factory, event_bus_factory)
 
 
 # ── Type-aliased dependencies (Annotated + Depends) ──────────────────────
