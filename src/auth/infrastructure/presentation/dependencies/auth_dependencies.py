@@ -15,22 +15,17 @@ from src.auth.application.uses_cases.logout_user_case import LogoutUserCase
 from src.auth.application.uses_cases.refresh_token_case import RefreshTokenCase
 from src.auth.domain.entities import TenantEntity, UserEntity, UserRole
 from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
-from src.auth.domain.services.change_password_service import ChangePasswordService
-from src.auth.domain.services.login_user_service import LoginUserService
-from src.auth.domain.services.register_user_service import RegisterUserService
 from src.auth.infrastructure.composition import (
-    GetTrialProvisioner,
-    _get_change_password_service,
-    _get_login_user_service,
-    _get_register_user_service,
+    _get_auth_service,
+    _get_change_password_case,
+    _get_create_tenant_case,
+    _get_login_user_case,
+    _get_logout_user_case,
+    _get_refresh_token_case,
 )
 from src.common.domain.exceptions import NotPermissionError, UnauthorizedError
-from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
-from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
 from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
-from src.common.infrastructure.presentation.dependencies.redis import GetTokenBlacklistService
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
-from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 oauth2_scheme = HTTPBearer(
@@ -75,74 +70,6 @@ def get_wellcome_notifier_service(
     notifier_client: GetNotifierClient,
 ) -> WellcomeEmailService:
     return WellcomeEmailService(notifier_client)
-
-
-def _get_create_tenant_case(
-    uow: GetUnitOfWork,
-    security_service: GetSecurityService,
-    register_service: Annotated[RegisterUserService, Depends(_get_register_user_service)],
-    bus: GetEventBus,
-    notifier: GetNotifierClient,
-    token_service: GetTokenService,
-    trial_provisioner: GetTrialProvisioner,
-) -> CreateTenantCase:
-    bus.register("tenant_registered", EmailNotificationHandler(notifier))
-    return CreateTenantCase(
-        uow=uow,
-        security_service=security_service,
-        register_service=register_service,
-        event_bus=bus,
-        token_service=token_service,
-        trial_provisioner=trial_provisioner,
-    )
-
-
-def _get_login_user_case(
-    uow: GetUnitOfWork,
-    security_service: GetSecurityService,
-    token_service: GetTokenService,
-    login_service: Annotated[LoginUserService, Depends(_get_login_user_service)],
-) -> LoginUserCase:
-    return LoginUserCase(uow, security_service, token_service, login_service)
-
-
-def _get_auth_service(
-    token_service: GetTokenService,
-    blacklist_service: GetTokenBlacklistService,
-) -> AuthService:
-    return AuthService(
-        token_service=token_service,
-        blacklist_service=blacklist_service,
-    )
-
-
-def _get_logout_user_case(
-    token_service: GetTokenService,
-    blacklist_service: GetTokenBlacklistService,
-    uow: GetUnitOfWork,
-) -> LogoutUserCase:
-    return LogoutUserCase(
-        token_service=token_service,
-        blacklist_service=blacklist_service,
-        uow=uow,
-    )
-
-
-def _get_refresh_token_case(
-    token_service: GetTokenService,
-    uow: GetUnitOfWork,
-) -> RefreshTokenCase:
-    return RefreshTokenCase(
-        token_service=token_service,
-        uow=uow,
-    )
-
-
-def _get_change_password_case(
-    uow: GetUnitOfWork,
-    change_password_service: Annotated[ChangePasswordService, Depends(_get_change_password_service)],
-) -> ChangePasswordCase:
-    return ChangePasswordCase(uow=uow, change_password_service=change_password_service)
 
 
 async def _get_current_user(
