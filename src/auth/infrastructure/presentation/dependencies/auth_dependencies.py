@@ -18,7 +18,12 @@ from src.auth.domain.repositories.tenant_repository_port import ITenantRepositor
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.auth.domain.services.login_user_service import LoginUserService
 from src.auth.domain.services.register_user_service import RegisterUserService
-from src.auth.infrastructure.composition import GetTrialProvisioner
+from src.auth.infrastructure.composition import (
+    GetTrialProvisioner,
+    _get_change_password_service,
+    _get_login_user_service,
+    _get_register_user_service,
+)
 from src.common.domain.exceptions import NotPermissionError, UnauthorizedError
 from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
 from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
@@ -70,21 +75,6 @@ def get_wellcome_notifier_service(
     notifier_client: GetNotifierClient,
 ) -> WellcomeEmailService:
     return WellcomeEmailService(notifier_client)
-
-
-def _get_register_user_service(security_service: GetSecurityService) -> RegisterUserService:
-    """Factory for RegisterUserService (no dependencies)."""
-    return RegisterUserService(security_service)
-
-
-def _get_login_user_service(security_service: GetSecurityService) -> LoginUserService:
-    """Factory for LoginUserService (no dependencies)."""
-    return LoginUserService(security_service)
-
-
-def _get_change_password_service(security_service: GetSecurityService) -> ChangePasswordService:
-    """Factory for ChangePasswordService (no dependencies)."""
-    return ChangePasswordService(security_service)
 
 
 def _get_create_tenant_case(
