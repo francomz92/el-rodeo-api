@@ -14,6 +14,9 @@ from src.billing.application.events._payment_failed_email_handler import (
 from src.billing.application.events.payment_confirmation_email_handler import (
     PaymentConfirmationEmailHandler,
 )
+from src.billing.application.services.subscription_authorized_payment_handler import (
+    SubscriptionAuthorizedPaymentHandler,
+)
 from src.billing.application.services.subscription_preapproval_handler import (
     SubscriptionPreapprovalHandler,
 )
@@ -62,6 +65,11 @@ class PaymentWebhookService:
         self._subscription_preapproval_handler = SubscriptionPreapprovalHandler(
             gateway=self._gateway,
             uow_factory=self._uow_factory,
+        )
+        self._subscription_authorized_payment_handler = SubscriptionAuthorizedPaymentHandler(
+            gateway=self._gateway,
+            uow_factory=self._uow_factory,
+            build_event_bus=self._build_event_bus,
         )
 
     def validate_signature(
@@ -280,91 +288,8 @@ class PaymentWebhookService:
         await self._subscription_preapproval_handler.handle(gateway_subscription_id)
 
     async def _handle_subscription_authorized_payment(self, authorized_payment_id: str) -> None:
-        """Handle a subscription_authorized_payment webhook notification.
-
-        Fetches the authorized payment from MP, creates a Payment record
-        with idempotency via mp_payment_id, updates the subscription
-        billing dates, and emits PaymentReceived/PAST_DUE events.
-        """
-        async with self._uow_factory() as uow:
-            payment_repo = uow.get_repository(IPaymentRepository)
-            sub_repo = uow.get_repository(ISubscriptionRepository)
-
-            # Fetch authorized payment from MP
-            auth = await self._gateway.get_authorized_payment(authorized_payment_id)
-            mp_payment_id = auth.payment_id or authorized_payment_id
-
-            # Idempotency: check if this mp_payment_id was already recorded
-            existing = await payment_repo.get_by_mp_payment_id(mp_payment_id)
-            if existing is not None:
-                return
-
-            amount = auth.transaction_amount or Decimal("0.00")
-
-            # Find subscription by gateway subscription id from the auth payment
-            # AuthorizedPaymentResult now carries preapproval_id
-            local_sub = await sub_repo.get_by_gateway_subscription_id(auth.preapproval_id)
-            if local_sub is None:
-                logger.warning(
-                    "subscription_authorized_payment — no local sub for authorized_payment={}",
-                    authorized_payment_id,
-                )
-                return
-
-            # Create payment record
-            payment = Payment(
-                tenant_id=local_sub.tenant_id,
-                subscription_id=local_sub.id,
-                status=PaymentStatus.APPROVED if auth.status == "approved" else PaymentStatus.REJECTED,
-                amount=amount,
-                mp_payment_id=mp_payment_id,
-                paid_at=(datetime.now(tz=timezone.utc) if auth.status == "approved" else None),
-                description="Subscription charge",
-            )
-            await payment_repo.create(payment)
-
-            if auth.status == "approved":
-                # Update subscription dates
-                updated = replace(
-                    local_sub,
-                    status=SubscriptionStatus.ACTIVE,
-                    next_billing_date=auth.next_billing_date or local_sub.next_billing_date,
-                )
-                await sub_repo.update(updated)
-
-                # Emit PaymentReceived
-                bus = self._build_event_bus(uow)
-                event = PaymentReceived(
-                    aggregate_id=payment.id,
-                    payment_id=payment.id,
-                    amount=amount,
-                    currency="ARS",
-                    tenant_id=local_sub.tenant_id,
-                    next_billing_date=auth.next_billing_date,
-                )
-                await bus.dispatch(event)
-
-            elif auth.status == "rejected":
-                # MP has exhausted retries — set PAST_DUE
-                updated = replace(
-                    local_sub,
-                    status=SubscriptionStatus.PAST_DUE,
-                )
-                await sub_repo.update(updated)
-
-                # Emit PaymentFailed
-                bus = self._build_event_bus(uow)
-                event = PaymentFailed(
-                    aggregate_id=payment.id,
-                    payment_id=payment.id,
-                    tenant_id=local_sub.tenant_id,
-                    subscription_id=local_sub.id,
-                    amount=amount,
-                    failure_reason="MP retry exhaustion",
-                )
-                await bus.dispatch(event)
-
-            await uow.commit()
+        """Delegate subscription_authorized_payment handling to its application handler."""
+        await self._subscription_authorized_payment_handler.handle(authorized_payment_id)
 
     def _build_event_bus(self, uow) -> IEventBus:
         """Build an event bus with handlers wired to *uow* repos.
