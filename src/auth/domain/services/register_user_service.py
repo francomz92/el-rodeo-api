@@ -6,6 +6,9 @@ from src.common.domain.services.security import ISecurityService
 
 
 class RegisterUserService:
+    def __init__(self, security_service: ISecurityService):
+        self.security_service = security_service
+
     async def validate_duplicated(
         self,
         dni: str,
@@ -19,11 +22,10 @@ class RegisterUserService:
     async def create_new(
         self,
         data: UserCreationValueObject,
-        security_service: ISecurityService,
         repository: IUserRepository,
     ) -> tuple[UserEntity, str]:
-        random_password = security_service.generate_random_str(10)
-        random_hashed_password = await security_service.hash_password(random_password)
+        random_password = self.security_service.generate_random_str(10)
+        random_hashed_password = await self.security_service.hash_password(random_password)
         user = await repository.create(
             data=data,
             password=random_hashed_password,

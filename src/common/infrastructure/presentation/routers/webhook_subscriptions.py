@@ -44,7 +44,7 @@ async def create_webhook(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
     sub = await service.create(
         tenant_id=current_user.tenant_id,
-        url=data.url,
+        url=str(data.url),
         subscribed_events=data.subscribed_events,
     )
     return WebhookResponse.model_validate(sub)
@@ -91,7 +91,7 @@ async def update_webhook(
     sub = await service.update(
         subscription_id=subscription_id,
         tenant_id=current_user.tenant_id,
-        url=data.url,
+        url=str(data.url),
         subscribed_events=data.subscribed_events,
         is_active=data.is_active,
     )

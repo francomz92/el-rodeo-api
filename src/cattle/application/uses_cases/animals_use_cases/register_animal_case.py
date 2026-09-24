@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.cattle.domain.events.animal_events import AnimalCreated
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
@@ -23,7 +25,7 @@ class RegisterAnimalCase:
         self.animal_protocol_service = create_animal_protocol_service
         self.event_bus = event_bus
 
-    async def execute(self, data: AnimalCreateValueObject):
+    async def execute(self, data: AnimalCreateValueObject, tenant_id: UUID | None):
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalsRepository)
             type_repository = uow.get_repository(IAnimalTypesRepository)
@@ -46,8 +48,9 @@ class RegisterAnimalCase:
                 data=AnimalProtocolCreateValueObject(animal_id=animal.id),
                 repository=protocol_repository,
             )
+            animal_created = AnimalCreated(aggregate_id=animal.id, metadata={"tenant_id": str(tenant_id)})
+            uow.add_outbox_event(animal_created)
             await uow.commit()
 
-        animal_created = AnimalCreated(aggregate_id=animal.id)
         await self.event_bus.dispatch(animal_created)
         return animal

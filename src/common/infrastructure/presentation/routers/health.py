@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from src.common.infrastructure.adapters.correlation import get_correlation_id
+from src.common.infrastructure.presentation.dependencies.redis import GetRedisClient
 from src.common.utils import log
 
 health_router = APIRouter()
@@ -34,7 +35,7 @@ class HealthResponse(BaseModel):
     description="Returns connectivity status for database and Redis.",
     tags=["observability"],
 )
-async def health_check(response: Response) -> HealthResponse:
+async def health_check(response: Response, redis_client: GetRedisClient) -> HealthResponse:
     """Verify database and Redis connectivity.
 
     Returns:
@@ -48,7 +49,6 @@ async def health_check(response: Response) -> HealthResponse:
 
     # Lazy imports — use whatever engine/redis the app has at call time
     from src.common.infrastructure.persistence.connections.db import engine
-    from src.common.infrastructure.persistence.connections.redis import _redis_client
 
     # ── Check database ───────────────────────────────────────────────────
     db_status = "ok"
@@ -61,7 +61,7 @@ async def health_check(response: Response) -> HealthResponse:
     # ── Check Redis ──────────────────────────────────────────────────────
     redis_status = "ok"
     try:
-        await _redis_client.ping()  # type: ignore[misc]
+        await redis_client.ping()  # type: ignore[misc]
     except Exception:
         redis_status = "unreachable"
 

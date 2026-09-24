@@ -36,7 +36,7 @@ class LoginUserCase:
         async with self.uow as uow:
             repository = uow.get_repository(IUserRepository)
             user = await self.login_service.validate_duplicate_and_get_user(dni, repository)
-            await self.login_service.validate_credentials(user, password, self.security_service)
+            await self.login_service.validate_credentials(user, password)
 
             # Generate access token (15 min) with tenant context
             access_token = self.token_service.generate(

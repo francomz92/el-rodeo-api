@@ -10,6 +10,7 @@ from src.common.infrastructure.core.app import configure_app
 from src.common.infrastructure.persistence.connections.db import engine
 from src.common.infrastructure.persistence.connections.redis import _redis_client
 from src.common.infrastructure.persistence.models.base import Model
+from src.common.infrastructure.presentation.dependencies.websocket import _get_ws_manager
 
 
 @asynccontextmanager
@@ -22,9 +23,6 @@ async def lifespan(app: FastAPI):
                 await conn.run_sync(Model.metadata.create_all)
 
     # ── WebSocket Pub/Sub subscriber ─────────────────────────────────────
-    from src.common.infrastructure.presentation.dependencies.websocket import (
-        _get_ws_manager,
-    )
 
     ws_manager = _get_ws_manager()
     ws_subscriber = RedisPubSubSubscriber(

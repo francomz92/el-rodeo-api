@@ -5,6 +5,9 @@ from src.common.domain.services.security import ISecurityService
 
 
 class LoginUserService:
+    def __init__(self, security_service: ISecurityService):
+        self.security_service = security_service
+
     async def validate_duplicate_and_get_user(
         self,
         dni: str,
@@ -19,10 +22,9 @@ class LoginUserService:
         self,
         user: UserEntity,
         password: str,
-        security_service: ISecurityService,
     ) -> None:
         if not user.is_active:
             raise UnauthorizedError("Las credenciales proporcionadas no son válidas")
-        passwords_match = await user.passwords_match(security_service, password)
+        passwords_match = await user.passwords_match(self.security_service, password)
         if not passwords_match:
             raise UnauthorizedError("Las credenciales proporcionadas no son válidas")

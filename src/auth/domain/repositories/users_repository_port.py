@@ -54,6 +54,7 @@ class IUserRepository(IRepository):
         search: str | None = None,
         role: UserRole | None = None,
         cursor: str | None = None,
+        ids: list[UUID] | None = None,
     ) -> tuple[list[UserEntity], int, bool]:
         """List users for a tenant with pagination, optional search and role filter.
 

@@ -7,11 +7,9 @@ Trial subscription is created inline (ACID) rather than via an event handler.
 from __future__ import annotations
 
 from src.auth.application.ports.tokens_port import ITokenService
-from src.auth.application.services.notifications.wellcome_email_service import (
-    WellcomeEmailService,
-)
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
+from src.auth.domain.events.tenant_registered import TenantRegistered
 from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
 from src.auth.domain.repositories.users_repository_port import (
     IUserRepository,
@@ -25,6 +23,7 @@ from src.billing.domain.entities import PlanTypeEntity
 from src.billing.domain.repositories import IPlanRepository, ISubscriptionRepository
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import DuplicatedError
+from src.common.domain.ports.event_bus import IEventBus
 from src.common.domain.services.security import ISecurityService
 
 
@@ -36,14 +35,14 @@ class CreateTenantCase:
         uow: IUoW,
         security_service: ISecurityService,
         register_service: RegisterUserService,
-        notifier_service: WellcomeEmailService,
+        event_bus: IEventBus,
         token_service: ITokenService,
         trial_service: TrialManagementService,
     ) -> None:
         self.uow = uow
         self.service = register_service
         self.security_service = security_service
-        self.notifier_service = notifier_service
+        self.event_bus = event_bus
         self.token_service = token_service
         self.trial_service = trial_service
 
@@ -81,7 +80,6 @@ class CreateTenantCase:
             )
             user, password = await self.service.create_new(
                 data=data,
-                security_service=self.security_service,
                 repository=user_repo,
             )
 
@@ -91,9 +89,7 @@ class CreateTenantCase:
             plan_repository = uow.get_repository(IPlanRepository)
             subscription_repository = uow.get_repository(ISubscriptionRepository)
             await self.trial_service.start_trial(tenant.id, plan_repository, subscription_repository, PlanTypeEntity.FREE)
-            await uow.commit()
 
-            # Send email only AFTER successful commit — never send
             # credentials for an account that wasn't persisted.
             token = self.token_service.generate(
                 data={
@@ -102,11 +98,16 @@ class CreateTenantCase:
                 },
                 exp_minutes=30,
             )
-            await self.notifier_service.send(
-                to=[user.email],
-                subject="Bienvenido a El Rodeo",
-                redirect_url=f"{redirect_url}{'&' if '?' in redirect_url else '?'}token={token}",
-                password=password,
-            )
 
+            tenant_registered = TenantRegistered(
+                aggregate_id=tenant.id,
+                metadata={
+                    "title": "Bienvenido a El Rodeo",
+                    "emails": [user.email],
+                    "body": f"Bienvenido a El Rodeo. Haz clic en el siguiente enlace para acceder: {redirect_url}{'&' if '?' in redirect_url else '?'}token={token}",
+                },
+            )
+            uow.add_outbox_event(tenant_registered)
+            await uow.commit()
+        self.event_bus.dispatch(tenant_registered)
         return user

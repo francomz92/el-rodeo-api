@@ -56,7 +56,7 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
                 ).label("participants"),
             )
             .where(CalendarEvent.id == id)
-            .outerjoin(CalendarEventParticipant, CalendarEventParticipant.event_id == id)
+            .outerjoin(CalendarEventParticipant, CalendarEventParticipant.event_id == CalendarEvent.id)
             .outerjoin(User, User.id == CalendarEventParticipant.user_id)
             .select_from(CalendarEvent)
             .group_by(CalendarEvent.id)
@@ -179,6 +179,8 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
                 CalendarEvent.title,
                 CalendarEvent.description,
                 CalendarEvent.pending,
+                CalendarEvent.start,
+                CalendarEvent.end,
                 CalendarEvent.tenant_id,
                 func.coalesce(
                     func.json_agg(

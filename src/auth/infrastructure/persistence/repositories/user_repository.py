@@ -140,6 +140,7 @@ class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepository
         search: str | None = None,
         role: UserRole | None = None,
         cursor: str | None = None,
+        ids: list[UUID] | None = None,
     ) -> tuple[list[UserEntity], int, bool]:
         conditions = [User.tenant_id == tenant_id]
 
@@ -147,9 +148,10 @@ class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepository
             conditions.append(
                 User.name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%"),
             )
-
         if role:
             conditions.append(User.role == role.value)
+        if ids:
+            conditions.append(User.id.in_(ids))
 
         # Total count before pagination
         count_query = select(func.count()).select_from(User).where(*conditions)

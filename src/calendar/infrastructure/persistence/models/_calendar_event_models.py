@@ -33,9 +33,10 @@ class CalendarEventParticipant(Model):
     event_id: Mapped[UUID] = mapped_column(ForeignKey("calendar_events.id", ondelete="CASCADE"), primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
-    event: Mapped["CalendarEvent"] = relationship(back_populates="participant_links")
+    event: Mapped["CalendarEvent"] = relationship(back_populates="participant_links", viewonly=True)
     user: Mapped["User"] = relationship(  # type: ignore  # noqa: F821
-        back_populates="event_links"
+        back_populates="event_links",
+        viewonly=True,
     )
 
 
@@ -61,10 +62,12 @@ class CalendarEvent(Model):
     participants: Mapped[list["User"]] = relationship(  # type: ignore    # noqa: F821
         secondary="calendar_event_participants",
         back_populates="events",
+        viewonly=True,
     )
     user: Mapped["User"] = relationship()  # type: ignore   # noqa: F821
 
     participant_links: Mapped[list["CalendarEventParticipant"]] = relationship(
         back_populates="event",
         cascade="all, delete-orphan",
+        viewonly=True,
     )

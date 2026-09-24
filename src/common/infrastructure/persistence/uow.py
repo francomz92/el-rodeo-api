@@ -1,5 +1,6 @@
 import dataclasses
 from collections.abc import Callable
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,8 +27,6 @@ def _serialize_event(event: DomainEvent) -> dict:
     ``PaymentReceived.payment_id``) are automatically included in the
     outbox payload rather than being silently dropped.
     """
-    from datetime import datetime
-
     raw = dataclasses.asdict(event)
     return {k: (str(v) if isinstance(v, (UUID, datetime)) else v) for k, v in raw.items()}
 
@@ -50,11 +49,6 @@ class UnitOfWork(IUoW):
         self._before_commit_hooks: list[Callable[[], None]] = []
         self.outbox_events: list[DomainEvent] = []
         self.audit_repository = AuditRepository()
-        self._wire_audit_repository()
-
-    def _wire_audit_repository(self) -> None:
-        """AuditRepository flush is called directly in commit() — no hook needed."""
-        pass
 
     async def _do_audit_flush(self) -> None:
         """Flush queued audit entries within the current transaction."""
@@ -89,14 +83,13 @@ class UnitOfWork(IUoW):
         repository = repositories_list.get(repository_type, None)
         if not repository:
             raise ValueError(f"Repository of type {repository_type} not found.")
+
+        repo_init_kws: dict[str, object] = {"session": self.db}
         if issubclass(repository, TenantAwareRepository):
-            repo = repository(
-                self.db,
-                self.tenant_id,
-                bypass_filter=self.bypass_filter,
-            )  # type: ignore
-        else:
-            repo = repository(self.db)  # type: ignore
+            repo_init_kws["tenant_id"] = self.tenant_id
+            repo_init_kws["bypass_filter"] = self.bypass_filter
+
+        repo = repository(**repo_init_kws)
 
         # Inject audit context into mixin-enabled repositories
         if isinstance(repo, AuditableRepositoryMixin):
@@ -104,7 +97,7 @@ class UnitOfWork(IUoW):
             repo.current_user = self.current_user
             repo.tenant_id = self.tenant_id
 
-        return repo  # type: ignore[return-value]
+        return repo
 
     async def __aenter__(self):
         return self

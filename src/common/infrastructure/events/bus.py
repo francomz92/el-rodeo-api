@@ -40,7 +40,7 @@ class InMemoryEventBus(IEventBus):
     def register(
         self,
         event_type: str,
-        handler: Callable[[DomainEvent], Awaitable[None] | None],
+        handler: Callable[type[DomainEvent], Awaitable[None] | None],
     ) -> None:
         """Register a handler for a given event type."""
         if event_type not in self._handlers:
@@ -67,6 +67,6 @@ class InMemoryEventBus(IEventBus):
             except Exception:
                 log.exception(
                     "Handler {} failed for event {}",
-                    handler.__name__,
+                    handler.__name__,  # type: ignore
                     event.event_id,
                 )

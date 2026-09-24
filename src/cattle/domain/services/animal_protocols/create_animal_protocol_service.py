@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolCreateValueObject
 from src.common.domain.exceptions import BusinessValidationError
@@ -11,7 +12,7 @@ class CreateAnimalProtocolService:
         user_id: UUID,
         data: AnimalProtocolCreateValueObject,
         repository: IAnimalProtocolsRepository,
-    ) -> None:
+    ) -> AnimalProtocolEntity:
         self._validate_creation(data)
         return await repository.create(user_id=user_id, data=data)
 

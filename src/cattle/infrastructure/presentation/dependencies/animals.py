@@ -18,25 +18,24 @@ from src.cattle.infrastructure.events.handlers.cache_invalidation import (
 )
 from src.common.domain.ports.event_bus import IEventBus
 from src.common.infrastructure.events.bus import InMemoryEventBus
-from src.common.infrastructure.events.handlers.outbox_scheduler import OutboxScheduler
 from src.common.infrastructure.events.handlers.ws_broadcast import (
     WebSocketBroadcastHandler,
 )
 
 # TODO: inject via DI instead of direct singleton import
-from src.common.infrastructure.persistence.connections.redis import _redis_client
 from src.common.infrastructure.presentation.dependencies.cache import GetCacheService
+from src.common.infrastructure.presentation.dependencies.redis import GetRedisClient
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
 def _get_event_bus(
     uow: GetUnitOfWork,
     cache_service: GetCacheService,
+    redis_client: GetRedisClient,
 ) -> IEventBus:
     """Build a request-scoped event bus with handler registrations."""
     bus = InMemoryEventBus()
-    bus.register("*", OutboxScheduler(uow))
-    bus.register("*", WebSocketBroadcastHandler(_redis_client))
+    bus.register("*", WebSocketBroadcastHandler(redis_client))
     bus.register("animal.created", AnimalCacheInvalidationHandler(cache_service))
     bus.register("animal.updated", AnimalCacheInvalidationHandler(cache_service))
     bus.register("animal.deleted", AnimalCacheInvalidationHandler(cache_service))

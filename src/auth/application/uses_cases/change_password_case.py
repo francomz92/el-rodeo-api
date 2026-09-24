@@ -6,18 +6,15 @@ from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.change_password_service import ChangePasswordService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError
-from src.common.domain.services.security import ISecurityService
 
 
 class ChangePasswordCase:
     def __init__(
         self,
         uow: IUoW,
-        security_service: ISecurityService,
         change_password_service: ChangePasswordService,
     ) -> None:
         self.uow = uow
-        self.security_service = security_service
         self.change_password_service = change_password_service
 
     async def execute(
@@ -46,13 +43,12 @@ class ChangePasswordCase:
             fresh_user = await repository.get_by_id(user.id)
             if not fresh_user:
                 raise NotFoundError("Usuario no encontrado")
-            await self.change_password_service.validate_passwords(fresh_user, password, self.security_service)
+            await self.change_password_service.validate_passwords(fresh_user, password)
             await self.change_password_service.change_password(
                 user=fresh_user,
                 password=password,
                 new_password=new_password,
                 confirmed_password=confirmed_password,
-                security_service=self.security_service,
                 repository=repository,
             )
 

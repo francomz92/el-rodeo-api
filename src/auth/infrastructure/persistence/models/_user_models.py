@@ -35,4 +35,5 @@ class User(Model):
     events: Mapped[list["CalendarEvent"]] = relationship(  # type: ignore  # noqa: F821
         secondary="calendar_event_participants",
         back_populates="participants",
+        viewonly=True,
     )

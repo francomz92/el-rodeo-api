@@ -46,12 +46,11 @@ async def create_calendar_event(
     calendar_event_case: GetRegisterCalendarEventCase,
     data: CalendarEventCreationSchema,
 ):
-    print(data)
     event_data = CalendarEventCreationValueObject(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
     )
-    return await calendar_event_case.execute(data=event_data)
+    return await calendar_event_case.execute(data=event_data, tenant_id=current_user.tenant_id)
 
 
 @events_router.put(
@@ -74,6 +73,7 @@ async def update_event(
     return await calendar_event_case.execute(
         id=id,
         data=payload,
+        tenant_id=current_user.tenant_id,
     )
 
 

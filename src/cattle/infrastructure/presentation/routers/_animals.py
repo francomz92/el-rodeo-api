@@ -56,7 +56,7 @@ async def register_animal(
         user_id=current_user.id,
         last_weight=data.initial_weight,
     )
-    return await animal_register_use_case.execute(payload)
+    return await animal_register_use_case.execute(payload, current_user.tenant_id)
 
 
 @animals_router.put(

@@ -10,7 +10,11 @@ from src.calendar.domain.services.calendar_events.delete_calendar_event_service 
 from src.calendar.domain.services.calendar_events.list_calendar_event_service import ListCalendarEventService
 from src.calendar.domain.services.calendar_events.register_calendar_event_service import RegisterCalendarEventService
 from src.calendar.domain.services.calendar_events.update_calendar_event_service import UpdateCalendarEventService
+from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
+from src.common.infrastructure.events.handlers.ws_broadcast import WebSocketBroadcastHandler
 from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
+from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
+from src.common.infrastructure.presentation.dependencies.redis import GetRedisClient
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
@@ -18,7 +22,11 @@ def _get_register_event_case(
     uow: GetUnitOfWork,
     service: Annotated[RegisterCalendarEventService, Depends()],
     event_bus: GetEventBus,
+    redis_client: GetRedisClient,
+    notifier: GetNotifierClient,
 ) -> RegisterCalendarEventCase:
+    event_bus.register("*", WebSocketBroadcastHandler(redis_client))
+    event_bus.register("calendar_event.create", EmailNotificationHandler(notifier))
     return RegisterCalendarEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
@@ -26,7 +34,11 @@ def _get_update_event_case(
     uow: GetUnitOfWork,
     service: Annotated[UpdateCalendarEventService, Depends()],
     event_bus: GetEventBus,
+    redis_client: GetRedisClient,
+    notifier: GetNotifierClient,
 ) -> UpdateCalendarEventCase:
+    event_bus.register("*", WebSocketBroadcastHandler(redis_client))
+    event_bus.register("calendar_event.update", EmailNotificationHandler(notifier))
     return UpdateCalendarEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
