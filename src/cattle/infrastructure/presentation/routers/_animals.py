@@ -27,10 +27,8 @@ from src.cattle.infrastructure.presentation.dependencies.animals import (
     GetAnimalUpdateCase,
     GetObtainAnimalCase,
 )
-from src.common.infrastructure.adapters.http.output.cursor_page import (
-    CursorPage,
-    encode_cursor,
-)
+from src.common.application.pagination.cursor import encode_cursor
+from src.common.infrastructure.adapters.http.output.cursor_page import CursorPage
 
 animals_router = APIRouter(
     prefix="/animals",
@@ -116,7 +114,7 @@ async def list_animals_user(
             exclude={"limit", "offset", "order_by", "cursor"},
         ),
     )
-    items, total, next_cursor = await animal_list_use_case.execute(
+    result = await animal_list_use_case.execute(
         filters=filters,
         limit=query_params.limit,
         offset=query_params.offset,
@@ -124,22 +122,23 @@ async def list_animals_user(
         cursor=query_params.cursor,
     )
 
+    next_cursor: str | None = None
+    if query_params.cursor is not None and result.has_next and result.items:
+        next_cursor = encode_cursor(str(result.items[-1].id))
+
     # if query_params.cursor is not None:
     # Return cursor-paginated response (bypasses response_model validation)
-    validated = [AnimalSchema.model_validate(a) for a in items]
+    validated = [AnimalSchema.model_validate(a) for a in result.items]
     page = CursorPage[AnimalSchema](
         items=validated,
         cursor=encode_cursor(str(validated[0].id)) if validated else None,
         next_cursor=next_cursor,
-        total=total,
+        total=result.total,
     )
     return JSONResponse(
         content=page.model_dump(mode="json"),
         status_code=status.HTTP_200_OK,
     )
-
-    # Legacy offset/limit response — validated against response_model
-    return [AnimalSchema.model_validate(a) for a in items]
 
 
 @animals_router.get(

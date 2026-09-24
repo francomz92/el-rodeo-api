@@ -3,17 +3,18 @@ from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError
+from src.reports.application.ports.report_exporter import IReportExporter
 from src.reports.application.services.reports_service import ReportsService
 from src.reports.domain.repositories.reports_repository_port import IReportsRepository
-from src.reports.infrastructure.export.pdf_renderer import generate_sales_report
 
 
 class ExportSalesSummaryUseCase:
-    def __init__(self, uow: IUoW, service: ReportsService):
+    def __init__(self, uow: IUoW, service: ReportsService, exporter: IReportExporter):
         self.uow = uow
         self.service = service
+        self.exporter = exporter
 
-    async def execute(self, tenant_id: UUID | None, from_date: date, to_date: date):
+    async def execute(self, tenant_id: UUID | None, from_date: date, to_date: date) -> bytes:
         if not tenant_id:
             raise NotFoundError("No se encontraron resultados")
 
@@ -26,7 +27,7 @@ class ExportSalesSummaryUseCase:
                 repository,
             )
 
-            generate_sales_report(
+            return self.exporter.export_sales_summary(
                 tenant_name=tenant_id.hex[:8],
                 from_date=from_date,
                 to_date=to_date,

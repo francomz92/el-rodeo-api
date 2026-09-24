@@ -10,8 +10,8 @@ from src.auth.domain.value_objects.user_value_object import (
     UserUpdateValueObject,
 )
 from src.auth.infrastructure.persistence.models import User
+from src.common.application.pagination.cursor import decode_cursor
 from src.common.domain.types import Sentinel
-from src.common.infrastructure.adapters.http.output.cursor_page import decode_cursor
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
 )

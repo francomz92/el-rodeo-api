@@ -15,6 +15,7 @@ from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWor
 from src.reports.application.use_cases.export_sales_summary import ExportSalesSummaryUseCase
 from src.reports.application.use_cases.get_inventory_summary import GetInventorySummaryUseCase
 from src.reports.application.use_cases.get_sales_summary import GetSalesSummaryUseCase
+from src.reports.infrastructure.export.pdf_sales_summary_exporter import PdfSalesSummaryExporter
 
 # isort: off
 from src.reports.application.services.reports_service import ReportsService
@@ -34,7 +35,8 @@ def _get_sales_summary_case(uow: GetUnitOfWork, service: GetReportsService) -> G
 
 
 def _get_export_sales_summary_case(uow: GetUnitOfWork, service: GetReportsService) -> ExportSalesSummaryUseCase:
-    return ExportSalesSummaryUseCase(uow, service)
+    exporter = PdfSalesSummaryExporter()
+    return ExportSalesSummaryUseCase(uow, service, exporter)
 
 
 GetReportsService = Annotated[ReportsService, Depends(_get_reports_service)]

@@ -1,16 +1,18 @@
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
+from src.cattle.domain.value_objects.animal_value_object import AnimalsListQueryParamsValueObject
 
 
 class ListAnimalService:
     async def get_animals(
         self,
         repository: IAnimalsRepository,
-        query,
+        query: AnimalsListQueryParamsValueObject,
         limit: int,
         offset: int,
         order_by: str,
         cursor: str | None = None,
-    ) -> tuple[list, int, bool]:
+    ) -> tuple[list[AnimalEntity], int, bool]:
         """List animals matching *query* filters.
 
         Returns ``(items, total_count, has_next)``.

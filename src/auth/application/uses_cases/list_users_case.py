@@ -3,9 +3,9 @@
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
+from src.common.application.pagination.cursor import encode_cursor
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError, NotPermissionError
-from src.common.infrastructure.adapters.http.output.cursor_page import encode_cursor
 
 
 class ListUsersCase:

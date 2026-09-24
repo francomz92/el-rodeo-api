@@ -29,10 +29,8 @@ from src.auth.infrastructure.presentation.dependencies.user_dependencies import 
     GetSoftDeleteUserCaseDep,
     GetUserByIdCaseDep,
 )
-from src.common.infrastructure.adapters.http.output.cursor_page import (
-    CursorPage,
-    encode_cursor,
-)
+from src.common.application.pagination.cursor import encode_cursor
+from src.common.infrastructure.adapters.http.output.cursor_page import CursorPage
 from src.common.infrastructure.adapters.http.output.messages import (
     SimpleMessageSchema,
 )
