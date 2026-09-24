@@ -57,9 +57,9 @@ class ReportsRepository(IReportsRepository):
         )
         status_rows = await self.db.execute(status_stmt)
         by_status: dict[str, int] = {s.value: 0 for s in AnimalStatus}
-        for row in status_rows:
+        for row in status_rows.all():
             skey = row.status.value if hasattr(row.status, "value") else str(row.status)
-            by_status[skey] = row.count
+            by_status[skey] = row._mapping["count"]
 
         # ── By type + status ──────────────────────────────────────────
         type_stmt = (
@@ -77,12 +77,12 @@ class ReportsRepository(IReportsRepository):
         type_rows = await self.db.execute(type_stmt)
 
         by_type_map: dict[str, dict[str, int]] = {}
-        for row in type_rows:
+        for row in type_rows.all():
             tname = row.type_name or "unknown"
             if tname not in by_type_map:
                 by_type_map[tname] = {s.value: 0 for s in AnimalStatus}
             skey = row.status.value if hasattr(row.status, "value") else str(row.status)
-            by_type_map[tname][skey] = row.count
+            by_type_map[tname][skey] = row._mapping["count"]
 
         return {
             "total": total,
