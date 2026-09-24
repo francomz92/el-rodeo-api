@@ -14,6 +14,9 @@ from src.billing.application.events._payment_failed_email_handler import (
 from src.billing.application.events.payment_confirmation_email_handler import (
     PaymentConfirmationEmailHandler,
 )
+from src.billing.application.services.subscription_preapproval_handler import (
+    SubscriptionPreapprovalHandler,
+)
 from src.billing.domain.entities._payment import Payment
 from src.billing.domain.entities._payment_status import PaymentStatus
 from src.billing.domain.entities._plan_type import PlanTypeEntity
@@ -25,9 +28,6 @@ from src.billing.domain.repositories import (
     IPaymentRepository,
     IPlanRepository,
     ISubscriptionRepository,
-)
-from src.billing.infrastructure.payment_gateway._mappers import (
-    map_mp_subscription_status,
 )
 from src.common.application.ports.email_notifier import IEmailNotifier
 from src.common.application.ports.uow import IUoWFactory
@@ -59,6 +59,10 @@ class PaymentWebhookService:
         self._plan_repo = plan_repo
         self._uow_factory = uow_factory
         self._email_notifier = email_notifier
+        self._subscription_preapproval_handler = SubscriptionPreapprovalHandler(
+            gateway=self._gateway,
+            uow_factory=self._uow_factory,
+        )
 
     def validate_signature(
         self,
@@ -272,41 +276,8 @@ class PaymentWebhookService:
     # ── Subscription webhook handlers (Phase 0b) ───────────────────────────
 
     async def _handle_subscription_preapproval(self, gateway_subscription_id: str) -> None:
-        """Handle a subscription_preapproval webhook notification.
-
-        Fetches the subscription from the gateway, finds the local subscription by
-        gateway_subscription_id, and syncs status and billing dates.
-        """
-        async with self._uow_factory() as uow:
-            sub_repo = uow.get_repository(ISubscriptionRepository)
-
-            # Fetch subscription from gateway
-            sub_result = await self._gateway.get_subscription(gateway_subscription_id)
-
-            # Find local subscription
-            local_sub = await sub_repo.get_by_gateway_subscription_id(gateway_subscription_id)
-            if local_sub is None:
-                logger.warning(
-                    "subscription_preapproval — no local subscription found for gateway_subscription_id={}",
-                    gateway_subscription_id,
-                )
-                await uow.commit()
-                return
-
-            # Sync state from gateway
-            mp_status = map_mp_subscription_status(sub_result.status)
-            datetime.now(tz=timezone.utc)
-            updated = replace(
-                local_sub,
-                gateway_subscription_id=sub_result.id,
-                status=mp_status,
-                current_period_end=sub_result.next_billing_date or local_sub.current_period_end,
-                next_billing_date=sub_result.next_billing_date or local_sub.next_billing_date,
-                billing_date=sub_result.billing_date or local_sub.billing_date,
-                gateway_card_id=sub_result.card_id or local_sub.gateway_card_id,
-            )
-            await sub_repo.update(updated)
-            await uow.commit()
+        """Delegate subscription_preapproval handling to its application handler."""
+        await self._subscription_preapproval_handler.handle(gateway_subscription_id)
 
     async def _handle_subscription_authorized_payment(self, authorized_payment_id: str) -> None:
         """Handle a subscription_authorized_payment webhook notification.
