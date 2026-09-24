@@ -15,6 +15,7 @@ from src.common.infrastructure.persistence.repositories.audit_repository import 
 
 from .repositories import repositories_list
 from .repository_factory import RepositoryFactory
+from .tenant_context import TenantContext
 
 
 def _serialize_event(event: DomainEvent) -> dict:
@@ -40,12 +41,38 @@ class UnitOfWork(IUoW):
         current_user: object | None = None,
     ) -> None:
         self.db = session
-        self.tenant_id = tenant_id
-        self.bypass_filter = bypass_filter
-        self.current_user = current_user
+        self.tenant_context = TenantContext(
+            tenant_id=tenant_id,
+            bypass_filter=bypass_filter,
+            current_user=current_user,
+        )
         self._before_commit_hooks: list[Callable[[], None]] = []
         self.outbox_events: list[DomainEvent] = []
         self.audit_repository = AuditRepository()
+
+    @property
+    def tenant_id(self) -> UUID | None:
+        return self.tenant_context.tenant_id
+
+    @tenant_id.setter
+    def tenant_id(self, value: UUID | None) -> None:
+        self.tenant_context.tenant_id = value
+
+    @property
+    def bypass_filter(self) -> bool:
+        return self.tenant_context.bypass_filter
+
+    @bypass_filter.setter
+    def bypass_filter(self, value: bool) -> None:
+        self.tenant_context.bypass_filter = value
+
+    @property
+    def current_user(self) -> object | None:
+        return self.tenant_context.current_user
+
+    @current_user.setter
+    def current_user(self, value: object | None) -> None:
+        self.tenant_context.current_user = value
 
     async def _do_audit_flush(self) -> None:
         """Flush queued audit entries within the current transaction."""
@@ -81,10 +108,8 @@ class UnitOfWork(IUoW):
             repository_type=repository_type,
             repositories=repositories_list,
             session=self.db,
-            tenant_id=self.tenant_id,
-            bypass_filter=self.bypass_filter,
+            tenant_context=self.tenant_context,
             audit_repository=self.audit_repository,
-            current_user=self.current_user,
         )
 
     async def __aenter__(self):
