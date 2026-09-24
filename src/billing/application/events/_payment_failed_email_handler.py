@@ -14,8 +14,8 @@ from datetime import datetime, timezone
 
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.billing.domain.events.payment_events import PaymentFailed
 from src.common.application.ports.email_notifier import IEmailNotifier
+from src.common.domain.events.base import DomainEvent
 from src.common.utils import log
 
 
@@ -36,7 +36,7 @@ class PaymentFailedEmailHandler:
         self._user_repo = user_repo
         self._email_notifier = email_notifier
 
-    async def __call__(self, event: PaymentFailed) -> None:
+    async def __call__(self, event: DomainEvent) -> None:
         """Handle a PaymentFailed event.
 
         Queries ADMIN and OWNER users, deduplicates by ID, and sends

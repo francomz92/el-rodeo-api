@@ -12,10 +12,9 @@ block other handlers for the same event.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
 
 from src.common.domain.events.base import DomainEvent
-from src.common.domain.ports.event_bus import IEventBus
+from src.common.domain.ports.event_bus import Handler, IEventBus
 from src.common.utils import log
 
 
@@ -35,12 +34,12 @@ class InMemoryEventBus(IEventBus):
     """
 
     def __init__(self) -> None:
-        self._handlers: dict[str, list[Callable[[DomainEvent], Awaitable[None] | None]]] = {}
+        self._handlers: dict[str, list[Handler]] = {}
 
     def register(
         self,
         event_type: str,
-        handler: Callable[type[DomainEvent], Awaitable[None] | None],
+        handler: Handler,
     ) -> None:
         """Register a handler for a given event type."""
         if event_type not in self._handlers:
