@@ -1,4 +1,5 @@
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,7 +34,11 @@ class RepositoryFactory:
             repo_init_kws["tenant_id"] = tenant_context.tenant_id
             repo_init_kws["bypass_filter"] = tenant_context.bypass_filter
 
-        repo = repository(**repo_init_kws)
+        # The registry maps interfaces to concrete repositories with different
+        # constructor kwargs; their shared constructor contract is established by
+        # registry configuration rather than the IRepository protocol.
+        repository_constructor = cast(Callable[..., IRepository], repository)
+        repo = repository_constructor(**repo_init_kws)
 
         if isinstance(repo, AuditableRepositoryMixin):
             repo.audit_repository = audit_repository

@@ -4,10 +4,7 @@ from dataclasses import dataclass, field
 from typing import TypeVar
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.common.domain.events.base import DomainEvent
-from src.common.domain.repositories.audit_repository_port import IAuditRepository
 from src.common.domain.repository import IRepository
 
 RepositoryType = TypeVar("RepositoryType", bound=IRepository)
@@ -15,11 +12,9 @@ RepositoryType = TypeVar("RepositoryType", bound=IRepository)
 
 @dataclass
 class IUoW(ABC):
-    db: AsyncSession | None = None
     bypass_filter: bool = False
     current_user: object | None = None
     tenant_id: UUID | None = None
-    audit_repository: IAuditRepository | None = None
     outbox_events: list[DomainEvent] = field(default_factory=list)
 
     @abstractmethod

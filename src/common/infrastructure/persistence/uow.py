@@ -10,13 +10,15 @@ from src.common.infrastructure.persistence.repositories.audit_repository import 
     AuditRepository,
 )
 
-from .outbox_collector import (  # noqa: F401
-    OutboxCollector,
-    serialize_event as _serialize_event,
-)
+from .outbox_collector import OutboxCollector, serialize_event
 from .repositories import repositories_list
 from .repository_factory import RepositoryFactory
 from .tenant_context import TenantContext
+
+
+def _serialize_event(event: DomainEvent) -> dict:
+    """Compatibility wrapper for the original outbox serializer location."""
+    return serialize_event(event)
 
 
 class UnitOfWork(IUoW):
