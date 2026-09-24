@@ -18,7 +18,6 @@ from src.billing.domain.exceptions import PaymentGatewayError
 from src.billing.domain.repositories import IPaymentGateway, IPlanRepository
 from src.common.application.ports.uow import IUoW, IUoWFactory
 from src.common.domain.ports.event_bus import IEventBus
-from src.common.infrastructure.core._config import settings
 
 
 class PaymentWebhookService:
@@ -38,8 +37,10 @@ class PaymentWebhookService:
         plan_repo: IPlanRepository,
         uow_factory: IUoWFactory,
         event_bus_factory: IPaymentEventBusFactory,
+        webhook_secret: str,
     ) -> None:
         self._gateway = gateway
+        self._webhook_secret = webhook_secret
         self._plan_repo = plan_repo
         self._uow_factory = uow_factory
         self._event_bus_factory = event_bus_factory
@@ -71,7 +72,7 @@ class PaymentWebhookService:
         Intended for use by the webhook router **before** spawning
         the async background task (defence in depth).
         """
-        secret = settings.MP_WEBHOOK_SECRET
+        secret = self._webhook_secret
         if not secret:
             return True
         return self._gateway.validate_signature(
@@ -104,7 +105,7 @@ class PaymentWebhookService:
             PaymentGatewayError: If x-signature validation fails or the
                 tenant/subscription cannot be resolved.
         """
-        secret = settings.MP_WEBHOOK_SECRET
+        secret = self._webhook_secret
         if secret:
             valid = self._gateway.validate_signature(
                 x_signature=x_signature,

@@ -25,6 +25,7 @@ from src.billing.infrastructure.adapters.payment_event_bus_factory import (
     PaymentEventBusFactory,
 )
 from src.billing.infrastructure.payment_gateway._client import MercadoPagoHttpClient
+from src.common.infrastructure.core._config import settings
 from src.common.infrastructure.presentation.dependencies.notifier import (
     GetNotifierClient,
 )
@@ -95,7 +96,13 @@ def _get_payment_webhook_service(
     notifier: GetNotifierClient,
 ) -> PaymentWebhookService:
     event_bus_factory = PaymentEventBusFactory(notifier)
-    return PaymentWebhookService(gateway, plan_repo, uow_factory, event_bus_factory)
+    return PaymentWebhookService(
+        gateway,
+        plan_repo,
+        uow_factory,
+        event_bus_factory,
+        webhook_secret=settings.MP_WEBHOOK_SECRET,
+    )
 
 
 # ── Type-aliased dependencies (Annotated + Depends) ──────────────────────
