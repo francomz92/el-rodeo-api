@@ -8,9 +8,7 @@ from src.auth.application.uses_cases.invite_user_case import InviteUserCase
 from src.auth.application.uses_cases.update_user_role_case import UpdateUserRoleCase
 from src.auth.domain.services.register_user_service import RegisterUserService
 from src.auth.domain.services.update_user_role_service import UpdateUserRoleService
-from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
-    _get_register_user_service,
-)
+from src.auth.infrastructure.composition import _get_register_user_service
 from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
 from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
 from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
