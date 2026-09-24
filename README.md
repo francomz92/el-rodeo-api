@@ -10,7 +10,7 @@ API para la gestión ganadera y financiera de pequeños productores. Construida 
 | ORM | SQLAlchemy 2.0 async + asyncpg |
 | Base de datos | PostgreSQL 16 |
 | Cache | Redis 7 |
-| Auth | JWT (PyJWT) + bcrypt |
+| Auth | JWT (PyJWT) + bcrypt + HttpOnly |
 | Background tasks | Celery + Redis |
 | Validación | Pydantic v2 |
 | Logging | Loguru |
@@ -23,6 +23,8 @@ Clean Architecture / Hexagonal con 4 bounded contexts:
 - **cattle** — Gestión de animales
 - **finance** — Compras, insumos
 - **market** — Ventas
+- **billing** — Suscripciones
+- **calendar** — Calendario de eventos
 
 Cada contexto sigue la estructura: `domain/` → `application/` → `infrastructure/`.
 

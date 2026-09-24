@@ -26,7 +26,7 @@ def _get_register_event_case(
     notifier: GetNotifierClient,
 ) -> RegisterCalendarEventCase:
     event_bus.register("*", WebSocketBroadcastHandler(redis_client))
-    event_bus.register("calendar_event.create", EmailNotificationHandler(notifier))
+    event_bus.register("calendar_event.created", EmailNotificationHandler(notifier))
     return RegisterCalendarEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
@@ -38,7 +38,7 @@ def _get_update_event_case(
     notifier: GetNotifierClient,
 ) -> UpdateCalendarEventCase:
     event_bus.register("*", WebSocketBroadcastHandler(redis_client))
-    event_bus.register("calendar_event.update", EmailNotificationHandler(notifier))
+    event_bus.register("calendar_event.updated", EmailNotificationHandler(notifier))
     return UpdateCalendarEventCase(uow=uow, service=service, event_bus=event_bus)
 
 
