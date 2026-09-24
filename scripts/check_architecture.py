@@ -97,7 +97,7 @@ def _findings_for_import(
             rules.add("domain-imports-infrastructure")
         if source_layer == "application" and imports_infrastructure:
             rules.add("application-imports-infrastructure")
-        if source_context != target_context and (imports_infrastructure or imports_persistence):
+        if source_context != target_context and target_context != "common" and (imports_infrastructure or imports_persistence):
             rules.add("cross-context-infrastructure-import")
 
         findings.update(Finding(relative_path, node.lineno, rule, target_text) for rule in rules)
