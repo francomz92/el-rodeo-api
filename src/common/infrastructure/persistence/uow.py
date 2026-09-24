@@ -9,15 +9,12 @@ from src.common.application.ports.uow import IRepository, IUoW, IUoWFactory
 from src.common.domain.events.base import DomainEvent
 from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
 from src.common.infrastructure.persistence.models.event_outbox import EventOutbox
-from src.common.infrastructure.persistence.repositories._auditable_mixin import (
-    AuditableRepositoryMixin,
-)
 from src.common.infrastructure.persistence.repositories.audit_repository import (
     AuditRepository,
 )
 
 from .repositories import repositories_list
-from .repositories.tenant_aware_repository import TenantAwareRepository
+from .repository_factory import RepositoryFactory
 
 
 def _serialize_event(event: DomainEvent) -> dict:
@@ -80,24 +77,15 @@ class UnitOfWork(IUoW):
         self.outbox_events.clear()
 
     def get_repository(self, repository_type: type[IRepository]) -> IRepository:
-        repository = repositories_list.get(repository_type, None)
-        if not repository:
-            raise ValueError(f"Repository of type {repository_type} not found.")
-
-        repo_init_kws: dict[str, object] = {"session": self.db}
-        if issubclass(repository, TenantAwareRepository):
-            repo_init_kws["tenant_id"] = self.tenant_id
-            repo_init_kws["bypass_filter"] = self.bypass_filter
-
-        repo = repository(**repo_init_kws)
-
-        # Inject audit context into mixin-enabled repositories
-        if isinstance(repo, AuditableRepositoryMixin):
-            repo.audit_repository = self.audit_repository
-            repo.current_user = self.current_user
-            repo.tenant_id = self.tenant_id
-
-        return repo
+        return RepositoryFactory.create(
+            repository_type=repository_type,
+            repositories=repositories_list,
+            session=self.db,
+            tenant_id=self.tenant_id,
+            bypass_filter=self.bypass_filter,
+            audit_repository=self.audit_repository,
+            current_user=self.current_user,
+        )
 
     async def __aenter__(self):
         return self
