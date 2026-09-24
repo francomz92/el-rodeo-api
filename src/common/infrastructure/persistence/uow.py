@@ -1,6 +1,4 @@
-import dataclasses
 from collections.abc import Callable
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,25 +6,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.common.application.ports.uow import IRepository, IUoW, IUoWFactory
 from src.common.domain.events.base import DomainEvent
 from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
-from src.common.infrastructure.persistence.models.event_outbox import EventOutbox
 from src.common.infrastructure.persistence.repositories.audit_repository import (
     AuditRepository,
 )
 
+from .outbox_collector import (  # noqa: F401
+    OutboxCollector,
+    serialize_event as _serialize_event,
+)
 from .repositories import repositories_list
 from .repository_factory import RepositoryFactory
 from .tenant_context import TenantContext
-
-
-def _serialize_event(event: DomainEvent) -> dict:
-    """Serialise *event* to a JSON-safe dict including subclass-specific fields.
-
-    Uses ``dataclasses.asdict`` so fields added by subclasses (e.g.
-    ``PaymentReceived.payment_id``) are automatically included in the
-    outbox payload rather than being silently dropped.
-    """
-    raw = dataclasses.asdict(event)
-    return {k: (str(v) if isinstance(v, (UUID, datetime)) else v) for k, v in raw.items()}
 
 
 class UnitOfWork(IUoW):
@@ -47,7 +37,8 @@ class UnitOfWork(IUoW):
             current_user=current_user,
         )
         self._before_commit_hooks: list[Callable[[], None]] = []
-        self.outbox_events: list[DomainEvent] = []
+        self._outbox_collector = OutboxCollector()
+        self.outbox_events = self._outbox_collector.events
         self.audit_repository = AuditRepository()
 
     @property
@@ -92,16 +83,7 @@ class UnitOfWork(IUoW):
 
         If no events are queued, this is a no-op.
         """
-        for event in self.outbox_events:
-            payload = _serialize_event(event)
-            outbox_row = EventOutbox(
-                event_id=event.event_id,
-                event_type=event.event_type,
-                aggregate_id=event.aggregate_id,
-                payload=payload,
-            )
-            self.db.add(outbox_row)
-        self.outbox_events.clear()
+        self._outbox_collector.flush(self.db)
 
     def get_repository(self, repository_type: type[IRepository]) -> IRepository:
         return RepositoryFactory.create(
@@ -139,7 +121,7 @@ class UnitOfWork(IUoW):
 
     async def rollback(self):
         self.audit_repository.clear()
-        self.outbox_events.clear()
+        self._outbox_collector.clear()
         await self.db.rollback()
 
     async def refresh(self, entity):
@@ -154,7 +136,7 @@ class UnitOfWork(IUoW):
 
     def add_outbox_event(self, event: DomainEvent) -> None:
         """Queue *event* for transactional outbox persistence."""
-        self.outbox_events.append(event)
+        self._outbox_collector.add_event(event)
 
 
 class UnitOfWorkFactory(IUoWFactory):
