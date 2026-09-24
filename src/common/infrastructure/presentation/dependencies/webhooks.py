@@ -6,12 +6,13 @@ from src.common.application.services.webhook_subscription_service import (
     WebhookSubscriptionService,
 )
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
+from src.common.infrastructure.security.fernet_engine import FernetEngine
 
 
 def _get_webhook_subscription_service(
     uow: GetUnitOfWork,
 ) -> WebhookSubscriptionService:
-    return WebhookSubscriptionService(uow=uow)
+    return WebhookSubscriptionService(uow=uow, secret_cipher=FernetEngine())
 
 
 GetWebhookSubscriptionService = Annotated[

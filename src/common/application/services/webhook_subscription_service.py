@@ -5,6 +5,7 @@ from __future__ import annotations
 import secrets
 from uuid import UUID
 
+from src.common.application.ports.secret_cipher import SecretCipher
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError
 from src.common.domain.repositories.webhook_subscription_repository_port import (
@@ -13,7 +14,6 @@ from src.common.domain.repositories.webhook_subscription_repository_port import 
 from src.common.infrastructure.persistence.models.webhook_subscription import (
     WebhookSubscription,
 )
-from src.common.infrastructure.security.fernet_engine import FernetEngine
 
 
 class WebhookSubscriptionService:
@@ -23,12 +23,13 @@ class WebhookSubscriptionService:
     the Unit of Work, keeping the service focused on orchestration and
     business rules (secret generation, tenant ownership, 404 handling).
 
-    Secrets are encrypted at rest via ``FernetEngine`` before storage
+    Secrets are encrypted at rest via the injected ``SecretCipher`` before storage
     and decrypted on read.
     """
 
-    def __init__(self, uow: IUoW) -> None:
+    def __init__(self, uow: IUoW, secret_cipher: SecretCipher) -> None:
         self._uow = uow
+        self._secret_cipher = secret_cipher
 
     @property
     def _repo(self) -> IWebhookSubscriptionRepository:
@@ -39,7 +40,7 @@ class WebhookSubscriptionService:
         sub = WebhookSubscription(
             tenant_id=tenant_id,
             url=url,
-            secret=FernetEngine.encrypt_secret(plain_secret),
+            secret=self._secret_cipher.encrypt_secret(plain_secret),
             subscribed_events=subscribed_events,
         )
         created = await self._repo.create(sub)
@@ -71,7 +72,7 @@ class WebhookSubscriptionService:
         # writing ``sub.secret = plaintext`` on a session-tracked model
         # would flush the plaintext to the DB on the next ``commit()``.
         if sub.secret:
-            decrypted = FernetEngine.decrypt_secret(sub.secret)
+            decrypted = self._secret_cipher.decrypt_secret(sub.secret)
             # Bypass SQLAlchemy attribute instrumentation so the change
             # is NOT tracked as dirty.  The decrypted value is visible
             # to the caller (router / response serialisation) but will
