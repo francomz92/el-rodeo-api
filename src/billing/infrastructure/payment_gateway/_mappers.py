@@ -4,9 +4,11 @@ Extracted from _client.py to reduce file size. Pure functions that
 transform MercadoPago API responses into domain types.
 """
 
+from src.billing.application.mappers.subscription_status import map_mp_subscription_status
 from src.billing.domain.entities._payment_status import PaymentStatus
-from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.billing.domain.exceptions import PaymentGatewayError
+
+__all__ = ["map_mp_status", "map_mp_subscription_status"]
 
 
 def map_mp_status(mp_status: str) -> PaymentStatus:
@@ -23,17 +25,4 @@ def map_mp_status(mp_status: str) -> PaymentStatus:
     }
     if mp_status not in mapping:
         raise PaymentGatewayError(f"Unknown MercadoPago payment status: {mp_status}")
-    return mapping[mp_status]
-
-
-def map_mp_subscription_status(mp_status: str) -> SubscriptionStatus:
-    """Map MercadoPago subscription status to SubscriptionStatus enum."""
-    mapping = {
-        "authorized": SubscriptionStatus.ACTIVE,
-        "cancelled": SubscriptionStatus.CANCELED,
-        "paused": SubscriptionStatus.PAUSED,
-        "pending": SubscriptionStatus.TRIAL,
-    }
-    if mp_status not in mapping:
-        raise PaymentGatewayError(f"Unknown MercadoPago subscription status: {mp_status}")
     return mapping[mp_status]

@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 
 from loguru import logger
 
+from src.billing.application.mappers.subscription_status import map_mp_subscription_status
 from src.billing.domain.repositories import IPaymentGateway, ISubscriptionRepository
-from src.billing.infrastructure.payment_gateway._mappers import map_mp_subscription_status
 from src.common.application.ports.uow import IUoWFactory
 
 
