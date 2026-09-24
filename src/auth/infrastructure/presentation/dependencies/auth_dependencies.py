@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import Depends, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
+from src.auth.application.ports.trial_provisioner import ITrialProvisioner
 from src.auth.application.services.authentication_service import AuthService
 from src.auth.application.services.notifications.wellcome_email_service import (
     WellcomeEmailService,
@@ -21,6 +22,7 @@ from src.auth.domain.services.register_user_service import RegisterUserService
 from src.billing.application.services._trial_management_service import (
     TrialManagementService,
 )
+from src.billing.infrastructure.adapters.trial_provisioner import TrialProvisioner
 from src.common.domain.exceptions import NotPermissionError, UnauthorizedError
 from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
 from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
@@ -89,14 +91,26 @@ def _get_change_password_service(security_service: GetSecurityService) -> Change
     return ChangePasswordService(security_service)
 
 
-def _get_trial_management_service(uow: GetUnitOfWork) -> TrialManagementService:
-    """Build a request-scoped TrialManagementService sharing the UoW session."""
+def _get_trial_management_service() -> TrialManagementService:
+    """Build the trial management service used by the billing adapter."""
     return TrialManagementService()
 
 
 GetTrialManagementService = Annotated[
     TrialManagementService,
     Depends(_get_trial_management_service),
+]
+
+
+def _get_trial_provisioner(
+    trial_service: GetTrialManagementService,
+) -> ITrialProvisioner:
+    return TrialProvisioner(trial_service)
+
+
+GetTrialProvisioner = Annotated[
+    ITrialProvisioner,
+    Depends(_get_trial_provisioner),
 ]
 
 
@@ -107,7 +121,7 @@ def _get_create_tenant_case(
     bus: GetEventBus,
     notifier: GetNotifierClient,
     token_service: GetTokenService,
-    trial_service: GetTrialManagementService,
+    trial_provisioner: GetTrialProvisioner,
 ) -> CreateTenantCase:
     bus.register("tenant_registered", EmailNotificationHandler(notifier))
     return CreateTenantCase(
@@ -116,7 +130,7 @@ def _get_create_tenant_case(
         register_service=register_service,
         event_bus=bus,
         token_service=token_service,
-        trial_service=trial_service,
+        trial_provisioner=trial_provisioner,
     )
 
 

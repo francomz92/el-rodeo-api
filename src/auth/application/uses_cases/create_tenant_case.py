@@ -7,6 +7,7 @@ Trial subscription is created inline (ACID) rather than via an event handler.
 from __future__ import annotations
 
 from src.auth.application.ports.tokens_port import ITokenService
+from src.auth.application.ports.trial_provisioner import ITrialProvisioner
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.events.tenant_registered import TenantRegistered
@@ -16,11 +17,6 @@ from src.auth.domain.repositories.users_repository_port import (
     UserCreationValueObject,
 )
 from src.auth.domain.services.register_user_service import RegisterUserService
-from src.billing.application.services._trial_management_service import (
-    TrialManagementService,  # noqa: intentional cross-module dependency — refactor to public interface
-)
-from src.billing.domain.entities import PlanTypeEntity
-from src.billing.domain.repositories import IPlanRepository, ISubscriptionRepository
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import DuplicatedError
 from src.common.domain.ports.event_bus import IEventBus
@@ -37,14 +33,14 @@ class CreateTenantCase:
         register_service: RegisterUserService,
         event_bus: IEventBus,
         token_service: ITokenService,
-        trial_service: TrialManagementService,
+        trial_provisioner: ITrialProvisioner,
     ) -> None:
         self.uow = uow
         self.service = register_service
         self.security_service = security_service
         self.event_bus = event_bus
         self.token_service = token_service
-        self.trial_service = trial_service
+        self.trial_provisioner = trial_provisioner
 
     async def execute(
         self,
@@ -86,9 +82,7 @@ class CreateTenantCase:
             # Provision trial subscription BEFORE commit, so the whole
             # operation (tenant + user + trial) is ACID — if anything
             # fails, nothing is persisted.
-            plan_repository = uow.get_repository(IPlanRepository)
-            subscription_repository = uow.get_repository(ISubscriptionRepository)
-            await self.trial_service.start_trial(tenant.id, plan_repository, subscription_repository, PlanTypeEntity.FREE)
+            await self.trial_provisioner.provision_trial(tenant.id, uow)
 
             # credentials for an account that wasn't persisted.
             token = self.token_service.generate(
