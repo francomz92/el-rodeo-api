@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from typing import ClassVar, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,8 +9,13 @@ from src.common.infrastructure.adapters.http.input.query_params import StandardQ
 
 
 class SaleListQueryParamsSchema(StandardQueryParams):
-    ALLOWED_ORDER_BY: frozenset[str] = frozenset({"sale_date", "price", "weight", "created_at"})
+    ALLOWED_ORDER_BY: ClassVar[frozenset[str]] = frozenset({"sale_date", "price", "weight", "created_at"})
 
+    order_by: Literal["sale_date", "price", "weight", "created_at"] = Field(
+        default="created_at",
+        max_length=50,
+        description="List ordering",
+    )
     buyer_id: UUID | None = None
     sale_date: date | None = None
     price: Decimal | None = None

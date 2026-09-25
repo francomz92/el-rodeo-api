@@ -1,4 +1,5 @@
 import warnings
+from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -8,6 +9,8 @@ ALLOWED_ORDER_BY: frozenset[str] = frozenset({"id", "created_at", "updated_at", 
 
 
 class StandardQueryParams(BaseModel):
+    ALLOWED_ORDER_BY: ClassVar[frozenset[str]] = ALLOWED_ORDER_BY
+
     limit: int = Field(
         default=pagination.ROW_PER_PAGE,
         ge=1,
@@ -20,8 +23,8 @@ class StandardQueryParams(BaseModel):
     @field_validator("order_by")
     @classmethod
     def _validate_order_by(cls, v: str) -> str:
-        if v not in ALLOWED_ORDER_BY:
-            raise ValueError(f"Invalid order_by '{v}'. Allowed: {', '.join(sorted(ALLOWED_ORDER_BY))}")
+        if v not in cls.ALLOWED_ORDER_BY:
+            raise ValueError(f"Invalid order_by '{v}'. Allowed: {', '.join(sorted(cls.ALLOWED_ORDER_BY))}")
         return v
 
     cursor: str | None = Field(
