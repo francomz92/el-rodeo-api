@@ -14,6 +14,7 @@ import json
 import sys
 from datetime import datetime
 from functools import lru_cache
+from typing import Any, cast
 
 from loguru import logger
 from loguru._logger import Logger
@@ -29,14 +30,15 @@ _TEXT_FORMAT = "{time:%d-%m-%Y %H:%M:%S} | {level:8} | {name}:{function}:{line} 
 # ── Correlation filter ────────────────────────────────────────────────────────
 
 
-def correlation_filter(record: dict) -> bool:
+def correlation_filter(record: object) -> bool:
     """Loguru filter: inject current correlation_id into *record* ``extra``.
 
     Always returns ``True`` (never drops records).
     """
+    log_record = cast(dict[str, Any], record)
     cid = get_correlation_id()
     if cid:
-        record["extra"]["correlation_id"] = cid
+        log_record["extra"]["correlation_id"] = cid
     return True
 
 
@@ -62,7 +64,7 @@ def _make_json_record(record: dict) -> dict:
     }
 
 
-def _json_format(record: dict) -> str:
+def _json_format(record: object) -> str:
     """Callable format for JSON log output.
 
     Returns a format template that Loguru can process via ``format_map``.
@@ -71,7 +73,7 @@ def _json_format(record: dict) -> str:
     Angle brackets in the JSON are escaped to avoid Loguru's color-tag
     parser raising ``ValueError``.
     """
-    d = _make_json_record(record)
+    d = _make_json_record(cast(dict[str, Any], record))
     raw = json.dumps(d, default=str)
     # Escape JSON structural braces so format_map treats them literally
     escaped = raw.replace("{", "{{").replace("}", "}}")
