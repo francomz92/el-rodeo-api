@@ -69,7 +69,13 @@ def _get_mercadopago_service(
     sub_repo: Annotated[ISubscriptionRepository, Depends(_get_subscription_repository)],
     plan_repo: Annotated[IPlanRepository, Depends(_get_plan_repository)],
 ) -> MercadoPagoService:
-    return MercadoPagoService(gateway, payment_repo, sub_repo, plan_repo)
+    return MercadoPagoService(
+        gateway,
+        payment_repo,
+        sub_repo,
+        plan_repo,
+        webhook_url=settings.MP_WEBHOOK_URL,
+    )
 
 
 def _get_change_plan_service(

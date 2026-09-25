@@ -31,7 +31,6 @@ from src.billing.domain.repositories import (
     PaymentResult,
     SubscriptionResult,
 )
-from src.common.infrastructure.core._config import settings
 
 
 class MercadoPagoService:
@@ -48,11 +47,13 @@ class MercadoPagoService:
         payment_repo: IPaymentRepository,
         subscription_repo: ISubscriptionRepository,
         plan_repo: IPlanRepository,
+        webhook_url: str,
     ) -> None:
         self._gateway = gateway
         self._payment_repo = payment_repo
         self._subscription_repo = subscription_repo
         self._plan_repo = plan_repo
+        self._webhook_url = webhook_url
 
     async def create_checkout_preference(
         self,
@@ -101,15 +102,15 @@ class MercadoPagoService:
         external_reference = f"{tenant_id}:{plan_type.value}"
 
         back_urls = BackUrlsData(
-            success=settings.MP_WEBHOOK_URL,
-            failure=settings.MP_WEBHOOK_URL,
-            pending=settings.MP_WEBHOOK_URL,
+            success=self._webhook_url,
+            failure=self._webhook_url,
+            pending=self._webhook_url,
         )
 
         result = await self._gateway.create_preference(
             items=[item],
             back_urls=back_urls,
-            notification_url=settings.MP_WEBHOOK_URL,
+            notification_url=self._webhook_url,
             external_reference=external_reference,
         )
 
@@ -200,7 +201,7 @@ class MercadoPagoService:
         )
 
         external_reference = f"{tenant_id}:{plan_type.value}"
-        back_url = settings.MP_WEBHOOK_URL
+        back_url = self._webhook_url
 
         # Call gateway
         result: SubscriptionResult = await self._gateway.create_subscription(
