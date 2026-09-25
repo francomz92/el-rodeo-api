@@ -103,5 +103,5 @@ class CreateTenantCase:
             )
             uow.add_outbox_event(tenant_registered)
             await uow.commit()
-        self.event_bus.dispatch(tenant_registered)
+        await self.event_bus.dispatch(tenant_registered)
         return user
