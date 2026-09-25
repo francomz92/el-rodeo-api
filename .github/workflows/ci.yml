@@ -29,6 +29,12 @@ jobs:
       - name: Lint with ruff
         run: uv run ruff check src/
 
+      - name: Check source formatting
+        run: uv run ruff format --check src/
+
+      - name: Report architecture dependencies
+        run: uv run python scripts/check_architecture.py
+
       # - name: Type check with pyright
       #   run: uv run pyright
 
