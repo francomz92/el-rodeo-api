@@ -91,7 +91,7 @@ async def update_webhook(
     sub = await service.update(
         subscription_id=subscription_id,
         tenant_id=current_user.tenant_id,
-        url=str(data.url),
+        url=str(data.url) if data.url is not None else None,
         subscribed_events=data.subscribed_events,
         is_active=data.is_active,
     )
