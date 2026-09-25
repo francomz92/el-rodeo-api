@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
@@ -13,6 +13,7 @@ from src.calendar.domain.value_objects.calendar_event_value_object import (
     CalendarEventsListQueryParamsValueObject,
     CalendarEventUpdateValueObject,
 )
+from src.common.domain.exceptions import NotPermissionError
 
 from ...adapters.http.input.calendar_event_schemas import (
     CalendarEventCreationSchema,
@@ -26,6 +27,16 @@ from ..dependencies.calendar_events import (
     GetRegisterCalendarEventCase,
     GetUpdateCalendarEventCase,
 )
+
+
+def _get_calendar_tenant_id(current_user: GetCurrentUser) -> UUID:
+    """Require a tenant for calendar operations and return its identifier."""
+    if current_user.tenant_id is None:
+        raise NotPermissionError("Se requiere un tenant para acceder a los eventos del calendario.")
+    return current_user.tenant_id
+
+
+GetCalendarTenantId = Annotated[UUID, Depends(_get_calendar_tenant_id)]
 
 events_router = APIRouter(
     prefix="/events",
@@ -45,12 +56,13 @@ async def create_calendar_event(
     current_user: GetCurrentUser,
     calendar_event_case: GetRegisterCalendarEventCase,
     data: CalendarEventCreationSchema,
+    tenant_id: GetCalendarTenantId,
 ):
     event_data = CalendarEventCreationValueObject(
         **data.model_dump(exclude_unset=True),
         user_id=current_user.id,
     )
-    return await calendar_event_case.execute(data=event_data, tenant_id=current_user.tenant_id)
+    return await calendar_event_case.execute(data=event_data, tenant_id=tenant_id)
 
 
 @events_router.put(
@@ -65,6 +77,7 @@ async def update_event(
     current_user: GetCurrentUser,
     calendar_event_case: GetUpdateCalendarEventCase,
     data: CalendarEventUpdateSchema,
+    tenant_id: GetCalendarTenantId,
 ):
     payload = CalendarEventUpdateValueObject(
         **data.model_dump(exclude_unset=True),
@@ -73,7 +86,7 @@ async def update_event(
     return await calendar_event_case.execute(
         id=id,
         data=payload,
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
     )
 
 
@@ -87,6 +100,7 @@ async def delete_event(
     id: UUID,
     current_user: GetCurrentUser,
     calendar_event_case: GetDeleteCalendarEventCase,
+    _tenant_id: GetCalendarTenantId,
 ):
     return await calendar_event_case.execute(
         id=id,
@@ -103,6 +117,7 @@ async def list_calendar_events(
     current_user: GetCurrentUser,
     calendar_event_case: GetListCalendarEventsCase,
     query_params: Annotated[CalendarEventsQueryParams, Query()],
+    _tenant_id: GetCalendarTenantId,
 ):
     filters = CalendarEventsListQueryParamsValueObject(
         **query_params.model_dump(
