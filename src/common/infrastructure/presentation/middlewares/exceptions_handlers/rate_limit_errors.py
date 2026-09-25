@@ -1,6 +1,5 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from slowapi.errors import RateLimitExceeded
 
 from src.common.infrastructure.adapters.correlation import get_correlation_id
 from src.common.infrastructure.adapters.http.output.errors import (
@@ -13,7 +12,7 @@ from src.common.utils import log
 from src.common.utils.date_utils import get_current_datetime
 
 
-async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+async def _rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
     """Custom 429 handler that includes a Retry-After header."""
     cid = get_correlation_id()
     log.warning(
