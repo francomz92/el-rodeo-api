@@ -10,7 +10,6 @@ from src.auth.domain.repositories.users_repository_port import IUserRepository
 from src.auth.domain.services.login_user_service import LoginUserService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService
-from src.common.infrastructure.core import settings
 from src.common.utils.date_utils import get_current_datetime
 
 
@@ -21,11 +20,13 @@ class LoginUserCase:
         security_service: ISecurityService,
         token_service: ITokenService,
         login_service: LoginUserService,
+        refresh_token_expire_days: int,
     ) -> None:
         self.uow = uow
         self.security_service = security_service
         self.token_service = token_service
         self.login_service = login_service
+        self.refresh_token_expire_days = refresh_token_expire_days
 
     async def execute(self, dni: str, password: str) -> tuple[str, str]:
         """Authenticate user and return (access_token, refresh_token).
@@ -64,7 +65,7 @@ class LoginUserCase:
                 user_id=user.id,
                 token_hash=refresh_token_id_str,  # use token ID as unique hash (ID-based lookup)
                 family_id=UUID(refresh_payload["family_id"]),
-                expires_at=get_current_datetime() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+                expires_at=get_current_datetime() + timedelta(days=self.refresh_token_expire_days),
                 is_revoked=False,
             )
             await refresh_repo.save(entity)

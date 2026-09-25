@@ -16,6 +16,7 @@ from src.billing.application.services._trial_management_service import (
     TrialManagementService,
 )
 from src.billing.infrastructure.adapters.trial_provisioner import TrialProvisioner
+from src.common.infrastructure.core import settings
 from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
 from src.common.infrastructure.presentation.dependencies.event_bus import GetEventBus
 from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
@@ -89,7 +90,13 @@ def _get_login_user_case(
     token_service: GetTokenService,
     login_service: Annotated[LoginUserService, Depends(_get_login_user_service)],
 ) -> LoginUserCase:
-    return LoginUserCase(uow, security_service, token_service, login_service)
+    return LoginUserCase(
+        uow=uow,
+        security_service=security_service,
+        token_service=token_service,
+        login_service=login_service,
+        refresh_token_expire_days=settings.REFRESH_TOKEN_EXPIRE_DAYS,
+    )
 
 
 def _get_auth_service(
