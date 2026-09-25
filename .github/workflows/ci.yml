@@ -35,8 +35,9 @@ jobs:
       - name: Report architecture dependencies
         run: uv run python scripts/check_architecture.py
 
-      # - name: Type check with pyright
-      #   run: uv run pyright
+      - name: Type check with pyright (non-blocking baseline)
+        continue-on-error: true
+        run: uv run pyright
 
   test:
     runs-on: ubuntu-latest
