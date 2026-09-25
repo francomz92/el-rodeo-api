@@ -1,7 +1,7 @@
 """TrialManagementService — creates and manages trial subscriptions.
 
 Provides methods to:
-- start_trial: create a 14-day PRO trial for a new tenant
+- start_trial: create a configured-duration PRO trial for a new tenant
 - cancel_subscription: cancel an active/trial subscription
 - expire_trial: downgrade an expired trial to FREE plan
 """
@@ -14,11 +14,13 @@ from src.billing.domain.entities._plan_type import PlanTypeEntity
 from src.billing.domain.entities._subscription import Subscription
 from src.billing.domain.entities._subscription_status import SubscriptionStatus
 from src.billing.domain.repositories import IPlanRepository, ISubscriptionRepository
-from src.common.infrastructure.core._config import settings
 
 
 class TrialManagementService:
     """Application service that manages trial subscription lifecycle."""
+
+    def __init__(self, trial_days: int) -> None:
+        self.trial_days = trial_days
 
     async def start_trial(
         self,
@@ -30,13 +32,13 @@ class TrialManagementService:
         """Create a trial subscription for the given tenant.
 
         Fetches the plan by type, creates a TRIAL status subscription
-        with trial_end = now + TRIAL_DAYS, and persists it.
+        with trial_end = now + the injected trial duration, and persists it.
         """
         plan = await plan_repository.get_by_plan_type(plan_type)
         if plan is None:
             raise ValueError(f"Plan not found: {plan_type.value}")
         now = datetime.now(timezone.utc)
-        trial_end = now + timedelta(days=settings.TRIAL_DAYS)
+        trial_end = now + timedelta(days=self.trial_days)
 
         subscription = Subscription(
             id=uuid4(),

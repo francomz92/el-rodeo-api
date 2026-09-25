@@ -28,7 +28,7 @@ from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWor
 
 def _get_trial_management_service() -> TrialManagementService:
     """Build the trial management service used by the billing adapter."""
-    return TrialManagementService()
+    return TrialManagementService(trial_days=settings.TRIAL_DAYS)
 
 
 GetTrialManagementService = Annotated[
