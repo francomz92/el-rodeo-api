@@ -6,9 +6,8 @@ tokens and manages per-tenant connections via ``ConnectionManager``.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from src.common.infrastructure.adapters.websocket.manager import ConnectionManager
 from src.common.infrastructure.presentation.dependencies.websocket import (
     GetWsManager,
 )
@@ -19,8 +18,8 @@ router = APIRouter(tags=["WebSocket"])
 @router.websocket("/ws/notifications")
 async def websocket_notifications(
     websocket: WebSocket,
+    manager: GetWsManager,
     token: str = Query(...),
-    manager: ConnectionManager = Depends(GetWsManager),
 ) -> None:
     """Accept a WebSocket connection for real-time notifications.
 
