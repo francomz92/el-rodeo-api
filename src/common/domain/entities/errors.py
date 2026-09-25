@@ -2,6 +2,8 @@ from typing import Literal, TypedDict
 
 ErrorCode = Literal[
     "domain_error",
+    "billing_error",
+    "payment_gateway_error",
     "conflict_error",
     "duplicated_error",
     "not_found_error",
