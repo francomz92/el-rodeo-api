@@ -8,7 +8,8 @@ Endpoints are protected by ``@rate_limit("5/minute")`` decorators that
 only apply rate limiting when ``settings.ENABLE_RATE_LIMIT`` is True.
 """
 
-from typing import Any
+from collections.abc import Awaitable
+from typing import Any, cast
 
 from slowapi import Limiter
 from slowapi.middleware import SlowAPIMiddleware
@@ -100,7 +101,9 @@ def _maybe_switch_to_redis(settings: Any) -> None:
         loop = asyncio.new_event_loop()
         try:
             probe = AsyncRedis.from_url(redis_url, socket_connect_timeout=2)
-            loop.run_until_complete(probe.ping())
+            # `AsyncRedis.ping()` is awaitable; redis-py shares a stub with
+            # its sync client, which widens the return type to `bool | Awaitable`.
+            loop.run_until_complete(cast(Awaitable[bool], probe.ping()))
             loop.run_until_complete(probe.aclose())
         except Exception as err:
             log.warning(
