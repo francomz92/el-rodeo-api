@@ -108,12 +108,15 @@ def outbox_forwarder_task() -> dict:
                         if not ok:
                             all_ok = False
                             sub.failure_count += 1
-                            if sub.failure_count >= 5:
+                            deactivate = sub.failure_count >= 5
+                            if deactivate:
                                 sub.is_active = False
-                                await webhook_repo.update(
-                                    id=sub.id,
-                                    is_active=False,
-                                )
+                            await webhook_repo.update(
+                                id=sub.id,
+                                failure_count=sub.failure_count,
+                                is_active=False if deactivate else None,
+                            )
+                            if deactivate:
                                 log.warning(
                                     "Deactivated webhook {} after {} failures",
                                     sub.id,

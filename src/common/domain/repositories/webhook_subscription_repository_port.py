@@ -3,32 +3,30 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 from uuid import UUID
 
+from src.common.domain.entities.webhook_subscription import (
+    WebhookSubscriptionCreateData,
+    WebhookSubscriptionEntity,
+)
 from src.common.domain.repository import IRepository
-
-if TYPE_CHECKING:
-    from src.common.infrastructure.persistence.models.webhook_subscription import (
-        WebhookSubscription,
-    )
 
 
 class IWebhookSubscriptionRepository(IRepository):
     """Interface for webhook subscription data access."""
 
     @abstractmethod
-    async def create(self, sub: WebhookSubscription) -> WebhookSubscription:
-        """Persist a new webhook subscription and return it."""
+    async def create(self, sub: WebhookSubscriptionCreateData) -> WebhookSubscriptionEntity:
+        """Persist a new webhook subscription and return its domain entity."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, id: UUID) -> WebhookSubscription | None:
+    async def get_by_id(self, id: UUID) -> WebhookSubscriptionEntity | None:
         """Retrieve a subscription by its ID, or None."""
         raise NotImplementedError
 
     @abstractmethod
-    async def list_by_tenant(self, tenant_id: UUID) -> list[WebhookSubscription]:
+    async def list_by_tenant(self, tenant_id: UUID) -> list[WebhookSubscriptionEntity]:
         """List all subscriptions for a tenant, ordered by creation date."""
         raise NotImplementedError
 
@@ -39,7 +37,8 @@ class IWebhookSubscriptionRepository(IRepository):
         url: str | None = None,
         subscribed_events: list[str] | None = None,
         is_active: bool | None = None,
-    ) -> WebhookSubscription:
+        failure_count: int | None = None,
+    ) -> WebhookSubscriptionEntity:
         """Partially update a subscription and return the updated entity."""
         raise NotImplementedError
 
@@ -49,7 +48,7 @@ class IWebhookSubscriptionRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_all_active(self) -> list[WebhookSubscription]:
+    async def list_all_active(self) -> list[WebhookSubscriptionEntity]:
         """Return all active subscriptions across all tenants (admin query).
 
         Used by the outbox forwarder task to match pending events against

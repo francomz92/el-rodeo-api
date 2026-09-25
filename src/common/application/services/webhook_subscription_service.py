@@ -7,12 +7,13 @@ from uuid import UUID
 
 from src.common.application.ports.secret_cipher import SecretCipher
 from src.common.application.ports.uow import IUoW
+from src.common.domain.entities.webhook_subscription import (
+    WebhookSubscriptionCreateData,
+    WebhookSubscriptionEntity,
+)
 from src.common.domain.exceptions import NotFoundError
 from src.common.domain.repositories.webhook_subscription_repository_port import (
     IWebhookSubscriptionRepository,
-)
-from src.common.infrastructure.persistence.models.webhook_subscription import (
-    WebhookSubscription,
 )
 
 
@@ -35,9 +36,9 @@ class WebhookSubscriptionService:
     def _repo(self) -> IWebhookSubscriptionRepository:
         return self._uow.get_repository(IWebhookSubscriptionRepository)
 
-    async def create(self, tenant_id: UUID, url: str, subscribed_events: list[str]) -> WebhookSubscription:
+    async def create(self, tenant_id: UUID, url: str, subscribed_events: list[str]) -> WebhookSubscriptionEntity:
         plain_secret = secrets.token_urlsafe(32)
-        sub = WebhookSubscription(
+        sub = WebhookSubscriptionCreateData(
             tenant_id=tenant_id,
             url=url,
             secret=self._secret_cipher.encrypt_secret(plain_secret),
@@ -45,39 +46,30 @@ class WebhookSubscriptionService:
         )
         created = await self._repo.create(sub)
         await self._uow.commit()
-        await self._uow.refresh(created)
-        # Return the model with the plaintext secret — bypass SQLAlchemy
-        # instrumentation to prevent dirty write-back on future commits.
-        object.__setattr__(created, "secret", plain_secret)
+        # The repository returned a detached domain dataclass, so plaintext
+        # response data cannot be written back through ORM dirty tracking.
+        created.secret = plain_secret
         return created
 
-    async def list_for_tenant(self, tenant_id: UUID) -> list[WebhookSubscription]:
+    async def list_for_tenant(self, tenant_id: UUID) -> list[WebhookSubscriptionEntity]:
         return await self._repo.list_by_tenant(tenant_id)
 
-    async def _verify_ownership(self, subscription_id: UUID, tenant_id: UUID) -> WebhookSubscription:
+    async def _verify_ownership(self, subscription_id: UUID, tenant_id: UUID) -> WebhookSubscriptionEntity:
         """Check ownership without decrypting the secret.
 
         Raises ``NotFoundError`` when the subscription does not exist or
-        belongs to a different tenant.  Returns the ORM-tracked model
-        **without** mutating its ``secret`` column.
+        belongs to a different tenant.
         """
         sub = await self._repo.get_by_id(subscription_id)
         if sub is None or sub.tenant_id != tenant_id:
             raise NotFoundError(message="Webhook subscription not found")
         return sub
 
-    async def get_by_id_for_tenant(self, subscription_id: UUID, tenant_id: UUID) -> WebhookSubscription:
+    async def get_by_id_for_tenant(self, subscription_id: UUID, tenant_id: UUID) -> WebhookSubscriptionEntity:
         sub = await self._verify_ownership(subscription_id, tenant_id)
-        # Decrypt the secret WITHOUT mutating the ORM-tracked column:
-        # writing ``sub.secret = plaintext`` on a session-tracked model
-        # would flush the plaintext to the DB on the next ``commit()``.
+        # Return plaintext to the API without altering persisted encrypted data.
         if sub.secret:
-            decrypted = self._secret_cipher.decrypt_secret(sub.secret)
-            # Bypass SQLAlchemy attribute instrumentation so the change
-            # is NOT tracked as dirty.  The decrypted value is visible
-            # to the caller (router / response serialisation) but will
-            # never be written back to the database.
-            object.__setattr__(sub, "secret", decrypted)
+            sub.secret = self._secret_cipher.decrypt_secret(sub.secret)
         return sub
 
     async def update(
@@ -87,7 +79,7 @@ class WebhookSubscriptionService:
         url: str | None = None,
         subscribed_events: list[str] | None = None,
         is_active: bool | None = None,
-    ) -> WebhookSubscription:
+    ) -> WebhookSubscriptionEntity:
         await self._verify_ownership(subscription_id, tenant_id)
 
         updated = await self._repo.update(
