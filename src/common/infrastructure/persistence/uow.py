@@ -1,9 +1,10 @@
 from collections.abc import Callable
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.common.application.ports.uow import IRepository, IUoW, IUoWFactory
+from src.common.application.ports.uow import IUoW, IUoWFactory, RepositoryType
 from src.common.domain.events.base import DomainEvent
 from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
 from src.common.infrastructure.persistence.repositories.audit_repository import (
@@ -87,14 +88,15 @@ class UnitOfWork(IUoW):
         """
         self._outbox_collector.flush(self.db)
 
-    def get_repository(self, repository_type: type[IRepository]) -> IRepository:
-        return RepositoryFactory.create(
+    def get_repository(self, repository_type: type[RepositoryType]) -> RepositoryType:
+        repository = RepositoryFactory.create(
             repository_type=repository_type,
             repositories=repositories_list,
             session=self.db,
             tenant_context=self.tenant_context,
             audit_repository=self.audit_repository,
         )
+        return cast(RepositoryType, repository)
 
     async def __aenter__(self):
         return self
