@@ -5,6 +5,9 @@ from src.auth.domain.repositories.tenant_repository_port import ITenantRepositor
 from src.auth.domain.repositories.users_repository_port import (
     IUserRepository,
 )
+from src.auth.infrastructure.persistence.repositories.calendar_user_projection_reader import (
+    CalendarUserProjectionReader,
+)
 from src.auth.infrastructure.persistence.repositories.refresh_token_repository import (
     RefreshTokenRepository,
 )
@@ -17,6 +20,7 @@ from src.auth.infrastructure.persistence.repositories.user_projection_reader imp
 from src.auth.infrastructure.persistence.repositories.user_repository import (
     UserRepository,
 )
+from src.calendar.domain.repositories.calendar_user_projection_port import ICalendarUserProjectionReader
 from src.common.domain.repository import IRepository
 from src.finance.domain.repositories.user_reader_port import IUserNameReader
 
@@ -25,4 +29,5 @@ repositories_list: dict[type[IRepository], type[IRepository]] = {
     ITenantRepository: TenantRepository,
     IUserRepository: UserRepository,
     IUserNameReader: UserProjectionReader,
+    ICalendarUserProjectionReader: CalendarUserProjectionReader,
 }

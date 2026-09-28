@@ -3,12 +3,9 @@ from uuid import UUID
 
 from sqlalchemy import RowMapping, and_, delete, exists, func, insert, select, update
 
-from src.auth.infrastructure.persistence.models import User
 from src.calendar.domain.entities.calendar_event_entity import (
     CalendarEventEntity,
-    CalendarEventParticipantEntity,
     CalendarEventRemindedEntity,
-    CalendarEventRemindedParticipantEntity,
 )
 from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 from src.calendar.domain.value_objects.calendar_event_value_object import (
@@ -43,21 +40,12 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
         query = self._filter_tenant(
             select(
                 *CalendarEvent.__table__.columns,
-                func.coalesce(
-                    func.json_agg(
-                        func.json_build_object(
-                            "id",
-                            User.id,
-                            "name",
-                            User.name,
-                        )
-                    ).filter(User.id.is_not(None)),
-                    func.json_build_array(),
-                ).label("participants"),
+                func.array_agg(CalendarEventParticipant.user_id)
+                .filter(CalendarEventParticipant.user_id.is_not(None))
+                .label("participant_user_ids"),
             )
             .where(CalendarEvent.id == id)
             .outerjoin(CalendarEventParticipant, CalendarEventParticipant.event_id == CalendarEvent.id)
-            .outerjoin(User, User.id == CalendarEventParticipant.user_id)
             .select_from(CalendarEvent)
             .group_by(CalendarEvent.id)
         )
@@ -83,21 +71,12 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
         query = self._filter_tenant(
             select(
                 *CalendarEvent.__table__.columns,
-                func.coalesce(
-                    func.json_agg(
-                        func.json_build_object(
-                            "id",
-                            User.id,
-                            "name",
-                            User.name,
-                        )
-                    ).filter(User.id.is_not(None)),
-                    func.json_build_array(),
-                ).label("participants"),
+                func.array_agg(CalendarEventParticipant.user_id)
+                .filter(CalendarEventParticipant.user_id.is_not(None))
+                .label("participant_user_ids"),
             )
             .where(*conditions)
             .outerjoin(CalendarEventParticipant, CalendarEventParticipant.event_id == CalendarEvent.id)
-            .outerjoin(User, User.id == CalendarEventParticipant.user_id)
             .group_by(CalendarEvent.id)
             .order_by(order_by)
         )
@@ -182,20 +161,11 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
                 CalendarEvent.start,
                 CalendarEvent.end,
                 CalendarEvent.tenant_id,
-                func.coalesce(
-                    func.json_agg(
-                        func.json_build_object(
-                            "name",
-                            User.name,
-                            "email",
-                            User.email,
-                        )
-                    ).filter(User.id.is_not(None)),
-                    func.json_build_array(),
-                ).label("participants"),
+                func.array_agg(CalendarEventParticipant.user_id)
+                .filter(CalendarEventParticipant.user_id.is_not(None))
+                .label("participant_user_ids"),
             )
             .outerjoin(CalendarEventParticipant, CalendarEventParticipant.event_id == CalendarEvent.id)
-            .outerjoin(User, User.id == CalendarEventParticipant.user_id)
             .where(
                 CalendarEvent.pending,
                 and_(
@@ -217,13 +187,8 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
                 start=event["start"],
                 end=event["end"],
                 pending=event["pending"],
-                participants=[
-                    CalendarEventRemindedParticipantEntity(
-                        name=participant["name"],
-                        email=participant["email"],
-                    )
-                    for participant in event["participants"]
-                ],
+                participants=[],
+                participant_user_ids=event["participant_user_ids"] or [],
             )
             for event in events
         ]
@@ -244,11 +209,6 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
             end=data["end"],
             pending=data["pending"],
             type=data["type"],
-            participants=[
-                CalendarEventParticipantEntity(
-                    id=participant["id"],
-                    name=participant["name"],
-                )
-                for participant in data["participants"]
-            ],
+            participants=[],
+            participant_user_ids=data["participant_user_ids"] or [],
         )

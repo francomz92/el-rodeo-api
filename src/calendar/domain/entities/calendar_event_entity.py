@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -24,6 +24,7 @@ class CalendarEventEntity:
     pending: bool
     type: CalendarEventType
     participants: list[CalendarEventParticipantEntity]
+    participant_user_ids: list[UUID] = field(default_factory=list, repr=False)
 
     def can_update(self) -> bool:
         return self.pending
@@ -47,3 +48,4 @@ class CalendarEventRemindedEntity:
     end: datetime
     pending: bool
     participants: list[CalendarEventRemindedParticipantEntity]
+    participant_user_ids: list[UUID] = field(default_factory=list, repr=False)
