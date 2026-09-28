@@ -14,23 +14,11 @@ from src.common.domain.repository import IRepository
 
 
 class IReportsRepository(IRepository):
-    """Interface for read-only report data access.
+    """Interface for read-only sales report data access.
 
-    Both methods accept an explicit ``tenant_id`` because reports aggregate
-    across multiple tables — the standard ``_filter_tenant`` (tied to a single
-    ``_model``) is not sufficient.
+    The sales query accepts an explicit ``tenant_id`` because it aggregates
+    across sales data independently of the standard single-model tenant filter.
     """
-
-    @abstractmethod
-    async def get_inventory_summary(self, *, tenant_id: UUID) -> dict:
-        """Return animal counts grouped by status and by type.
-
-        Returns a dict with keys:
-            total (int): grand total of all animals
-            by_status (dict[str, int]): count per status value
-            by_type (list[dict]): [{type, by_status: {status: count}}, ...]
-        """
-        ...
 
     @abstractmethod
     async def get_sales_summary(

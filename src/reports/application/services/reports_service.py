@@ -9,17 +9,18 @@ from __future__ import annotations
 from datetime import date
 from uuid import UUID
 
-from src.common.domain.ports.cache_service import ICacheService
-from src.reports.domain.repositories.reports_repository_port import (
-    IReportsRepository,
+from src.cattle.domain.repositories.inventory_report_query_port import (
+    IAnimalInventoryReportQuery,
 )
+from src.common.domain.ports.cache_service import ICacheService
+from src.reports.domain.repositories.reports_repository_port import IReportsRepository
 
 
 class ReportsService:
     """Orchestrates report generation with cache-aside pattern.
 
-    Queries are delegated to ``IReportsRepository`` for SQLAlchemy Core
-    aggregation.  Results are cached via ``ICacheService`` with a 5-minute TTL.
+    Inventory and sales queries are delegated to their owning repository ports.
+    Results are cached via ``ICacheService`` with a 5-minute TTL.
     Cache keys follow the pattern ``reports:{tenant_id}:{report_name}[:args]``.
     """
 
@@ -33,7 +34,7 @@ class ReportsService:
         parts = [self.CACHE_PREFIX, str(tenant_id), report, *args]
         return ":".join(parts)
 
-    async def get_inventory_summary(self, tenant_id: UUID, repository: IReportsRepository) -> dict:
+    async def get_inventory_summary(self, tenant_id: UUID, repository: IAnimalInventoryReportQuery) -> dict:
         """Return cached or fresh inventory summary."""
         key = self._cache_key(tenant_id, "inventory")
         return await self._cache.get_or_set(
