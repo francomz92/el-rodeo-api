@@ -1,10 +1,4 @@
-"""SQLAlchemy Core aggregation queries for report data.
-
-Implements ``IReportsRepository`` using SQLAlchemy Core for efficient
-GROUP BY aggregations.  All queries accept an explicit ``tenant_id``
-parameter — reports aggregate across multiple tables so the single-model
-``_filter_tenant`` from ``TenantAwareRepository`` is not used here.
-"""
+"""SQLAlchemy Core aggregation query for market sales reports."""
 
 from __future__ import annotations
 
@@ -14,17 +8,14 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.market.infrastructure.persistence.models._sales import Sale
-from src.reports.domain.repositories.reports_repository_port import (
-    IReportsRepository,
+from src.market.domain.repositories.sales_summary_report_query_port import (
+    ISalesSummaryReportQuery,
 )
+from src.market.infrastructure.persistence.models._sales import Sale
 
 
-class ReportsRepository(IReportsRepository):
-    """Read-only repository for report aggregation queries.
-
-    Uses SQLAlchemy Core (not ORM) for efficient GROUP BY aggregations.
-    """
+class SalesSummaryReportQuery(ISalesSummaryReportQuery):
+    """Read-only sales aggregation query using a plain async session."""
 
     def __init__(self, session: AsyncSession) -> None:
         self.db = session

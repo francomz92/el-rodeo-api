@@ -31,9 +31,6 @@ from src.finance.infrastructure.persistence.repositories._registry import (
 from src.market.infrastructure.persistence.repositories._registry import (
     repositories_list as market_repos,
 )
-from src.reports.infrastructure.persistence.repositories._registry import (
-    repositories_list as reports_repos,
-)
 
 
 def _merge_registries(
@@ -61,7 +58,6 @@ repositories_list.update(
         market_repos,
         finance_repos,
         billing_repos,
-        reports_repos,
         calendar_repos,
     )
 )

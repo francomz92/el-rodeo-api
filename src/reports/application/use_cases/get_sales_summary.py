@@ -3,8 +3,10 @@ from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError
+from src.market.domain.repositories.sales_summary_report_query_port import (
+    ISalesSummaryReportQuery,
+)
 from src.reports.application.services.reports_service import ReportsService
-from src.reports.domain.repositories.reports_repository_port import IReportsRepository
 
 
 class GetSalesSummaryUseCase:
@@ -17,5 +19,5 @@ class GetSalesSummaryUseCase:
             raise NotFoundError("No se encontraron resultados")
 
         async with self.uow as uow:
-            repository = uow.get_repository(IReportsRepository)
+            repository = uow.get_repository(ISalesSummaryReportQuery)
             return await self.service.get_sales_summary(tenant_id, from_date, to_date, repository)

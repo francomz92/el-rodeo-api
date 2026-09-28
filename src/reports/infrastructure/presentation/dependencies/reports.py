@@ -1,7 +1,7 @@
 """FastAPI dependency injection for the reports module.
 
-Wires up ``IReportsRepository`` and ``ReportsService`` for request-scoped
-DI.  The service also receives ``ICacheService`` for cache-aside caching.
+Wires the cache-backed ``ReportsService`` to report use cases. Each use case
+resolves its owning context's query port through the Unit of Work.
 """
 
 from __future__ import annotations

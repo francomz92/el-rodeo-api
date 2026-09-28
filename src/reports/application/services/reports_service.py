@@ -1,6 +1,6 @@
 """Application service for report generation with cache-aside caching.
 
-Uses ``IReportsRepository`` for data access and ``ICacheService`` for
+Uses report query ports for data access and ``ICacheService`` for
 read-through caching.  No Unit of Work is needed — reports are read-only.
 """
 
@@ -13,7 +13,9 @@ from src.cattle.domain.repositories.inventory_report_query_port import (
     IAnimalInventoryReportQuery,
 )
 from src.common.domain.ports.cache_service import ICacheService
-from src.reports.domain.repositories.reports_repository_port import IReportsRepository
+from src.market.domain.repositories.sales_summary_report_query_port import (
+    ISalesSummaryReportQuery,
+)
 
 
 class ReportsService:
@@ -48,7 +50,7 @@ class ReportsService:
         tenant_id: UUID,
         from_date: date,
         to_date: date,
-        repository: IReportsRepository,
+        repository: ISalesSummaryReportQuery,
     ) -> dict:
         """Return cached or fresh sales summary for a date range."""
         key = self._cache_key(
