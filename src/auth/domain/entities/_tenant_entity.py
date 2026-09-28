@@ -10,6 +10,7 @@ class TenantEntity:
     id: UUID
     name: str
     slug: str
+    plan_id: UUID | None
     created_at: datetime
     updated_at: datetime
     plan: PlanEntity | None = None
