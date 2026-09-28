@@ -11,13 +11,18 @@ from src.auth.infrastructure.persistence.repositories.refresh_token_repository i
 from src.auth.infrastructure.persistence.repositories.tenant_repository import (
     TenantRepository,
 )
+from src.auth.infrastructure.persistence.repositories.user_projection_reader import (
+    UserProjectionReader,
+)
 from src.auth.infrastructure.persistence.repositories.user_repository import (
     UserRepository,
 )
 from src.common.domain.repository import IRepository
+from src.finance.domain.repositories.user_reader_port import IUserNameReader
 
 repositories_list: dict[type[IRepository], type[IRepository]] = {
     IRefreshTokenRepository: RefreshTokenRepository,
     ITenantRepository: TenantRepository,
     IUserRepository: UserRepository,
+    IUserNameReader: UserProjectionReader,
 }

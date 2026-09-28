@@ -1,8 +1,10 @@
+from typing import cast
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
+from src.finance.domain.repositories.user_reader_port import IUserNameReader
 from src.finance.domain.services.purchase_services.get_purchase_service import GetPurchaseService
 
 
@@ -21,7 +23,11 @@ class GetPurchaseCase:
     ) -> PurchaseEntity:
         async with self.uow as uow:
             repository = uow.get_repository(IPurchasesRepository)
-            return await self.service.validate_existence(
+            purchase = await self.service.validate_existence(
                 id=id,
                 repository=repository,
             )
+            user_reader = uow.get_repository(IUserNameReader)
+            user_names = await user_reader.get_names_by_ids({purchase.user_id})
+            purchase.user_name = cast(str, user_names.get(purchase.user_id))
+            return purchase

@@ -1,9 +1,9 @@
 from datetime import date
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
 
-from src.auth.infrastructure.persistence.models import User
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -33,16 +33,14 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         query = self._filter_tenant(
             select(
                 *Purchase.__table__.columns,
-                User.name.label("user_name"),
                 AnimalSupply.name.label("supply_name"),
             )
             .where(Purchase.id == id)
             .outerjoin(AnimalSupply, Purchase.supply_id == AnimalSupply.id)
-            .outerjoin(User, Purchase.user_id == User.id)
         )
         result = await self.db.execute(query)
         purchase_db = result.mappings().one_or_none()
-        return self._build_purchase_with_user_and_supply(purchase_db) if purchase_db else None
+        return self._build_purchase_with_supply(purchase_db) if purchase_db else None
 
     async def list_for_user(
         self,
@@ -65,19 +63,17 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         query = self._filter_tenant(
             select(
                 *Purchase.__table__.columns,
-                User.name.label("user_name"),
                 AnimalSupply.name.label("supply_name"),
             )
             .where(*conditions)
             .limit(limit)
             .offset(offset)
             .order_by(order_by)
-            .outerjoin(User, Purchase.user_id == User.id)
             .outerjoin(AnimalSupply, Purchase.supply_id == AnimalSupply.id)
         )
         result = await self.db.execute(query)
         purchases_list = result.mappings().all()
-        return [self._build_purchase_with_user_and_supply(purchase_data) for purchase_data in purchases_list]
+        return [self._build_purchase_with_supply(purchase_data) for purchase_data in purchases_list]
 
     async def create(
         self,
@@ -143,7 +139,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         await self.db.execute(query)
         self._audit_delete("purchase", id, old_values)
 
-    def _build_purchase_with_user_and_supply(self, purchase_data: RowMapping) -> PurchaseEntity:
+    def _build_purchase_with_supply(self, purchase_data: RowMapping) -> PurchaseEntity:
         return PurchaseEntity(
             id=purchase_data["id"],
             tenant_id=purchase_data["tenant_id"],
@@ -153,7 +149,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
             unit_price=purchase_data["unit_price"],
             unit_of_measurement=purchase_data["unit_of_measurement"],
             user_id=purchase_data["user_id"],
-            user_name=purchase_data["user_name"],
+            user_name=cast(str, None),
             supply_id=purchase_data["supply_id"],
             supply_name=purchase_data["supply_name"],
         )
