@@ -14,6 +14,80 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = ROOT / "src"
 
+# Exact, reviewed composition and presentation seams. Keep both the source path
+# and target module explicit; this is not a context-wide exception mechanism.
+ALLOWED_CROSS_CONTEXT_SEAMS: dict[str, frozenset[str]] = {
+    "src/common/infrastructure/persistence/repositories/_registry.py": frozenset(
+        {
+            "src.auth.infrastructure.persistence.repositories._registry",
+            "src.billing.infrastructure.persistence.repositories._registry",
+            "src.calendar.infrastructure.persistence.repositories._registry",
+            "src.cattle.infrastructure.persistence.repositories._registry",
+            "src.finance.infrastructure.persistence.repositories._registry",
+            "src.market.infrastructure.persistence.repositories._registry",
+            "src.reports.infrastructure.persistence.repositories._registry",
+        }
+    ),
+    "src/common/infrastructure/presentation/routers/__init__.py": frozenset(
+        {
+            "src.auth.infrastructure.presentation.routers",
+            "src.billing.infrastructure.presentation.routers",
+            "src.calendar.infrastructure.presentation.routers",
+            "src.cattle.infrastructure.presentation.routers",
+            "src.finance.infrastructure.presentation.routers",
+            "src.market.infrastructure.presentation.routers",
+            "src.reports.infrastructure.presentation.routers.reports",
+        }
+    ),
+    "src/common/infrastructure/workers/cron_tasks_register.py": frozenset(
+        {
+            "src.billing.infrastructure.workers._expire_trials_task",
+            "src.billing.infrastructure.workers._monthly_billing_task",
+            "src.calendar.infrastructure.workers.upcoming_events_tasks",
+        }
+    ),
+    "src/auth/infrastructure/composition.py": frozenset({"src.billing.infrastructure.adapters.trial_provisioner"}),
+    "src/billing/infrastructure/presentation/routers/_payment_router.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/billing/infrastructure/presentation/routers/_subscription_router.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/calendar/infrastructure/presentation/routers/_calendar_events.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/cattle/infrastructure/presentation/routers/_animal_protocols.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/cattle/infrastructure/presentation/routers/_animal_types.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/cattle/infrastructure/presentation/routers/_animals.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/common/infrastructure/presentation/routers/webhook_subscriptions.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/finance/infrastructure/presentation/routers/_animal_supplies.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/finance/infrastructure/presentation/routers/_animal_supply_types.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/finance/infrastructure/presentation/routers/_purchases.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/market/infrastructure/presentation/routers/_buyers.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/market/infrastructure/presentation/routers/_sales.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+    "src/reports/infrastructure/presentation/routers/reports.py": frozenset(
+        {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
+    ),
+}
+
 
 @dataclass(frozen=True, order=True)
 class Finding:
@@ -79,8 +153,9 @@ def _findings_for_import(
     source_context: str,
     source_layer: str,
     contexts: set[str],
-) -> set[Finding]:
+) -> tuple[set[Finding], set[Finding]]:
     findings: set[Finding] = set()
+    allowed_seams: set[Finding] = set()
     relative_path = path.relative_to(ROOT).as_posix()
 
     for candidate in _import_candidates(node, path):
@@ -89,6 +164,7 @@ def _findings_for_import(
             continue
         target_context, target_parts = target
         target_text = ".".join(candidate)
+        canonical_target = "src." + ".".join((target_context, *target_parts))
         imports_infrastructure = "infrastructure" in target_parts
         imports_persistence = "persistence" in target_parts
         rules: set[str] = set()
@@ -98,19 +174,24 @@ def _findings_for_import(
         if source_layer == "application" and imports_infrastructure:
             rules.add("application-imports-infrastructure")
         if source_context != target_context and target_context != "common" and (imports_infrastructure or imports_persistence):
-            rules.add("cross-context-infrastructure-import")
+            seam_targets = ALLOWED_CROSS_CONTEXT_SEAMS.get(relative_path, frozenset())
+            if canonical_target in seam_targets:
+                allowed_seams.add(Finding(relative_path, node.lineno, "allowed-cross-context-seam", target_text))
+            else:
+                rules.add("cross-context-infrastructure-import")
 
         findings.update(Finding(relative_path, node.lineno, rule, target_text) for rule in rules)
-    return findings
+    return findings, allowed_seams
 
 
-def scan() -> tuple[list[Finding], list[Finding]]:
-    """Return architecture findings and parser/read diagnostics, both sorted."""
+def scan() -> tuple[list[Finding], list[Finding], list[Finding]]:
+    """Return sorted violations, allowed seams, and parser/read diagnostics."""
     if not SRC_ROOT.is_dir():
-        return [], [Finding("src", 1, "scan-error", "src/ directory not found")]
+        return [], [], [Finding("src", 1, "scan-error", "src/ directory not found")]
 
     contexts = _context_names()
     architecture_findings: set[Finding] = set()
+    allowed_seams: set[Finding] = set()
     diagnostics: set[Finding] = set()
 
     for path in sorted(SRC_ROOT.rglob("*.py"), key=lambda item: item.as_posix()):
@@ -135,17 +216,17 @@ def scan() -> tuple[list[Finding], list[Finding]]:
 
         for node in ast.walk(tree):
             if isinstance(node, (ast.Import, ast.ImportFrom)):
-                architecture_findings.update(
-                    _findings_for_import(
-                        node,
-                        path,
-                        source_context,
-                        source_layer,
-                        contexts,
-                    )
+                findings, seams = _findings_for_import(
+                    node,
+                    path,
+                    source_context,
+                    source_layer,
+                    contexts,
                 )
+                architecture_findings.update(findings)
+                allowed_seams.update(seams)
 
-    return sorted(architecture_findings), sorted(diagnostics)
+    return sorted(architecture_findings), sorted(allowed_seams), sorted(diagnostics)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -157,13 +238,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    violations, diagnostics = scan()
-    if not violations and not diagnostics:
-        print("Architecture check: no violations found.")
-    else:
-        print(f"Architecture check: {len(violations)} violation(s), {len(diagnostics)} diagnostic(s).")
-        for finding in sorted(violations + diagnostics):
-            print(f"{finding.path}:{finding.line}: {finding.rule}: {finding.target}")
+    violations, allowed_seams, diagnostics = scan()
+    print(f"Architecture check: {len(violations)} violation(s), {len(allowed_seams)} allowed seam(s), {len(diagnostics)} diagnostic(s).")
+    for finding in sorted(violations + diagnostics):
+        print(f"{finding.path}:{finding.line}: {finding.rule}: {finding.target}")
 
     if args.strict and (violations or diagnostics):
         return 1
