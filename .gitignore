@@ -26,5 +26,7 @@ errors.json
 logs/*
 openspec
 sdd
+odd
+fronend_doc
 .codegraph
 celerybeat-schedule
