@@ -1,4 +1,3 @@
-from typing import cast
 from uuid import UUID
 
 from src.common.application.ports.uow import IUoW
@@ -27,7 +26,10 @@ class GetPurchaseCase:
                 id=id,
                 repository=repository,
             )
-            user_reader = uow.get_repository(IUserNameReader)
-            user_names = await user_reader.get_names_by_ids({purchase.user_id})
-            purchase.user_name = cast(str, user_names.get(purchase.user_id))
+            if purchase.user_id is None:
+                purchase.user_name = None
+            else:
+                user_reader = uow.get_repository(IUserNameReader)
+                user_names = await user_reader.get_names_by_ids({purchase.user_id})
+                purchase.user_name = user_names.get(purchase.user_id)
             return purchase

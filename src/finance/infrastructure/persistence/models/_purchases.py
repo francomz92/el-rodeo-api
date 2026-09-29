@@ -18,7 +18,7 @@ class Purchase(Model):
     __tablename__ = "purchases"
 
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
     supply_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supplies.id", ondelete="RESTRICT"), index=True)
     amount: Mapped[float] = mapped_column(Float)
     price: Mapped[float] = mapped_column(Float)
@@ -26,5 +26,5 @@ class Purchase(Model):
     unit_price: Mapped[float] = mapped_column(Float)
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
 
-    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     supply: Mapped["AnimalSupply"] = relationship()  # type: ignore  # noqa: F821

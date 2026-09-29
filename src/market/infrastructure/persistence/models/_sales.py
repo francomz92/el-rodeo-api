@@ -11,7 +11,7 @@ class Sale(Model):
     __tablename__ = "sales"
 
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
     buyer_id: Mapped[UUID] = mapped_column(ForeignKey("buyers.id", ondelete="SET NULL"), index=True)
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"), index=True)
     sale_date: Mapped[date] = mapped_column(Date)
@@ -23,6 +23,6 @@ class Sale(Model):
     weight: Mapped[float] = mapped_column(Float)
     description: Mapped[str] = mapped_column(String(500), default=str)
 
-    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     buyer: Mapped["Buyer"] = relationship()  # type: ignore  # noqa: F821
     animal: Mapped["Animal"] = relationship()  # type: ignore # noqa: F821

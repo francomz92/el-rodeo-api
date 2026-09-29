@@ -28,7 +28,7 @@ class Animal(Model):
     __tablename__ = "animals"
 
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_types.id", ondelete="SET NULL"), nullable=True)
     caravana: Mapped[str] = mapped_column(String(50), unique=True)
     tag: Mapped[str] = mapped_column(String(50), default="")
@@ -39,7 +39,7 @@ class Animal(Model):
     breed: Mapped[str] = mapped_column(String(50))
     status: Mapped[AnimalStatus] = mapped_column(SQLEnum(AnimalStatus), index=True)
 
-    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     type: Mapped["AnimalType"] = relationship(back_populates="animals")
 
 
@@ -47,7 +47,7 @@ class AnimalProtocols(Model):
     __tablename__ = "animal_protocols"
 
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"))
     vaccinated: Mapped[bool] = mapped_column(Boolean, default=False)
     vaccinated_date: Mapped[date] = mapped_column(Date, nullable=True)

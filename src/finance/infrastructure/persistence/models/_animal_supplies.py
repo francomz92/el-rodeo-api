@@ -23,7 +23,7 @@ class AnimalSupply(Model):
     __tablename__ = "animal_supplies"
 
     tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
     type_id: Mapped[UUID] = mapped_column(ForeignKey("animal_supply_types.id", ondelete="RESTRICT"))
     name: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), default=str)
@@ -31,5 +31,5 @@ class AnimalSupply(Model):
     critical_amount: Mapped[float] = mapped_column(Float)
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
 
-    user: Mapped["User"] = relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     type: Mapped["AnimalSupplyType"] = relationship()

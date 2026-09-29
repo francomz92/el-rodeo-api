@@ -15,7 +15,7 @@ class CalendarEventParticipantEntity:
 class CalendarEventEntity:
     id: UUID
     tenant_id: UUID
-    user_id: UUID
+    user_id: UUID | None
     created_at: datetime
     title: str
     description: str

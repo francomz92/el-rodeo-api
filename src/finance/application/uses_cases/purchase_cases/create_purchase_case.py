@@ -1,5 +1,3 @@
-from typing import cast
-
 from src.common.application.ports.uow import IUoW
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
@@ -34,7 +32,7 @@ class CreatePurchaseCase:
                 amount_to_increase=data.amount,
             )
             user_reader = uow.get_repository(IUserNameReader)
-            user_names = await user_reader.get_names_by_ids({purchase.user_id})
-            purchase.user_name = cast(str, user_names.get(purchase.user_id))
+            user_names = await user_reader.get_names_by_ids({data.user_id})
+            purchase.user_name = user_names.get(data.user_id)
             await uow.commit()
             return purchase

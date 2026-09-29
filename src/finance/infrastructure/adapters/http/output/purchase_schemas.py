@@ -13,8 +13,8 @@ class PurchaseSchema(BaseModel):
     purchase_date: date
     unit_price: float
     unit_of_measurement: UnitOfMeasurement
-    user_id: UUID
-    user_name: str
+    user_id: UUID | None
+    user_name: str | None
     supply_id: UUID
     supply_name: str
     created_at: datetime | None = None

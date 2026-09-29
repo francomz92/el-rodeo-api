@@ -49,7 +49,7 @@ class CalendarEvent(Model):
         nullable=False,
         index=True,
     )
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     title: Mapped[str] = mapped_column(String(50), index=True)
     description: Mapped[str] = mapped_column(String(255))
     start: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -64,7 +64,7 @@ class CalendarEvent(Model):
         back_populates="events",
         viewonly=True,
     )
-    user: Mapped["User"] = relationship()  # type: ignore   # noqa: F821
+    user: Mapped["User | None"] = relationship()  # type: ignore   # noqa: F821
 
     participant_links: Mapped[list["CalendarEventParticipant"]] = relationship(
         back_populates="event",
