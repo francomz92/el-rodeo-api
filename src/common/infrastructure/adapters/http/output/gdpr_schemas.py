@@ -31,10 +31,3 @@ class GDPRExportResponse(BaseModel):
     audit_log: list[dict] = []
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class GDPRDeleteResponse(BaseModel):
-    """Response for GDPR data deletion request."""
-
-    message: str = "Your data deletion request has been accepted. Business records have been anonymized and your account has been disabled."
-    status: str = "accepted"

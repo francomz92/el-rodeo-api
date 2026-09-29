@@ -11,16 +11,12 @@ from src.cattle.infrastructure.persistence.repositories._registry import (
     repositories_list as cattle_repos,
 )
 from src.common.application.ports.audit_log_query_port import IAuditLogQueryRepository
-from src.common.application.ports.gdpr_delete_port import IGDPRDeleteRepository
 from src.common.domain.repositories.webhook_subscription_repository_port import (
     IWebhookSubscriptionRepository,
 )
 from src.common.domain.repository import IRepository
 from src.common.infrastructure.persistence.repositories.audit_log_query_repository import (
     AuditLogQueryRepository,
-)
-from src.common.infrastructure.persistence.repositories.gdpr_delete_repository import (
-    GDPRDeleteRepository,
 )
 from src.common.infrastructure.persistence.repositories.webhook_subscription_repository import (
     WebhookSubscriptionRepository,
@@ -48,7 +44,6 @@ def _merge_registries(
 
 repositories_list: dict[type[IRepository], type[IRepository]] = {
     IAuditLogQueryRepository: AuditLogQueryRepository,
-    IGDPRDeleteRepository: GDPRDeleteRepository,
     IWebhookSubscriptionRepository: WebhookSubscriptionRepository,
 }
 repositories_list.update(

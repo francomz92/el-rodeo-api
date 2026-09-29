@@ -21,3 +21,4 @@ class UserUpdateValueObject:
     password: str | type[Sentinel] = Sentinel
     role: UserRole | type[Sentinel] = Sentinel
     is_active: bool | type[Sentinel] = Sentinel
+    tenant_id: UUID | None | type[Sentinel] = Sentinel
