@@ -1,3 +1,6 @@
+from src.cattle.domain.repositories.gdpr_data_repository_port import (
+    ICattleGDPRDataRepository,
+)
 from src.cattle.domain.repositories.inventory_report_query_port import (
     IAnimalInventoryReportQuery,
 )
@@ -13,6 +16,9 @@ from src.cattle.infrastructure.persistence.repositories.animal_type_repository i
     AnimalTypeRepository,
     IAnimalTypesRepository,
 )
+from src.cattle.infrastructure.persistence.repositories.gdpr_data_repository import (
+    CattleGDPRDataRepository,
+)
 from src.cattle.infrastructure.persistence.repositories.inventory_report_query_repository import (
     AnimalInventoryReportQueryRepository,
 )
@@ -23,4 +29,5 @@ repositories_list: dict[type[IRepository], type[IRepository]] = {
     IAnimalTypesRepository: AnimalTypeRepository,
     IAnimalProtocolsRepository: AnimalProtocolsRepository,
     IAnimalInventoryReportQuery: AnimalInventoryReportQueryRepository,
+    ICattleGDPRDataRepository: CattleGDPRDataRepository,
 }
