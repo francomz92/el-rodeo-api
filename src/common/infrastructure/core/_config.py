@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import PositiveInt, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.common.domain.types import EnvironmentType
@@ -34,21 +34,20 @@ class Settings(BaseSettings):
     SECRET: str
     JWT_ALGORITHM: str
     SMTP_SERVER: str
-    SMTP_PORT: int
+    SMTP_PORT: PositiveInt
     SMTP_USER: str
     SMTP_PASSWORD: str
     DOMAIN: str
     BROKER_URL: str
     RESULT_BACKEND_URL: str
     REDIS_URL: str
+    WORKERS: PositiveInt = 1
 
     # ── Database Connection Pool ──────────────────────────────────────────────
-    DB_POOL_SIZE: int = 10
-    DB_POOL_OVERFLOW: int = 20
-    DB_POOL_RECYCLE: int = 3600  # seconds
+    DB_POOL_RECYCLE: PositiveInt
 
     # ── Security / Rate Limiting ──────────────────────────────────────────────
-    COOKIE_DOMAIN: str = ""
+    COOKIE_DOMAIN: str
     COOKIE_SECURE: bool = True
     RATE_LIMIT_DEFAULT: str = "100/minute"
     RATE_LIMIT_LOGIN: str = "5/minute"
@@ -56,7 +55,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PASSWORD_CHANGE: str = "3/minute"
     RATE_LIMIT_REFRESH: str = "10/minute"
     ENABLE_RATE_LIMIT: bool = True
-    MAX_REQUEST_BODY_SIZE: int = 10_485_760  # 10MB
+    MAX_REQUEST_BODY_SIZE: PositiveInt = 10_485_760  # 10MB
     CSP_DIRECTIVES_ENABLED: bool = True
     CSP_DEFAULT_SRC: str = "'self'"
     CSP_DIRECTIVES: dict[str, str] = {
@@ -68,16 +67,16 @@ class Settings(BaseSettings):
         "base-uri": "'self'",
         "form-action": "'self'",
     }
-    HSTS_MAX_AGE: int = 31536000
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    WS_TOKEN_EXPIRE_MINUTES: int = 5
+    HSTS_MAX_AGE: PositiveInt = 31536000
+    ACCESS_TOKEN_EXPIRE_MINUTES: PositiveInt = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: PositiveInt = 7
+    WS_TOKEN_EXPIRE_MINUTES: PositiveInt = 5
 
     # ── Audit / Data Retention ─────────────────────────────────────────────────
-    AUDIT_RETENTION_DAYS: int = 180
+    AUDIT_RETENTION_DAYS: PositiveInt = 180
 
     # ── Billing / Subscription ────────────────────────────────────────────────
-    TRIAL_DAYS: int = 14
+    TRIAL_DAYS: PositiveInt = 14
     MP_ACCESS_TOKEN: str = ""
     MP_WEBHOOK_SECRET: str = ""
     MP_WEBHOOK_URL: str = ""
