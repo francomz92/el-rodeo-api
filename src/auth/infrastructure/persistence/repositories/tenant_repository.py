@@ -21,7 +21,9 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
 
 
 class TenantRepository(ITenantRepository, TenantAwareRepository, AuditableRepositoryMixin):
-    # Required by TenantAwareRepository ABC; filtering is a no-op at tenant_id=None.
+    # Required by TenantAwareRepository ABC. This repository never calls _filter_tenant:
+    # the identity layer is deliberately not tenant-scoped (login/register search users
+    # across tenants before any tenant context exists)..
     @property
     def _model(self) -> type:
         return Tenant

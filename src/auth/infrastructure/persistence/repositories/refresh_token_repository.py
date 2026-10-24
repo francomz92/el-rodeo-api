@@ -17,7 +17,9 @@ from src.common.utils.date_utils import get_current_datetime
 
 
 class RefreshTokenRepository(IRefreshTokenRepository, TenantAwareRepository, AuditableRepositoryMixin):
-    # Required by TenantAwareRepository ABC; filtering is a no-op at tenant_id=None.
+    # Required by TenantAwareRepository ABC. This repository never calls _filter_tenant:
+    # the identity layer is deliberately not tenant-scoped (login/register search users
+    # across tenants before any tenant context exists)..
     @property
     def _model(self) -> type:
         return RefreshToken
