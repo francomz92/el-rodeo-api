@@ -24,7 +24,8 @@ class AnimalCreationSchema(BaseModel):
 
 
 class AnimalUpdateSchema(BaseModel):
-    type_id: UUID | None = None
+    # The use-case VO requires type_id: keep it mandatory so partial bodies reach a 422, not a 500.
+    type_id: UUID
     caravana: str | None = None
     date_of_birth: date | None = None
     initial_weight: float | None = Field(None, gt=0)
