@@ -26,6 +26,7 @@ dependencies = [
     "sqlalchemy>=2.0.48",
     "cryptography>=49.0.0",
     "reportlab>=4.3.0",
+    "xlsxwriter>=3.2.0",
     "granian>=2.8.4",
     "uvloop>=0.23.0",
 ]

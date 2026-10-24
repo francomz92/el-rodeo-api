@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-from datetime import date
-from typing import Protocol
+from typing import ClassVar, Protocol
+
+from src.reports.application.dto.report_spec import ReportSpec
 
 
 class IReportExporter(Protocol):
-    def export_sales_summary(
-        self,
-        *,
-        tenant_name: str,
-        from_date: date,
-        to_date: date,
-        data: dict,
-    ) -> bytes:
-        """Render a sales summary report as PDF bytes."""
+    """Exports a declarative report spec into a downloadable byte format.
+
+    Implementations carry their transport metadata (``media_type`` and
+    ``file_extension``) as class attributes so routers can build responses
+    without knowing concrete formats.
+    """
+
+    media_type: ClassVar[str]
+    file_extension: ClassVar[str]
+
+    def export(self, spec: ReportSpec) -> bytes:
+        """Render a declarative report specification as document bytes."""
         ...

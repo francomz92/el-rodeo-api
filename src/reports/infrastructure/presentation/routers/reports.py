@@ -4,7 +4,8 @@ Three read-only endpoints under ``/reports`` — all require ``ADMIN`` role:
 
 * ``GET /reports/inventory-summary`` — animals grouped by status and type
 * ``GET /reports/sales-summary`` — revenue aggregated by week/month
-* ``GET /reports/export/sales-summary`` — same data as downloadable PDF
+* ``GET /reports/export/sales-summary`` — same data as a downloadable
+  report (PDF by default, XLSX with ``format=xlsx``)
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ from src.reports.infrastructure.presentation.dependencies.reports import (
     GetExportSalesSummaryCase,
     GetObtainInventorySummaryCase,
     GetObtainSalesSumaryCase,
+    GetReportExporter,
 )
 
 CACHE_TTL = 300
@@ -93,16 +95,17 @@ async def sales_summary(
 
 @router.get("/export/sales-summary")
 async def export_sales_summary(
-    query: SalesSummaryQuery,
+    query: Annotated[SalesSummaryQuery, Query()],
     current_user: GetCurrentUser,
     use_case: GetExportSalesSummaryCase,
+    exporter: GetReportExporter,
 ) -> StreamingResponse:
-    """Return sales summary as a downloadable PDF."""
-    pdf_bytes = await use_case.execute(current_user.tenant_id, query.from_date, query.to_date)
-    filename = f"sales-report-{query.from_date.isoformat()}-{query.to_date.isoformat()}.pdf"
+    """Download the sales summary report (PDF by default, XLSX with format=xlsx)."""
+    report_bytes = await use_case.execute(current_user.tenant_id, query.from_date, query.to_date)
+    filename = f"sales-report-{query.from_date.isoformat()}-{query.to_date.isoformat()}.{exporter.file_extension}"
     return StreamingResponse(
-        iter([pdf_bytes]),
-        media_type="application/pdf",
+        iter([report_bytes]),
+        media_type=exporter.media_type,
         headers={
             "Content-Disposition": f'attachment; filename="{filename}"',
         },

@@ -1,8 +1,16 @@
 """Pydantic schemas for report query parameters."""
 
 from datetime import date, timedelta
+from enum import Enum
 
 from pydantic import BaseModel, field_validator, model_validator
+
+
+class ReportExportFormat(str, Enum):
+    """Download formats for report export endpoints."""
+
+    PDF = "pdf"
+    XLSX = "xlsx"
 
 
 class SalesSummaryQuery(BaseModel):

@@ -6,6 +6,7 @@ from src.common.domain.exceptions import NotFoundError
 from src.market.domain.repositories.sales_summary_report_query_port import (
     ISalesSummaryReportQuery,
 )
+from src.reports.application.mappers.sales_summary import build_sales_summary_spec
 from src.reports.application.ports.report_exporter import IReportExporter
 from src.reports.application.services.reports_service import ReportsService
 
@@ -29,9 +30,10 @@ class ExportSalesSummaryUseCase:
                 repository,
             )
 
-            return self.exporter.export_sales_summary(
+            spec = build_sales_summary_spec(
                 tenant_name=tenant_id.hex[:8],
                 from_date=from_date,
                 to_date=to_date,
                 data=data,
             )
+            return self.exporter.export(spec)
