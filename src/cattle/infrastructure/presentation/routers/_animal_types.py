@@ -67,9 +67,8 @@ async def update_animal_type(
 @animal_type_router.get(
     path="",
     status_code=status.HTTP_200_OK,
-    summary="List animal types in the database",
+    summary="List animal types from the database",
     response_model=list[AnimalTypeSchema],
-    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def list_animal_types(
     params: Annotated[AnimalTypeListQueryParamsSchema, Query()],

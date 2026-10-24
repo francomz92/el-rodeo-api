@@ -83,7 +83,6 @@ async def delete_supply_type(
     status_code=status.HTTP_200_OK,
     summary="List supply types from the database",
     response_model=list[SupplyTypeSchema],
-    dependencies=[require_role(UserRole.ADMIN)],
 )
 async def get_supply_types(
     query_params: Annotated[AnimalSupplyTypeListQueryParamsSchema, Query()],
