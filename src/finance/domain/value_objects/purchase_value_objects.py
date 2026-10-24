@@ -4,6 +4,7 @@ from uuid import UUID
 
 from src.common.domain.types import Sentinel
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 
 
 @dataclass
@@ -12,6 +13,7 @@ class PurchaseListQueryParamValueObject:
     supply_id: UUID | Sentinel = Sentinel.UNSET
     purchase_date: date | Sentinel = Sentinel.UNSET
     unit_of_measurement: UnitOfMeasurement | Sentinel = Sentinel.UNSET
+    status: PurchaseStatus | Sentinel = Sentinel.UNSET
 
 
 @dataclass
@@ -23,3 +25,4 @@ class PurchaseCreateValueObject:
     purchase_date: date
     unit_price: float
     unit_of_measurement: UnitOfMeasurement
+    status: PurchaseStatus

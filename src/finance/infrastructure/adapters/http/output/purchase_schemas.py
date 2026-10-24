@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 
 
 class PurchaseSchema(BaseModel):
@@ -13,6 +14,9 @@ class PurchaseSchema(BaseModel):
     purchase_date: date
     unit_price: float
     unit_of_measurement: UnitOfMeasurement
+    status: PurchaseStatus
+    confirmed_at: datetime | None = None
+    confirmed_by: UUID | None = None
     user_id: UUID | None
     user_name: str | None
     supply_id: UUID

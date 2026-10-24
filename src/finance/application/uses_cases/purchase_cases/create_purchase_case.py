@@ -15,21 +15,12 @@ class CreatePurchaseCase:
     async def execute(self, data: PurchaseCreateValueObject) -> PurchaseEntity:
         self.service.validate_data(data)
         async with self.uow as uow:
-            supply_repository = uow.get_repository(IAnimalSuppliesRepository)
-            await self.service.validate_supply(
-                supply_id=data.supply_id,
-                supply_repository=supply_repository,
-            )
             repository = uow.get_repository(IPurchasesRepository)
             purchase = await self.service.create_new_purchase(
                 user_id=data.user_id,
                 data=data,
                 repository=repository,
-                supply_repository=supply_repository,
-            )
-            await supply_repository.increase_stock(
-                id=data.supply_id,
-                amount_to_increase=data.amount,
+                supply_repository=uow.get_repository(IAnimalSuppliesRepository),
             )
             user_reader = uow.get_repository(IUserNameReader)
             user_names = await user_reader.get_names_by_ids({data.user_id})

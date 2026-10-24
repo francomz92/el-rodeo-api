@@ -1,8 +1,9 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import (
     Date,
+    DateTime,
     Enum as SQLEnum,
     Float,
     ForeignKey,
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.infrastructure.persistence.models.base import Model
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 
 
 class Purchase(Model):
@@ -25,6 +27,15 @@ class Purchase(Model):
     purchase_date: Mapped[date] = mapped_column(Date)
     unit_price: Mapped[float] = mapped_column(Float)
     unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
+    status: Mapped[PurchaseStatus] = mapped_column(
+        SQLEnum(PurchaseStatus),
+        nullable=False,
+        default=PurchaseStatus.PENDING,
+        # Native PG enums store member names (repo-wide pattern, see unitofmeasurement)
+        server_default=PurchaseStatus.PENDING.name,
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    confirmed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
 
-    user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
-    supply: Mapped["AnimalSupply"] = relationship()  # type: ignore  # noqa: F821
+    user: Mapped["User | None"] = relationship(foreign_keys=[user_id])  # type: ignore  # noqa: F821
+    supply: Mapped["AnimalSupply"] = relationship(foreign_keys=[supply_id])  # type: ignore  # noqa: F821

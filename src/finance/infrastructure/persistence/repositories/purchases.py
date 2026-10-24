@@ -12,6 +12,7 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
     TenantAwareRepository,
 )
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
@@ -58,6 +59,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
                 "supply_id",
                 "purchase_date",
                 "unit_of_measurement",
+                "status",
             ):
                 conditions.append(getattr(Purchase, k) == v)
         query = self._filter_tenant(
@@ -139,6 +141,32 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         await self.db.execute(query)
         self._audit_delete("purchase", id, old_values)
 
+    async def mark_confirmed(self, id: UUID, confirmed_by: UUID) -> bool:
+        """Transition a pending purchase to confirmed.
+
+        Returns False when the purchase is not in ``pending`` status anymore
+        (concurrent confirmation), never mutating stock twice.
+        """
+        old_row = await self.db.execute(self._filter_tenant(select(Purchase.status).where(Purchase.id == id)))
+        old_status = old_row.scalars().first()
+        query = self._filter_tenant(
+            update(Purchase)
+            .where(Purchase.id == id)
+            .where(Purchase.status == PurchaseStatus.PENDING)
+            .values(
+                status=PurchaseStatus.CONFIRMED,
+                confirmed_at=func.now(),
+                confirmed_by=confirmed_by,
+                updated_at=func.now(),
+            )
+            .returning(Purchase.id)
+        )
+        result = await self.db.execute(query)
+        confirmed = result.scalar_one_or_none() is not None
+        if confirmed:
+            self._audit_update("purchase", id, {"status": getattr(old_status, "value", old_status)}, {"status": "CONFIRMED"})
+        return confirmed
+
     def _build_purchase_with_supply(self, purchase_data: RowMapping) -> PurchaseEntity:
         return PurchaseEntity(
             id=purchase_data["id"],
@@ -152,4 +180,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
             user_name=cast(str, None),
             supply_id=purchase_data["supply_id"],
             supply_name=purchase_data["supply_name"],
+            status=purchase_data["status"],
+            confirmed_at=purchase_data["confirmed_at"],
+            confirmed_by=purchase_data["confirmed_by"],
         )

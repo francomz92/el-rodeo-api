@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from src.common.infrastructure.adapters.http.input.query_params import StandardQueryParams
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 
 
 class PurchaseListQueryParamsSchema(StandardQueryParams):
@@ -12,6 +13,7 @@ class PurchaseListQueryParamsSchema(StandardQueryParams):
     purchase_date: date | None = None
     unit_of_measurement: UnitOfMeasurement | None = None
     supply_id: UUID | None = None
+    status: PurchaseStatus | None = None
 
 
 class PurchaseCreateSchema(BaseModel):

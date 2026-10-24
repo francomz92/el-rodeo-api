@@ -50,3 +50,8 @@ class IPurchasesRepository(IRepository):
     @abstractmethod
     async def delete(self, id: UUID) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def mark_confirmed(self, id: UUID, confirmed_by: UUID) -> bool:
+        """Transition a pending purchase to confirmed; False if already confirmed."""
+        raise NotImplementedError

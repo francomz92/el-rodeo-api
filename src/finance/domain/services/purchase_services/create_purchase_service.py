@@ -2,10 +2,29 @@ from uuid import UUID
 
 from src.common.domain.exceptions import BusinessValidationError
 from src.common.utils.date_utils import get_current_datetime
+from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject
+
+
+def assert_purchase_unit_matches(
+    purchase_unit: UnitOfMeasurement,
+    supply: AnimalSupplyEntity,
+) -> None:
+    """Business rule: stock entries must share the supply's unit of measurement."""
+    if purchase_unit != supply.unit_of_measurement:
+        raise BusinessValidationError(
+            message="Hay datos ingresados que no son válidos",
+            details=[
+                {
+                    "field": "unit_of_measurement",
+                    "message": (f"La unidad de medición no coincide con la del insumo ({supply.unit_of_measurement.value})."),
+                },
+            ],
+        )
 
 
 class CreatePurchaseService:
@@ -56,7 +75,7 @@ class CreatePurchaseService:
         self,
         supply_id: UUID,
         supply_repository: IAnimalSuppliesRepository,
-    ) -> None:
+    ) -> AnimalSupplyEntity:
         supply = await supply_repository.get_by_id(id=supply_id)
         if not supply:
             raise BusinessValidationError(
@@ -68,6 +87,7 @@ class CreatePurchaseService:
                     },
                 ],
             )
+        return supply
 
     async def create_new_purchase(
         self,
@@ -77,5 +97,6 @@ class CreatePurchaseService:
         supply_repository: IAnimalSuppliesRepository,
     ) -> PurchaseEntity:
         self.validate_data(data)
-        await self.validate_supply(data.supply_id, supply_repository)
+        supply = await self.validate_supply(data.supply_id, supply_repository)
+        assert_purchase_unit_matches(data.unit_of_measurement, supply)
         return await repository.create(user_id=user_id, data=data)

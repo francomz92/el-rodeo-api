@@ -8,6 +8,7 @@ from src.auth.infrastructure.presentation.dependencies.auth_dependencies import 
     GetCurrentUser,
     require_role,
 )
+from src.finance.domain.constants.purchases import PurchaseStatus
 from src.finance.domain.value_objects.purchase_value_objects import (
     PurchaseCreateValueObject,
     PurchaseListQueryParamValueObject,
@@ -18,6 +19,7 @@ from src.finance.infrastructure.adapters.http.input.purchase_schemas import (
 )
 from src.finance.infrastructure.adapters.http.output.purchase_schemas import PurchaseSchema
 from src.finance.infrastructure.presentation.dependencies.purchase_dependencies import (
+    GetConfirmPurchaseCase,
     GetCreatePurchaseCase,
     GetDeletePurchaseCase,
     GetListPurchaseCase,
@@ -46,22 +48,38 @@ async def create_purchase(
     payload = PurchaseCreateValueObject(
         **data.model_dump(),
         user_id=current_user.id,
+        status=PurchaseStatus.PENDING,
     )
     return await create_purchase_case.execute(payload)
+
+
+@purchase_router.post(
+    path="/{id}/confirm",
+    status_code=status.HTTP_200_OK,
+    summary="Confirm a pending purchase, adding its amount to the supply stock",
+    response_model=PurchaseSchema,
+    dependencies=[require_role(UserRole.EDITOR)],
+)
+async def confirm_purchase(
+    id: UUID,
+    current_user: GetCurrentUser,
+    confirm_purchase_case: GetConfirmPurchaseCase,
+):
+    return await confirm_purchase_case.execute(id=id, user_id=current_user.id)
 
 
 @purchase_router.delete(
     path="/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a user purchase from database",
-    dependencies=[require_role(UserRole.ADMIN)],
+    dependencies=[require_role(UserRole.EDITOR)],
 )
 async def delete_purchase(
     id: UUID,
     current_user: GetCurrentUser,
     delete_purchase_case: GetDeletePurchaseCase,
 ):
-    return await delete_purchase_case.execute(id)
+    return await delete_purchase_case.execute(id=id, user_role_rank=current_user.role.rank)
 
 
 @purchase_router.get(

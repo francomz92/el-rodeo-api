@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
+from src.finance.domain.constants.purchases import PurchaseStatus
 
 
 @dataclass
@@ -18,6 +19,9 @@ class PurchaseEntity:
     user_name: str | None
     supply_id: UUID
     supply_name: str
+    status: PurchaseStatus = PurchaseStatus.PENDING
+    confirmed_at: datetime | None = None
+    confirmed_by: UUID | None = None
 
     def validate_unit_price(self):
         if self.unit_price < 0:
