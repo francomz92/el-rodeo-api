@@ -62,7 +62,7 @@ class WebhookSubscriptionService:
         """
         sub = await self._repo.get_by_id(subscription_id)
         if sub is None or sub.tenant_id != tenant_id:
-            raise NotFoundError(message="Webhook subscription not found")
+            raise NotFoundError(message="No existe la suscripción de webhook")
         return sub
 
     async def get_by_id_for_tenant(self, subscription_id: UUID, tenant_id: UUID) -> WebhookSubscriptionEntity:

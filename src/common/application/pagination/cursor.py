@@ -28,5 +28,5 @@ def decode_cursor(cursor: str) -> dict[str, str]:
         payload = base64.urlsafe_b64decode(cursor.encode()).decode()
         return json.loads(payload)
     except (ValueError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-        msg = f"Invalid cursor token: {exc}"
+        msg = f"Token de cursor no válido: {exc}"
         raise ValueError(msg) from exc

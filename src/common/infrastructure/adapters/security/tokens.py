@@ -38,9 +38,9 @@ class TokenService(ITokenService):
         try:
             return pyjwt.decode(token, self.secret, [self.algorithm])
         except pyjwt.ExpiredSignatureError:
-            raise InvalidCredentialError("Expired token")
+            raise InvalidCredentialError("Token expirado")
         except pyjwt.InvalidTokenError:
-            raise InvalidCredentialError("Invalid token")
+            raise InvalidCredentialError("Token no válido")
 
     # ── Refresh token methods ─────────────────────────────────────────────────
 

@@ -41,7 +41,7 @@ async def create_webhook(
 ) -> WebhookResponse:
     """Register a new webhook subscription for the current tenant."""
     if current_user.tenant_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene tenant")
     sub = await service.create(
         tenant_id=current_user.tenant_id,
         url=str(data.url),
@@ -57,7 +57,7 @@ async def list_webhooks(
 ) -> list[WebhookResponse]:
     """List all webhook subscriptions for the current tenant."""
     if current_user.tenant_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene tenant")
     subs = await service.list_for_tenant(tenant_id=current_user.tenant_id)
     return [WebhookResponse.model_validate(s) for s in subs]
 
@@ -70,7 +70,7 @@ async def get_webhook(
 ) -> WebhookResponse:
     """Get a single webhook subscription by ID (tenant-scoped)."""
     if current_user.tenant_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene tenant")
     sub = await service.get_by_id_for_tenant(
         subscription_id=subscription_id,
         tenant_id=current_user.tenant_id,
@@ -87,7 +87,7 @@ async def update_webhook(
 ) -> WebhookResponse:
     """Update a webhook subscription's URL, events, or active status."""
     if current_user.tenant_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene tenant")
     sub = await service.update(
         subscription_id=subscription_id,
         tenant_id=current_user.tenant_id,
@@ -106,7 +106,7 @@ async def delete_webhook(
 ) -> None:
     """Delete a webhook subscription by ID (tenant-scoped)."""
     if current_user.tenant_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no tenant")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene tenant")
     await service.delete(
         subscription_id=subscription_id,
         tenant_id=current_user.tenant_id,

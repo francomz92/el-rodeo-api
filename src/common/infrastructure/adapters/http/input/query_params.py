@@ -24,7 +24,7 @@ class StandardQueryParams(BaseModel):
     @classmethod
     def _validate_order_by(cls, v: str) -> str:
         if v not in cls.ALLOWED_ORDER_BY:
-            raise ValueError(f"Invalid order_by '{v}'. Allowed: {', '.join(sorted(cls.ALLOWED_ORDER_BY))}")
+            raise ValueError(f"order_by no válido: '{v}'. Permitidos: {', '.join(sorted(cls.ALLOWED_ORDER_BY))}")
         return v
 
     cursor: str | None = Field(

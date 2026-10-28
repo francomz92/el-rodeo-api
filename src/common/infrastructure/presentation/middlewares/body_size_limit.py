@@ -64,7 +64,7 @@ class BodySizeLimitMiddleware:
                     success=False,
                     error=ErrorPayloadSchema(
                         code="bad_request",
-                        message="Invalid Content-Length header",
+                        message="Cabecera Content-Length no válida",
                     ),
                     timestamp=get_current_datetime().isoformat(),
                 )
@@ -87,7 +87,7 @@ class BodySizeLimitMiddleware:
                     success=False,
                     error=ErrorPayloadSchema(
                         code="request_entity_too_large",
-                        message=f"Request body exceeds maximum allowed size of {self.max_size} bytes",
+                        message=f"El cuerpo de la solicitud supera el tamaño máximo permitido de {self.max_size} bytes",
                     ),
                     timestamp=get_current_datetime().isoformat(),
                 )
