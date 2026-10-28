@@ -1,6 +1,6 @@
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
-from src.cattle.domain.services.animal_protocols.list_animal_protocol_service import ListAnimalProtocolService
+from src.cattle.domain.services.animal_protocol_services.list_animal_protocol_service import ListAnimalProtocolService
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolListQueryParamsValueObject
 from src.common.application.ports.uow import IUoW
 

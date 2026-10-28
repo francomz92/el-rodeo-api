@@ -4,7 +4,7 @@ from src.cattle.domain.constants.animal import AnimalStatus
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
-from src.cattle.domain.services.animal_protocols.update_animal_protocol_service import UpdateAnimalProtocolService
+from src.cattle.domain.services.animal_protocol_services.update_animal_protocol_service import UpdateAnimalProtocolService
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolUpdateValueObject
 from src.common.application.ports.uow import IUoW
 

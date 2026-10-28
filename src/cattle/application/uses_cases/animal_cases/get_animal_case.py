@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
-from src.cattle.domain.services.animals.get_animal_service import GetAnimalService
+from src.cattle.domain.services.animal_services.get_animal_service import GetAnimalService
 from src.common.application.ports.uow import IUoW
 
 

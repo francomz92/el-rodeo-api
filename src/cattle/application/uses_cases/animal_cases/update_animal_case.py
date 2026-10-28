@@ -2,7 +2,7 @@ from uuid import UUID
 
 from src.cattle.domain.events.animal_events import AnimalUpdated
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
-from src.cattle.domain.services.animals.update_animal_service import UpdateAnimalService
+from src.cattle.domain.services.animal_services.update_animal_service import UpdateAnimalService
 from src.cattle.domain.value_objects.animal_value_object import AnimalUpdateValueObject
 from src.common.application.ports.uow import IUoW
 from src.common.domain.ports.event_bus import IEventBus

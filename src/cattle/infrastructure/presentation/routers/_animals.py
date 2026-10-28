@@ -21,11 +21,11 @@ from src.cattle.infrastructure.adapters.http.input.animal_schemas import (
 )
 from src.cattle.infrastructure.adapters.http.output.animal_schemas import AnimalSchema
 from src.cattle.infrastructure.presentation.dependencies.animals import (
-    GetAnimalDeleteCase,
-    GetAnimalListCase,
-    GetAnimalRegisterCase,
-    GetAnimalUpdateCase,
+    GetDeleteAnimalCase,
+    GetListAnimalsCase,
     GetObtainAnimalCase,
+    GetRegisterAnimalCase,
+    GetUpdateAnimalCase,
 )
 from src.common.application.pagination.cursor import encode_cursor
 from src.common.infrastructure.adapters.http.output.cursor_page import CursorPage
@@ -47,7 +47,7 @@ animals_router = APIRouter(
 async def register_animal(
     data: AnimalCreationSchema,
     current_user: GetCurrentUser,
-    animal_register_use_case: GetAnimalRegisterCase,
+    animal_register_use_case: GetRegisterAnimalCase,
 ):
     payload = AnimalCreateValueObject(
         **data.model_dump(),
@@ -68,7 +68,7 @@ async def update_animal(
     id: UUID,
     data: AnimalUpdateSchema,
     current_user: GetCurrentUser,
-    animal_update_use_case: GetAnimalUpdateCase,
+    animal_update_use_case: GetUpdateAnimalCase,
 ):
     payload = AnimalUpdateValueObject(
         **data.model_dump(exclude_unset=True),
@@ -90,7 +90,7 @@ async def update_animal(
 async def delete_animal(
     id: UUID,
     current_user: GetCurrentUser,
-    animal_delete_use_case: GetAnimalDeleteCase,
+    animal_delete_use_case: GetDeleteAnimalCase,
 ):
     return await animal_delete_use_case.execute(
         id,
@@ -105,7 +105,7 @@ async def delete_animal(
 )
 async def list_animals_user(
     current_user: GetCurrentUser,
-    animal_list_use_case: GetAnimalListCase,
+    animal_list_use_case: GetListAnimalsCase,
     query_params: Annotated[AnimalsListQueryParamsSchema, Query()],
 ):
     filters = AnimalsListQueryParamsValueObject(

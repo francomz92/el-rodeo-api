@@ -1,6 +1,6 @@
 from src.cattle.application.dto import ListAnimalsResult
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
-from src.cattle.domain.services.animals.list_animal_service import ListAnimalService
+from src.cattle.domain.services.animal_services.list_animal_service import ListAnimalService
 from src.cattle.domain.value_objects.animal_value_object import AnimalsListQueryParamsValueObject
 from src.common.application.ports.uow import IUoW
 

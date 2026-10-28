@@ -4,7 +4,6 @@ from uuid import UUID
 from sqlalchemy import (
     Boolean,
     Date,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     String,
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.cattle.domain.constants.animal import AnimalStatus
 from src.common.infrastructure.persistence.models.base import Model
+from src.common.infrastructure.persistence.models.enum_types import values_enum
 
 
 class AnimalType(Model):
@@ -37,7 +37,7 @@ class Animal(Model):
     initial_weight_date: Mapped[date] = mapped_column(Date)
     last_weight: Mapped[float] = mapped_column(Float)
     breed: Mapped[str] = mapped_column(String(50))
-    status: Mapped[AnimalStatus] = mapped_column(SQLEnum(AnimalStatus), index=True)
+    status: Mapped[AnimalStatus] = mapped_column(values_enum(AnimalStatus), index=True)
 
     user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     type: Mapped["AnimalType"] = relationship(back_populates="animals")

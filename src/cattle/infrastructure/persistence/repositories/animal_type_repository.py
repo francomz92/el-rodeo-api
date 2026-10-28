@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, exists, func, insert, select, update
+from sqlalchemy import exists, func, insert, select, update
 
 from src.cattle.domain.entities.animal_entity import AnimalTypeEntity
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
@@ -17,6 +17,8 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
+
+from .mappers import build_animal_type
 
 
 class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -36,7 +38,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, Audita
         ).where(AnimalType.id == id)
         result = await self.db.execute(query)
         animal_type_db = result.mappings().one_or_none()
-        return self._build_animal_type(animal_type_db) if animal_type_db else None
+        return build_animal_type(animal_type_db) if animal_type_db else None
 
     async def list(
         self,
@@ -67,7 +69,7 @@ class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, Audita
         )
         result = await self.db.execute(query)
         animal_types_list = result.mappings().all()
-        return [self._build_animal_type(type_data) for type_data in animal_types_list]
+        return [build_animal_type(type_data) for type_data in animal_types_list]
 
     async def create(
         self,
@@ -103,9 +105,3 @@ class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, Audita
         entity = await self.get_by_id(animal_type_id)  # type: ignore
         self._audit_update("animal_type", id, old_values, kws)
         return entity  # type: ignore
-
-    def _build_animal_type(self, type_data: RowMapping) -> AnimalTypeEntity:
-        return AnimalTypeEntity(
-            id=type_data["id"],
-            name=type_data["name"],
-        )

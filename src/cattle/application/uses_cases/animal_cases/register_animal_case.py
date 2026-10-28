@@ -4,8 +4,8 @@ from src.cattle.domain.events.animal_events import AnimalCreated
 from src.cattle.domain.repositories.animal_type_repository_port import IAnimalTypesRepository
 from src.cattle.domain.repositories.animals_repository_port import IAnimalsRepository
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
-from src.cattle.domain.services.animal_protocols.create_animal_protocol_service import CreateAnimalProtocolService
-from src.cattle.domain.services.animals.register_animal_service import RegisterAnimalService
+from src.cattle.domain.services.animal_protocol_services.create_animal_protocol_service import CreateAnimalProtocolService
+from src.cattle.domain.services.animal_services.register_animal_service import RegisterAnimalService
 from src.cattle.domain.value_objects.animal_protocol_value_object import AnimalProtocolCreateValueObject
 from src.cattle.domain.value_objects.animal_value_object import AnimalCreateValueObject
 from src.common.application.ports.uow import IUoW

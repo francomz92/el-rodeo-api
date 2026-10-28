@@ -1,8 +1,7 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
+from sqlalchemy import delete, exists, func, insert, select, update
 
-from src.cattle.domain.entities.animal_entity import AnimalEntity, AnimalTypeEntity
 from src.cattle.domain.entities.animal_protocol_entity import AnimalProtocolEntity
 from src.cattle.domain.repositories.protocol_animals_repository_port import IAnimalProtocolsRepository
 from src.cattle.domain.value_objects.animal_protocol_value_object import (
@@ -18,6 +17,8 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
+
+from .mappers import build_animal_protocol
 
 
 class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -53,7 +54,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
         )
         result = await self.db.execute(query)
         protocol = result.mappings().one_or_none()
-        return self._build_animal_protocol_entity(protocol) if protocol else None
+        return build_animal_protocol(protocol) if protocol else None
 
     async def get_by_animal_id(self, animal_id: UUID) -> AnimalProtocolEntity | None:
         query = self._filter_tenant(
@@ -77,7 +78,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
         )
         result = await self.db.execute(query)
         protocol = result.mappings().one_or_none()
-        return self._build_animal_protocol_entity(protocol) if protocol else None
+        return build_animal_protocol(protocol) if protocol else None
 
     async def list_for_user(
         self,
@@ -115,7 +116,7 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
         )
         result = await self.db.execute(query)
         protocols = result.mappings().all()
-        return [self._build_animal_protocol_entity(protocol) for protocol in protocols]
+        return [build_animal_protocol(protocol) for protocol in protocols]
 
     async def create(
         self,
@@ -164,34 +165,3 @@ class AnimalProtocolsRepository(IAnimalProtocolsRepository, TenantAwareRepositor
         query = self._filter_tenant(delete(AnimalProtocols).where(AnimalProtocols.id == id))
         await self.db.execute(query)
         self._audit_delete("animal_protocol", id, old_values)
-
-    def _build_animal_protocol_entity(self, protocol: RowMapping) -> AnimalProtocolEntity:
-        animal_type = (
-            AnimalTypeEntity(
-                id=protocol["animal_type_id"],
-                name=protocol["animal_type_name"],
-            )
-            if protocol["animal_type_id"]
-            else None
-        )
-        return AnimalProtocolEntity(
-            id=protocol["id"],
-            tenant_id=protocol["tenant_id"],
-            animal=AnimalEntity(
-                id=protocol["animal_id"],
-                tenant_id=protocol["tenant_id"],
-                date_of_birth=protocol["animal_date_of_birth"],
-                initial_weight=protocol["animal_initial_weight"],
-                type=animal_type,
-                status=protocol["animal_status"],
-                breed=protocol["animal_breed"],
-                caravana=protocol["animal_caravana"],
-                initial_weight_date=protocol["animal_initial_weight_date"],
-                last_weight=protocol["animal_last_weight"],
-                tag=protocol["animal_tag"],
-            ),
-            vaccinated=protocol["vaccinated"],
-            vaccinated_date=protocol["vaccinated_date"],
-            sale_permission=protocol["sale_permission"],
-            sale_permission_date=protocol["sale_permission_date"],
-        )

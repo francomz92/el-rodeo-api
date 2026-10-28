@@ -20,7 +20,7 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
     TenantAwareRepository,
 )
 
-from ._mappers import build_animal_with_type
+from .mappers import build_animal_with_type
 
 
 class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepositoryMixin):

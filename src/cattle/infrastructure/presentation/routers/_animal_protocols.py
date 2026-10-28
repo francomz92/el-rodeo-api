@@ -15,9 +15,9 @@ from src.cattle.infrastructure.adapters.http.input.animal_protocols_schemas impo
 )
 from src.cattle.infrastructure.adapters.http.output.animal_protocols_schemas import AnimalProtocolSchema
 from src.cattle.infrastructure.presentation.dependencies.animal_protocols import (
+    GetAnimalProtocolCaseDep,
     GetDeleteAnimalProtocolCase,
-    GetObtainAnimalProtocolCase,
-    GetUpdateAnimalProtocolsCase,
+    GetUpdateAnimalProtocolCase,
 )
 
 protocols_router = APIRouter(
@@ -38,7 +38,7 @@ async def update_animal_protocol(
     animal_id: UUID,
     id: UUID,
     current_user: GetCurrentUser,
-    update_protocol_case: GetUpdateAnimalProtocolsCase,
+    update_protocol_case: GetUpdateAnimalProtocolCase,
     data: AnimalProtocolsUpdateSchema,
 ):
     payload = AnimalProtocolUpdateValueObject(
@@ -57,7 +57,7 @@ async def update_animal_protocol(
 async def get_animal_protocol(
     animal_id: UUID,
     current_user: GetCurrentUser,
-    get_protocol_case: GetObtainAnimalProtocolCase,
+    get_protocol_case: GetAnimalProtocolCaseDep,
 ):
     return await get_protocol_case.execute(animal_id)
 

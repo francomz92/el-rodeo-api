@@ -2,14 +2,14 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.cattle.application.uses_cases.animal_protocols_cases.delete_animal_protocol_case import DeleteAnimalProtocolCase
-from src.cattle.application.uses_cases.animal_protocols_cases.get_animal_protocol_case import GetAnimalProtocolCase
-from src.cattle.application.uses_cases.animal_protocols_cases.list_animal_protocol_case import ListAnimalProtocolCase
-from src.cattle.application.uses_cases.animal_protocols_cases.update_animal_protocol_case import UpdateAnimalProtocolCase
-from src.cattle.domain.services.animal_protocols.delete_animal_protocol_service import DeleteAnimalProtocolService
-from src.cattle.domain.services.animal_protocols.get_animal_protocol_service import GetAnimalProtocolService
-from src.cattle.domain.services.animal_protocols.list_animal_protocol_service import ListAnimalProtocolService
-from src.cattle.domain.services.animal_protocols.update_animal_protocol_service import UpdateAnimalProtocolService
+from src.cattle.application.uses_cases.animal_protocol_cases.delete_animal_protocol_case import DeleteAnimalProtocolCase
+from src.cattle.application.uses_cases.animal_protocol_cases.get_animal_protocol_case import GetAnimalProtocolCase
+from src.cattle.application.uses_cases.animal_protocol_cases.list_animal_protocol_case import ListAnimalProtocolCase
+from src.cattle.application.uses_cases.animal_protocol_cases.update_animal_protocol_case import UpdateAnimalProtocolCase
+from src.cattle.domain.services.animal_protocol_services.delete_animal_protocol_service import DeleteAnimalProtocolService
+from src.cattle.domain.services.animal_protocol_services.get_animal_protocol_service import GetAnimalProtocolService
+from src.cattle.domain.services.animal_protocol_services.list_animal_protocol_service import ListAnimalProtocolService
+from src.cattle.domain.services.animal_protocol_services.update_animal_protocol_service import UpdateAnimalProtocolService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
@@ -41,12 +41,12 @@ def _get_delete_animal_protocol_case(
     return DeleteAnimalProtocolCase(uow, service)
 
 
-GetUpdateAnimalProtocolsCase = Annotated[
+GetUpdateAnimalProtocolCase = Annotated[
     UpdateAnimalProtocolCase,
     Depends(_get_update_animal_protocols_case),
 ]
 
-GetObtainAnimalProtocolCase = Annotated[
+GetAnimalProtocolCaseDep = Annotated[
     GetAnimalProtocolCase,
     Depends(_get_obtain_animal_protocol_case),
 ]
