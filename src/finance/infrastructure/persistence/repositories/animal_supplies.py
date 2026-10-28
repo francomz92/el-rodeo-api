@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
+from sqlalchemy import delete, exists, func, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -9,7 +9,7 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
-from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity, SupplyTypeEntity
+from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesCreateValueObject,
@@ -17,6 +17,8 @@ from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesUpdateValueObject,
 )
 from src.finance.infrastructure.persistence.models import AnimalSupply, AnimalSupplyType
+
+from .mappers import build_animal_supply_with_type
 
 
 class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -44,7 +46,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         )
         result = await self.db.execute(query)
         supply_db = result.mappings().one_or_none()
-        return self._build_animal_supply_with_type(supply_db) if supply_db else None
+        return build_animal_supply_with_type(supply_db) if supply_db else None
 
     async def list_for_user(
         self,
@@ -77,7 +79,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         )
         result = await self.db.execute(query)
         supplies_list = result.mappings().all()
-        return [self._build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
+        return [build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
 
     async def create(
         self,
@@ -156,19 +158,3 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         query = self._filter_tenant(delete(AnimalSupply).where(AnimalSupply.id == id))
         await self.db.execute(query)
         self._audit_delete("animal_supply", id, old_values)
-
-    def _build_animal_supply_with_type(self, supply_data: RowMapping) -> AnimalSupplyEntity:
-        return AnimalSupplyEntity(
-            id=supply_data["id"],
-            tenant_id=supply_data["tenant_id"],
-            created_at=supply_data["created_at"],
-            name=supply_data["name"],
-            amount=supply_data["amount"],
-            critical_amount=supply_data["critical_amount"],
-            unit_of_measurement=supply_data["unit_of_measurement"],
-            description=supply_data["description"],
-            type=SupplyTypeEntity(
-                id=supply_data["type_id"],
-                name=supply_data["type_name"],
-            ),
-        )

@@ -3,7 +3,7 @@ from uuid import UUID
 from src.common.application.ports.uow import IUoW
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.repositories.purchases import IPurchasesRepository
-from src.finance.domain.services.animal_supplies_services.delete_animal_supplies_service import DeleteAnimalSuppliesService
+from src.finance.domain.services.animal_supply_services.delete_animal_supplies_service import DeleteAnimalSuppliesService
 
 
 class DeleteAnimalSuppliesCase:

@@ -5,7 +5,7 @@ from src.common.domain.types import Sentinel
 from src.finance.domain.entities.animal_supplies import AnimalSupplyEntity
 from src.finance.domain.repositories.animal_supplies import IAnimalSuppliesRepository
 from src.finance.domain.repositories.animal_supply_types import ISupplyTypesRepository
-from src.finance.domain.services.animal_supplies_services.update_animal_supplies_service import UpdateAnimalSuppliesService
+from src.finance.domain.services.animal_supply_services.update_animal_supplies_service import UpdateAnimalSuppliesService
 from src.finance.domain.services.animal_supply_type_services.get_animal_supply_type_service import GetSupplyTypeService
 from src.finance.domain.value_objects.animal_supplies_value_objects import AnimalSuppliesUpdateValueObject
 

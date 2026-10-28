@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -17,6 +17,8 @@ from src.finance.domain.value_objects.animal_supply_type_value_objects import (
     AnimalSupplyTypeUpdateValueObject,
 )
 from src.finance.infrastructure.persistence.models import AnimalSupplyType
+
+from .mappers import build_supply_type
 
 
 class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -43,7 +45,7 @@ class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, Audit
         )
         result = await self.db.execute(query)
         supply_db = result.mappings().one_or_none()
-        return self._build_supply_type(supply_db) if supply_db else None
+        return build_supply_type(supply_db) if supply_db else None
 
     async def get_by_name(self, name: str) -> SupplyTypeEntity | None:
         query = select(
@@ -53,7 +55,7 @@ class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, Audit
         )
         result = await self.db.execute(query)
         supply_db = result.mappings().one_or_none()
-        return self._build_supply_type(supply_db) if supply_db else None
+        return build_supply_type(supply_db) if supply_db else None
 
     async def list(
         self,
@@ -81,7 +83,7 @@ class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, Audit
         )
         result = await self.db.execute(query)
         supplies_list = result.mappings().all()
-        return [self._build_supply_type(supply_data) for supply_data in supplies_list]
+        return [build_supply_type(supply_data) for supply_data in supplies_list]
 
     async def create(self, data: AnimalSupplyTypeCreateValueObject) -> SupplyTypeEntity:
         kws = {k: v for k, v in vars(data).items() if v is not Sentinel.UNSET}
@@ -114,9 +116,3 @@ class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, Audit
         query = delete(AnimalSupplyType).where(AnimalSupplyType.id == id)
         await self.db.execute(query)
         self._audit_delete("supply_type", id, old_values)
-
-    def _build_supply_type(self, supply_data: RowMapping) -> SupplyTypeEntity:
-        return SupplyTypeEntity(
-            id=supply_data["id"],
-            name=supply_data["name"],
-        )

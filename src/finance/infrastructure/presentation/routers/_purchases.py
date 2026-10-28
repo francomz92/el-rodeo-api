@@ -23,7 +23,7 @@ from src.finance.infrastructure.presentation.dependencies.purchase_dependencies 
     GetCreatePurchaseCase,
     GetDeletePurchaseCase,
     GetListPurchaseCase,
-    GetObtainPurchaseCase,
+    GetPurchaseCaseDep,
 )
 
 purchase_router = APIRouter(
@@ -116,6 +116,6 @@ async def get_purchases(
 async def get_purchase(
     id: UUID,
     current_user: GetCurrentUser,
-    get_purchase_case: GetObtainPurchaseCase,
+    get_purchase_case: GetPurchaseCaseDep,
 ):
     return await get_purchase_case.execute(id)

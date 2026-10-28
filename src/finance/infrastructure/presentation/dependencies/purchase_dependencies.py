@@ -53,5 +53,5 @@ def _get_list_purchase_case(
 GetCreatePurchaseCase = Annotated[CreatePurchaseCase, Depends(_get_create_purchase_case)]
 GetConfirmPurchaseCase = Annotated[ConfirmPurchaseCase, Depends(_get_confirm_purchase_case)]
 GetDeletePurchaseCase = Annotated[DeletePurchaseCase, Depends(_get_delete_purchase_case)]
-GetObtainPurchaseCase = Annotated[GetPurchaseCase, Depends(_get_obtain_purchase_case)]
+GetPurchaseCaseDep = Annotated[GetPurchaseCase, Depends(_get_obtain_purchase_case)]
 GetListPurchaseCase = Annotated[ListPurchaseCase, Depends(_get_list_purchase_case)]

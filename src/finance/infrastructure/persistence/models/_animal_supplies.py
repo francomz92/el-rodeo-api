@@ -1,7 +1,6 @@
 from uuid import UUID
 
 from sqlalchemy import (
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     String,
@@ -10,6 +9,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.infrastructure.persistence.models.base import Model
+from src.common.infrastructure.persistence.models.enum_types import values_enum
 from src.finance.domain.constants.animal_supplies import UnitOfMeasurement
 
 
@@ -29,7 +29,7 @@ class AnimalSupply(Model):
     description: Mapped[str] = mapped_column(String(500), default=str)
     amount: Mapped[float] = mapped_column(Float)
     critical_amount: Mapped[float] = mapped_column(Float)
-    unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(SQLEnum(UnitOfMeasurement))
+    unit_of_measurement: Mapped[UnitOfMeasurement] = mapped_column(values_enum(UnitOfMeasurement))
 
     user: Mapped["User | None"] = relationship()  # type: ignore  # noqa: F821
     type: Mapped["AnimalSupplyType"] = relationship()

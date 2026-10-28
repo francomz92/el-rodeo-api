@@ -1,8 +1,7 @@
 from datetime import date
-from typing import cast
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, func, insert, select, update
+from sqlalchemy import delete, exists, func, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -17,6 +16,8 @@ from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
 from src.finance.infrastructure.persistence.models import AnimalSupply, Purchase
+
+from .mappers import build_purchase_with_supply
 
 
 class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -41,7 +42,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         )
         result = await self.db.execute(query)
         purchase_db = result.mappings().one_or_none()
-        return self._build_purchase_with_supply(purchase_db) if purchase_db else None
+        return build_purchase_with_supply(purchase_db) if purchase_db else None
 
     async def list_for_user(
         self,
@@ -75,7 +76,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         )
         result = await self.db.execute(query)
         purchases_list = result.mappings().all()
-        return [self._build_purchase_with_supply(purchase_data) for purchase_data in purchases_list]
+        return [build_purchase_with_supply(purchase_data) for purchase_data in purchases_list]
 
     async def create(
         self,
@@ -164,23 +165,7 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         result = await self.db.execute(query)
         confirmed = result.scalar_one_or_none() is not None
         if confirmed:
-            self._audit_update("purchase", id, {"status": getattr(old_status, "value", old_status)}, {"status": "CONFIRMED"})
+            self._audit_update(
+                "purchase", id, {"status": getattr(old_status, "value", old_status)}, {"status": PurchaseStatus.CONFIRMED.value}
+            )
         return confirmed
-
-    def _build_purchase_with_supply(self, purchase_data: RowMapping) -> PurchaseEntity:
-        return PurchaseEntity(
-            id=purchase_data["id"],
-            tenant_id=purchase_data["tenant_id"],
-            amount=purchase_data["amount"],
-            price=purchase_data["price"],
-            purchase_date=purchase_data["purchase_date"],
-            unit_price=purchase_data["unit_price"],
-            unit_of_measurement=purchase_data["unit_of_measurement"],
-            user_id=purchase_data["user_id"],
-            user_name=cast(str, None),
-            supply_id=purchase_data["supply_id"],
-            supply_name=purchase_data["supply_name"],
-            status=purchase_data["status"],
-            confirmed_at=purchase_data["confirmed_at"],
-            confirmed_by=purchase_data["confirmed_by"],
-        )

@@ -25,6 +25,6 @@ class PurchaseEntity:
 
     def validate_unit_price(self):
         if self.unit_price < 0:
-            raise ValueError("Purchase price cant be negative")
+            raise ValueError("El precio de compra no puede ser negativo")
         if abs(self.unit_price * self.amount - self.price) > 0.01:
             raise ValueError("El precio unitario por la cantidad no coincide con el precio de compra")

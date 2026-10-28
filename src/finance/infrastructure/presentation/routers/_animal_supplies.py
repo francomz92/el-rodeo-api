@@ -20,11 +20,11 @@ from src.finance.infrastructure.adapters.http.input.animal_supplies_schemas impo
 )
 from src.finance.infrastructure.adapters.http.output.animal_supplies_schemas import AnimalSupplySchema
 from src.finance.infrastructure.presentation.dependencies.animal_supplies_dependencies import (
-    GetCreateAnimalSupplyCase,
-    GetDeleteAnimalSupplyCase,
-    GetListAnimalSupplyCase,
-    GetObtainAnimalSupplyCase,
-    GetUpdateAnimalSupplyCase,
+    GetAnimalSuppliesCaseDep,
+    GetCreateAnimalSuppliesCase,
+    GetDeleteAnimalSuppliesCase,
+    GetListAnimalSuppliesCase,
+    GetUpdateAnimalSuppliesCase,
 )
 
 animal_supplies_router = APIRouter(
@@ -44,7 +44,7 @@ animal_supplies_router = APIRouter(
 async def create_animal_supply(
     current_user: GetCurrentUser,
     data: AnimalSuppliesCreateSchema,
-    create_animal_supply_case: GetCreateAnimalSupplyCase,
+    create_animal_supply_case: GetCreateAnimalSuppliesCase,
 ):
     payload = AnimalSuppliesCreateValueObject(
         **data.model_dump(),
@@ -64,7 +64,7 @@ async def update_animal_supply(
     current_user: GetCurrentUser,
     id: UUID,
     data: AnimalSuppliesUpdateSchema,
-    update_animal_supply_case: GetUpdateAnimalSupplyCase,
+    update_animal_supply_case: GetUpdateAnimalSuppliesCase,
 ):
     payload = AnimalSuppliesUpdateValueObject(
         **data.model_dump(exclude_unset=True),
@@ -84,7 +84,7 @@ async def update_animal_supply(
 async def delete_animal_supply(
     current_user: GetCurrentUser,
     id: UUID,
-    delete_animal_supply_case: GetDeleteAnimalSupplyCase,
+    delete_animal_supply_case: GetDeleteAnimalSuppliesCase,
 ):
     return await delete_animal_supply_case.execute(
         id=id,
@@ -100,7 +100,7 @@ async def delete_animal_supply(
 async def list_animal_supplies(
     current_user: GetCurrentUser,
     query_params: Annotated[AnimalSuppliesListQueryParamsSchema, Query()],
-    list_animal_supplies_case: GetListAnimalSupplyCase,
+    list_animal_supplies_case: GetListAnimalSuppliesCase,
 ):
     filters = AnimalSuppliesListQueryParamsValueObject(
         **query_params.model_dump(
@@ -125,7 +125,7 @@ async def list_animal_supplies(
 async def get_animal_supply(
     current_user: GetCurrentUser,
     id: UUID,
-    get_animal_supply_case: GetObtainAnimalSupplyCase,
+    get_animal_supply_case: GetAnimalSuppliesCaseDep,
 ):
     return await get_animal_supply_case.execute(
         id=id,
