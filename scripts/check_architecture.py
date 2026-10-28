@@ -36,7 +36,7 @@ ALLOWED_CROSS_CONTEXT_SEAMS: dict[str, frozenset[str]] = {
             "src.cattle.infrastructure.presentation.routers",
             "src.finance.infrastructure.presentation.routers",
             "src.market.infrastructure.presentation.routers",
-            "src.reports.infrastructure.presentation.routers.reports",
+            "src.reports.infrastructure.presentation.routers._reports",
         }
     ),
     "src/common/infrastructure/workers/cron_tasks_register.py": frozenset(
@@ -47,10 +47,10 @@ ALLOWED_CROSS_CONTEXT_SEAMS: dict[str, frozenset[str]] = {
         }
     ),
     "src/auth/infrastructure/composition.py": frozenset({"src.billing.infrastructure.adapters.trial_provisioner"}),
-    "src/billing/infrastructure/presentation/routers/_payment_router.py": frozenset(
+    "src/billing/infrastructure/presentation/routers/_payments.py": frozenset(
         {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
     ),
-    "src/billing/infrastructure/presentation/routers/_subscription_router.py": frozenset(
+    "src/billing/infrastructure/presentation/routers/_subscriptions.py": frozenset(
         {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
     ),
     "src/calendar/infrastructure/presentation/routers/_calendar_events.py": frozenset(
@@ -83,7 +83,7 @@ ALLOWED_CROSS_CONTEXT_SEAMS: dict[str, frozenset[str]] = {
     "src/market/infrastructure/presentation/routers/_sales.py": frozenset(
         {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
     ),
-    "src/reports/infrastructure/presentation/routers/reports.py": frozenset(
+    "src/reports/infrastructure/presentation/routers/_reports.py": frozenset(
         {"src.auth.infrastructure.presentation.dependencies.auth_dependencies"}
     ),
 }

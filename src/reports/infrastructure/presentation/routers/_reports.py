@@ -32,9 +32,9 @@ from src.reports.infrastructure.adapters.http.output.report_schemas import (
 )
 from src.reports.infrastructure.presentation.dependencies.reports import (
     GetExportSalesSummaryCase,
-    GetObtainInventorySummaryCase,
-    GetObtainSalesSumaryCase,
+    GetInventorySummaryCaseDep,
     GetReportExporter,
+    GetSalesSummaryCaseDep,
 )
 
 CACHE_TTL = 300
@@ -52,7 +52,7 @@ router = APIRouter(
 @router.get("/inventory-summary")
 async def inventory_summary(
     current_user: GetCurrentUser,
-    inventory_summary_case: GetObtainInventorySummaryCase,
+    inventory_summary_case: GetInventorySummaryCaseDep,
     response: Response,
 ) -> ReportWrapper[InventorySummaryData]:
     """Return animal inventory grouped by status and type."""
@@ -74,7 +74,7 @@ async def inventory_summary(
 async def sales_summary(
     query: Annotated[SalesSummaryQuery, Query()],
     current_user: GetCurrentUser,
-    sales_summary_case: GetObtainSalesSumaryCase,
+    sales_summary_case: GetSalesSummaryCaseDep,
     response: Response,
 ) -> ReportWrapper[SalesSummaryData]:
     """Return sales aggregated by week and month within a date range."""

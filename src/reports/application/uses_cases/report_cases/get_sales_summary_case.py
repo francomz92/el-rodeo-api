@@ -9,7 +9,7 @@ from src.market.domain.repositories.sales_summary_report_query_port import (
 from src.reports.application.services.reports_service import ReportsService
 
 
-class GetSalesSummaryUseCase:
+class GetSalesSummaryCase:
     def __init__(self, uow: IUoW, service: ReportsService):
         self.uow = uow
         self.service = service

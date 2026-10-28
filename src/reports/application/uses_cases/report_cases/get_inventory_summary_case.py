@@ -8,7 +8,7 @@ from src.common.domain.exceptions import NotFoundError
 from src.reports.application.services.reports_service import ReportsService
 
 
-class GetInventorySummaryUseCase:
+class GetInventorySummaryCase:
     def __init__(self, uow: IUoW, report_service: ReportsService):
         self.uow = uow
         self.report_service = report_service

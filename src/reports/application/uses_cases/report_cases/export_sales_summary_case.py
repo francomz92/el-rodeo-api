@@ -11,7 +11,7 @@ from src.reports.application.ports.report_exporter import IReportExporter
 from src.reports.application.services.reports_service import ReportsService
 
 
-class ExportSalesSummaryUseCase:
+class ExportSalesSummaryCase:
     def __init__(self, uow: IUoW, service: ReportsService, exporter: IReportExporter):
         self.uow = uow
         self.service = service
