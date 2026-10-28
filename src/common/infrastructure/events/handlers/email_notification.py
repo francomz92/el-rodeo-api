@@ -8,8 +8,9 @@ class EmailNotificationHandler:
 
     def __call__(self, event: DomainEvent):
         data = event.metadata
+        emails = data.get("emails", [])
         self.notifier.send(
-            to=[data.get("emails", [])],
+            to=emails if isinstance(emails, list) else [emails],
             subject=data.get("title", ""),
             body=data.get("body", ""),
         )
