@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import RowMapping, and_, delete, exists, func, insert, select, update
+from sqlalchemy import and_, delete, exists, func, insert, select, update
 
 from src.calendar.domain.entities.calendar_event_entity import (
     CalendarEventEntity,
@@ -23,6 +23,7 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
 from src.common.utils.date_utils import get_current_datetime
 
 from ..models import CalendarEvent, CalendarEventParticipant
+from .mappers import build_calendar_event
 
 
 class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, AuditableRepositoryMixin):
@@ -51,7 +52,7 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
         )
         result = await self.db.execute(query)
         event = result.mappings().one_or_none()
-        return self._build_calendar_event(event) if event else None
+        return build_calendar_event(event) if event else None
 
     async def list_for_user(self, filters: CalendarEventsListQueryParamsValueObject, order_by: str) -> list[CalendarEventEntity]:
         conditions = []
@@ -82,7 +83,7 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
         )
         result = await self.db.execute(query)
         events = result.mappings().all()
-        return [self._build_calendar_event(event) for event in events]
+        return [build_calendar_event(event) for event in events]
 
     async def create(
         self,
@@ -196,19 +197,3 @@ class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, A
     async def mark_as_notified(self, event_id: UUID) -> None:
         query = self._filter_tenant(update(CalendarEvent).values(pending=False, updated_at=func.now()).where(CalendarEvent.id == event_id))
         await self.db.execute(query)
-
-    def _build_calendar_event(self, data: RowMapping) -> CalendarEventEntity:
-        return CalendarEventEntity(
-            id=data["id"],
-            tenant_id=data["tenant_id"],
-            user_id=data["user_id"],
-            created_at=data["created_at"],
-            title=data["title"],
-            description=data["description"],
-            start=data["start"],
-            end=data["end"],
-            pending=data["pending"],
-            type=data["type"],
-            participants=[],
-            participant_user_ids=data["participant_user_ids"] or [],
-        )

@@ -6,7 +6,7 @@ from src.calendar.domain.entities.calendar_event_entity import CalendarEventPart
 from src.calendar.domain.events.calendar_events import CalendarEventCreated
 from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 from src.calendar.domain.repositories.calendar_user_projection_port import ICalendarUserProjectionReader
-from src.calendar.domain.services.calendar_events.register_calendar_event_service import RegisterCalendarEventService
+from src.calendar.domain.services.calendar_event_services.register_calendar_event_service import RegisterCalendarEventService
 from src.calendar.domain.value_objects.calendar_event_value_object import CalendarEventCreationValueObject
 from src.common.application.ports.uow import IUoW
 from src.common.domain.ports.event_bus import IEventBus

@@ -1,7 +1,7 @@
 from src.calendar.domain.entities.calendar_event_entity import CalendarEventParticipantEntity
 from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 from src.calendar.domain.repositories.calendar_user_projection_port import ICalendarUserProjectionReader
-from src.calendar.domain.services.calendar_events.list_calendar_event_service import ListCalendarEventService
+from src.calendar.domain.services.calendar_event_services.list_calendar_event_service import ListCalendarEventService
 from src.calendar.domain.value_objects.calendar_event_value_object import CalendarEventsListQueryParamsValueObject
 from src.common.application.ports.uow import IUoW
 

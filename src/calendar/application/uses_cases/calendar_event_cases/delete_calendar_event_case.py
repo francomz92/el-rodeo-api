@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
-from src.calendar.domain.services.calendar_events.delete_calendar_event_service import DeleteCalendarEventService
+from src.calendar.domain.services.calendar_event_services.delete_calendar_event_service import DeleteCalendarEventService
 from src.common.application.ports.uow import IUoW
 
 

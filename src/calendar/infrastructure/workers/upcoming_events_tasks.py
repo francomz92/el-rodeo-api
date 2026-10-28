@@ -5,7 +5,7 @@ from celery import Task, shared_task
 
 from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
 from src.calendar.application.services.notifications.calendar_events_reminder_service import CalendarEventsReminderService
-from src.calendar.application.uses_cases.calendar_events_use_cases.notify_upcoming_events_case import (
+from src.calendar.application.uses_cases.calendar_event_cases.notify_upcoming_events_case import (
     NotifyUpcomingEventsCase,
 )
 from src.common.infrastructure.adapters.workers.email_workers import EmailNotifier
