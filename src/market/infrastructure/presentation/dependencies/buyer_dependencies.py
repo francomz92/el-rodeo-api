@@ -53,5 +53,5 @@ def _get_list_buyers_case(
 GetCreateBuyerCase = Annotated[CreateBuyerCase, Depends(_get_create_buyer_case)]
 GetUpdateBuyerCase = Annotated[UpdateBuyerCase, Depends(_get_update_buyer_case)]
 GetDeleteBuyerCase = Annotated[DeleteBuyerCase, Depends(_get_delete_buyer_case)]
-GetObtainBuyerCase = Annotated[GetBuyerCase, Depends(_get_obtain_buyer_case)]
-GetListBuyersCase = Annotated[ListBuyerCase, Depends(_get_list_buyers_case)]
+GetBuyerCaseDep = Annotated[GetBuyerCase, Depends(_get_obtain_buyer_case)]
+GetListBuyerCase = Annotated[ListBuyerCase, Depends(_get_list_buyers_case)]

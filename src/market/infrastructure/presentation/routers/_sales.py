@@ -23,7 +23,7 @@ from src.market.infrastructure.presentation.dependencies.sale_dependencies impor
     GetCreateSaleCase,
     GetDeleteSaleCase,
     GetListSaleCase,
-    GetObtainSaleCase,
+    GetSaleCaseDep,
     GetUpdateSaleCase,
 )
 
@@ -95,7 +95,7 @@ async def delete_sale(
 )
 async def get_sale(
     id: UUID,
-    get_use_case: GetObtainSaleCase,
+    get_use_case: GetSaleCaseDep,
 ):
     return await get_use_case.execute(
         id=id,

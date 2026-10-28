@@ -19,7 +19,7 @@ from src.market.domain.value_objects.sale_value_objects import (
 )
 from src.market.infrastructure.persistence.models import Sale
 
-from ._mappers import build_sale
+from .mappers import build_sale
 
 
 class SalesRepository(ISalesRepository, TenantAwareRepository, AuditableRepositoryMixin):

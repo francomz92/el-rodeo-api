@@ -52,6 +52,6 @@ def _get_update_sale_case(
 
 GetCreateSaleCase = Annotated[CreateSaleCase, Depends(_get_create_sale_case)]
 GetDeleteSaleCase = Annotated[DeleteSaleCase, Depends(_get_delete_sale_case)]
-GetObtainSaleCase = Annotated[GetSaleCase, Depends(_get_obtain_sale_case)]
+GetSaleCaseDep = Annotated[GetSaleCase, Depends(_get_obtain_sale_case)]
 GetListSaleCase = Annotated[ListSaleCase, Depends(_get_list_sale_case)]
 GetUpdateSaleCase = Annotated[UpdateSaleCase, Depends(_get_update_sale_case)]

@@ -16,10 +16,10 @@ from src.market.domain.value_objects.buyer_value_objects import (
 from src.market.infrastructure.adapters.http.input.buyer_schemas import BuyerCreateSchema, BuyerListQueryParamsSchema, BuyerUpdateSchema
 from src.market.infrastructure.adapters.http.output.buyer_schemas import BuyerSchema
 from src.market.infrastructure.presentation.dependencies.buyer_dependencies import (
+    GetBuyerCaseDep,
     GetCreateBuyerCase,
     GetDeleteBuyerCase,
-    GetListBuyersCase,
-    GetObtainBuyerCase,
+    GetListBuyerCase,
     GetUpdateBuyerCase,
 )
 
@@ -91,7 +91,7 @@ async def delete_buyer(
 )
 async def get_buyer(
     id: UUID,
-    get_use_case: GetObtainBuyerCase,
+    get_use_case: GetBuyerCaseDep,
 ):
     return await get_use_case.execute(
         id=id,
@@ -107,7 +107,7 @@ async def get_buyer(
 async def list_buyers(
     current_user: GetCurrentUser,
     filters: Annotated[BuyerListQueryParamsSchema, Query()],
-    list_use_case: GetListBuyersCase,
+    list_use_case: GetListBuyerCase,
 ):
     params = BuyerListQueryParamsValueObject(
         **filters.model_dump(

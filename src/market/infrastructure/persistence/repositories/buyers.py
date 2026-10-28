@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import RowMapping, delete, exists, insert, select, update
+from sqlalchemy import delete, exists, insert, select, update
 
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -19,6 +19,8 @@ from src.market.domain.value_objects.buyer_value_objects import (
 )
 from src.market.infrastructure.persistence.models import Buyer
 
+from .mappers import build_buyer
+
 
 class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableRepositoryMixin):
     _model: type[Buyer] = Buyer
@@ -35,7 +37,7 @@ class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableReposi
         query = self._filter_tenant(select(*Buyer.__table__.columns).where(Buyer.id == id))
         result = await self.db.execute(query)
         buyer_db = result.mappings().one_or_none()
-        return self._build_buyer(buyer_db) if buyer_db else None
+        return build_buyer(buyer_db) if buyer_db else None
 
     async def list_for_user(
         self,
@@ -57,7 +59,7 @@ class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableReposi
         query = self._filter_tenant(select(*Buyer.__table__.columns).where(*conditions).limit(limit).offset(offset).order_by(order_by))
         result = await self.db.execute(query)
         buyers_list = result.mappings().all()
-        return [self._build_buyer(buyer_data) for buyer_data in buyers_list]
+        return [build_buyer(buyer_data) for buyer_data in buyers_list]
 
     async def create(self, data: BuyerCreateValueObject) -> BuyerEntity:
         value_dict = {
@@ -104,14 +106,3 @@ class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableReposi
         await self.db.execute(query)
         self._audit_delete("buyer", id, old_values)
         return True
-
-    def _build_buyer(self, buyer_data: RowMapping) -> BuyerEntity:
-        return BuyerEntity(
-            id=buyer_data["id"],
-            tenant_id=buyer_data["tenant_id"],
-            created_at=buyer_data["created_at"],
-            name=buyer_data["name"],
-            description=buyer_data["description"],
-            contact_number=buyer_data["contact_number"],
-            contact_address=buyer_data["contact_address"],
-        )

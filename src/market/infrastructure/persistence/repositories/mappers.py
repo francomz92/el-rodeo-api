@@ -1,13 +1,24 @@
-"""Mapper functions for SalesRepository.
-
-Builds SaleEntity from Sale table columns (no joins).
-"""
+"""Row-to-entity builders for the market repositories."""
 
 from decimal import Decimal
 
 from sqlalchemy import RowMapping
 
+from src.market.domain.entities.buyers import BuyerEntity
 from src.market.domain.entities.sales import SaleEntity
+
+
+def build_buyer(buyer_data: RowMapping) -> BuyerEntity:
+    """Build a BuyerEntity from a SQLAlchemy RowMapping."""
+    return BuyerEntity(
+        id=buyer_data["id"],
+        tenant_id=buyer_data["tenant_id"],
+        created_at=buyer_data["created_at"],
+        name=buyer_data["name"],
+        description=buyer_data["description"],
+        contact_number=buyer_data["contact_number"],
+        contact_address=buyer_data["contact_address"],
+    )
 
 
 def build_sale(sale_data: RowMapping) -> SaleEntity:
