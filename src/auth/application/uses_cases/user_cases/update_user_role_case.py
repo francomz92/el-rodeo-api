@@ -13,7 +13,7 @@ from uuid import UUID
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.auth.domain.services.update_user_role_service import UpdateUserRoleService
+from src.auth.domain.services.user_services.update_user_role_service import UpdateUserRoleService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError, NotPermissionError
 

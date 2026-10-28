@@ -4,17 +4,18 @@ from fastapi import Depends
 
 from src.auth.application.ports.trial_provisioner import ITrialProvisioner
 from src.auth.application.services.authentication_service import AuthService
-from src.auth.application.uses_cases.change_password_case import ChangePasswordCase
-from src.auth.application.uses_cases.create_tenant_case import CreateTenantCase
-from src.auth.application.uses_cases.login_user_case import LoginUserCase
-from src.auth.application.uses_cases.logout_user_case import LogoutUserCase
-from src.auth.application.uses_cases.refresh_token_case import RefreshTokenCase
-from src.auth.domain.services.change_password_service import ChangePasswordService
-from src.auth.domain.services.login_user_service import LoginUserService
-from src.auth.domain.services.register_user_service import RegisterUserService
-from src.billing.application.services._trial_management_service import (
-    TrialManagementService,
+from src.auth.application.uses_cases.authentication_cases.change_password_case import ChangePasswordCase
+from src.auth.application.uses_cases.authentication_cases.login_user_case import LoginUserCase
+from src.auth.application.uses_cases.authentication_cases.logout_user_case import LogoutUserCase
+from src.auth.application.uses_cases.authentication_cases.refresh_token_case import RefreshTokenCase
+from src.auth.application.uses_cases.tenant_cases.create_tenant_case import CreateTenantCase
+from src.auth.domain.services.authentication_services.change_password_service import ChangePasswordService
+from src.auth.domain.services.authentication_services.login_user_service import LoginUserService
+from src.auth.domain.services.tenant_services.register_user_service import RegisterUserService
+from src.billing.application.uses_cases.trial_cases.start_trial_case import (
+    StartTrialCase,
 )
+from src.billing.domain.services.subscription_services.trial_service import TrialService
 from src.billing.infrastructure.adapters.trial_provisioner import TrialProvisioner
 from src.common.infrastructure.core import settings
 from src.common.infrastructure.events.handlers.email_notification import EmailNotificationHandler
@@ -26,21 +27,29 @@ from src.common.infrastructure.presentation.dependencies.token import GetTokenSe
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
-def _get_trial_management_service() -> TrialManagementService:
-    """Build the trial management service used by the billing adapter."""
-    return TrialManagementService(trial_days=settings.TRIAL_DAYS)
+def _get_trial_service() -> TrialService:
+    """Build the trial rules service used by the trial use case."""
+    return TrialService(trial_days=settings.TRIAL_DAYS)
 
 
-GetTrialManagementService = Annotated[
-    TrialManagementService,
-    Depends(_get_trial_management_service),
+def _get_start_trial_case(
+    uow: GetUnitOfWork,
+    service: Annotated[TrialService, Depends(_get_trial_service)],
+) -> StartTrialCase:
+    """Build the StartTrialCase used by the billing adapter."""
+    return StartTrialCase(uow, service)
+
+
+GetStartTrialCase = Annotated[
+    StartTrialCase,
+    Depends(_get_start_trial_case),
 ]
 
 
 def _get_trial_provisioner(
-    trial_service: GetTrialManagementService,
+    start_trial_case: GetStartTrialCase,
 ) -> ITrialProvisioner:
-    return TrialProvisioner(trial_service)
+    return TrialProvisioner(start_trial_case)
 
 
 GetTrialProvisioner = Annotated[

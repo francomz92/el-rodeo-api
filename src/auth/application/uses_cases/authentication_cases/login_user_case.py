@@ -7,7 +7,7 @@ from src.auth.domain.repositories.refresh_token_repository_port import (
     IRefreshTokenRepository,
 )
 from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.auth.domain.services.login_user_service import LoginUserService
+from src.auth.domain.services.authentication_services.login_user_service import LoginUserService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.services.security import ISecurityService
 from src.common.utils.date_utils import get_current_datetime

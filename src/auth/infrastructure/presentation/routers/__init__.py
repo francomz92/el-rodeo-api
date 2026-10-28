@@ -1,15 +1,13 @@
 from fastapi import APIRouter
 
-from ._authentication_routers import auth_router as _auth_router
-from ._gdpr_routers import gdpr_router as _gdpr_router
-from ._refresh_routers import refresh_router as _refresh_router
-from ._role_routers import role_router as _role_router
+from ._authentication import authentication_router as _authentication_router
+from ._tenants import tenant_router as _tenant_router
+from ._users import user_router as _user_router
 
 auth_routers = APIRouter()
-auth_routers.include_router(_auth_router, tags=["Authentication"])
-auth_routers.include_router(_refresh_router, tags=["Authentication"])
-auth_routers.include_router(_role_router, prefix="/users", tags=["Role Management"])
-auth_routers.include_router(_gdpr_router, prefix="/users", tags=["GDPR"])
+auth_routers.include_router(_tenant_router)
+auth_routers.include_router(_authentication_router)
+auth_routers.include_router(_user_router)
 
 
 __all__ = ["auth_routers"]

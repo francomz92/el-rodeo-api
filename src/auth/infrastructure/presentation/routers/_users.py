@@ -1,7 +1,4 @@
-"""Router for role management endpoints.
-
-Only OWNER-level users can access these endpoints.
-"""
+"""User router — profile, tenant-scoped listing, roles, and GDPR export."""
 
 from uuid import UUID
 
@@ -10,6 +7,9 @@ from fastapi.responses import JSONResponse
 
 from src.auth.domain.entities import UserRole
 from src.auth.infrastructure.adapters.http.input.role_schemas import UpdateRoleSchema
+from src.auth.infrastructure.adapters.http.input.user_schemas import (
+    UpdateProfileSchema,
+)
 from src.auth.infrastructure.adapters.http.output.role_schemas import (
     UserRoleResponseSchema,
 )
@@ -25,26 +25,90 @@ from src.auth.infrastructure.presentation.dependencies.role_dependencies import 
     GetUpdateUserRoleCase,
 )
 from src.auth.infrastructure.presentation.dependencies.user_dependencies import (
-    GetListUsersCaseDep,
-    GetSoftDeleteUserCaseDep,
+    GetListUsersCase,
+    GetSoftDeleteUserCase,
+    GetUpdateUserProfileCase,
     GetUserByIdCaseDep,
+    GetUserProfileCaseDep,
 )
 from src.common.application.pagination.cursor import encode_cursor
 from src.common.infrastructure.adapters.http.output.cursor_page import CursorPage
+from src.common.infrastructure.adapters.http.output.gdpr_schemas import (
+    GDPRExportResponse,
+)
 from src.common.infrastructure.adapters.http.output.messages import (
     SimpleMessageSchema,
 )
+from src.common.infrastructure.presentation.dependencies.gdpr import (
+    GetGDPRExportUserDataCase,
+)
 
-role_router = APIRouter()
+user_router = APIRouter(prefix="/users")
 
 
-@role_router.put(
+@user_router.get(
+    path="/me",
+    status_code=status.HTTP_200_OK,
+    summary="Get current user profile",
+    response_model=UserSchema,
+    tags=["Authentication"],
+)
+async def get_current_user_profile(
+    current_user: GetCurrentUser,
+    get_user_profile_case: GetUserProfileCaseDep,
+) -> UserSchema:
+    """Return the authenticated user's profile."""
+    user = await get_user_profile_case.execute(current_user)
+    return UserSchema(
+        id=user.id,
+        created_at=user.created_at,
+        name=user.name,
+        dni=user.dni,
+        email=user.email,
+        role=user.role.value,
+        is_active=user.is_active,
+        tenant_id=user.tenant_id,
+    )
+
+
+@user_router.put(
+    path="/me",
+    status_code=status.HTTP_200_OK,
+    summary="Update current user profile",
+    response_model=UserSchema,
+    tags=["Authentication"],
+)
+async def update_current_user_profile(
+    data: UpdateProfileSchema,
+    current_user: GetCurrentUser,
+    update_user_profile_case: GetUpdateUserProfileCase,
+) -> UserSchema:
+    """Update the authenticated user's name and/or email."""
+    user = await update_user_profile_case.execute(
+        current_user=current_user,
+        name=data.name,
+        email=data.email,
+    )
+    return UserSchema(
+        id=user.id,
+        created_at=user.created_at,
+        name=user.name,
+        dni=user.dni,
+        email=user.email,
+        role=user.role.value,
+        is_active=user.is_active,
+        tenant_id=user.tenant_id,
+    )
+
+
+@user_router.put(
     path="/{user_id}/role",
     status_code=status.HTTP_200_OK,
     summary="Update a user's role",
     description="Only OWNER-level users can change roles. Self-escalation and last-OWNER demotion are blocked.",
     response_model=UserRoleResponseSchema,
     dependencies=[require_role(UserRole.OWNER)],
+    tags=["Role Management"],
 )
 async def update_user_role(
     user_id: UUID,
@@ -74,17 +138,18 @@ async def update_user_role(
     )
 
 
-@role_router.get(
+@user_router.get(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List users (admin)",
     description="Requires ADMIN or higher role. Tenant-scoped.",
     response_model=PaginatedUsersSchema,
     dependencies=[require_role(UserRole.ADMIN)],
+    tags=["Role Management"],
 )
 async def list_users(
     current_user: GetCurrentUser,
-    list_users_case: GetListUsersCaseDep,
+    list_users_case: GetListUsersCase,
     page: int = Query(default=1, ge=1, description="Page number (deprecated, use cursor)"),
     per_page: int = Query(default=20, ge=1, le=100, description="Items per page"),
     search: str | None = Query(default=None, description="Search by name or email"),
@@ -147,13 +212,14 @@ async def list_users(
     )
 
 
-@role_router.get(
+@user_router.get(
     path="/{user_id}",
     status_code=status.HTTP_200_OK,
     summary="Get user by ID (admin)",
     description="Requires ADMIN or higher role. Tenant-scoped.",
     response_model=UserSchema,
     dependencies=[require_role(UserRole.ADMIN)],
+    tags=["Role Management"],
 )
 async def get_user_by_id(
     user_id: UUID,
@@ -177,18 +243,19 @@ async def get_user_by_id(
     )
 
 
-@role_router.delete(
+@user_router.delete(
     path="/{user_id}",
     status_code=status.HTTP_200_OK,
     summary="Deactivate a user (admin)",
     description="Requires ADMIN or higher role. Cannot deactivate self or last OWNER.",
     response_model=SimpleMessageSchema,
     dependencies=[require_role(UserRole.ADMIN)],
+    tags=["Role Management"],
 )
 async def deactivate_user(
     user_id: UUID,
     current_user: GetCurrentUser,
-    soft_delete_user_case: GetSoftDeleteUserCaseDep,
+    soft_delete_user_case: GetSoftDeleteUserCase,
 ) -> SimpleMessageSchema:
     """Soft-delete a user by setting is_active=False."""
     await soft_delete_user_case.execute(
@@ -196,3 +263,30 @@ async def deactivate_user(
         target_user_id=user_id,
     )
     return SimpleMessageSchema(message="Usuario desactivado exitosamente")
+
+
+# GDPR compliance endpoint.
+#
+# Allows users to export their data (GET /users/me/export). The former
+# self-service DELETE /users/me/data route is retired: data unlinking is
+# performed by tenant administrators through the guarded soft-delete flow.
+# Protected by require_role(VIEWER) so any authenticated user can access
+# their own data.
+@user_router.get(
+    path="/me/export",
+    status_code=status.HTTP_200_OK,
+    summary="Export my data (GDPR)",
+    description="Returns all personal data associated with the current user across all contexts. Password hashes are never included.",
+    response_model=GDPRExportResponse,
+    dependencies=[require_role(UserRole.VIEWER)],
+    tags=["GDPR"],
+)
+async def export_my_data(
+    current_user: GetCurrentUser,
+    gdpr_export_case: GetGDPRExportUserDataCase,
+) -> GDPRExportResponse:
+    """Export all data for the current authenticated user."""
+    data = await gdpr_export_case.execute(current_user.id)
+    if data is None:
+        return GDPRExportResponse()
+    return GDPRExportResponse(**data)

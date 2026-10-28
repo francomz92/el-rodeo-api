@@ -1,38 +1,24 @@
+"""Authentication router — login, logout, token refresh, and password change."""
+
 from fastapi import APIRouter, Request, Response, status
 
-from src.auth.domain.entities._user_role import UserRole
 from src.auth.infrastructure.adapters.http.input.authentication_schemas import (
     ChangePasswordSchema,
-    CreateTenantSchema,
     LoginSchema,
-)
-from src.auth.infrastructure.adapters.http.input.role_schemas import InviteSchema
-from src.auth.infrastructure.adapters.http.input.user_schemas import (
-    UpdateProfileSchema,
 )
 from src.auth.infrastructure.adapters.http.output.authentication_schemas import (
     LoginResponseSchema,
+    RefreshResponseSchema,
     WsTokenResponse,
 )
-from src.auth.infrastructure.adapters.http.output.tenant_schemas import TenantResponseSchema
-from src.auth.infrastructure.adapters.http.output.user_schemas import UserSchema
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetChangePasswordCase,
-    GetCreateTenantCase,
     GetCurrentUser,
     GetLoginUserCase,
     GetLogoutUserCase,
     GetOauthToken,
     GetRefreshToken,
-    require_role,
-)
-from src.auth.infrastructure.presentation.dependencies.role_dependencies import (
-    GetInviteUserCase,
-)
-from src.auth.infrastructure.presentation.dependencies.tenant_dependencies import GetObtainTenantCase
-from src.auth.infrastructure.presentation.dependencies.user_dependencies import (
-    GetUpdateUserProfileCaseDep,
-    GetUserProfileCaseDep,
+    GetRefreshTokenCase,
 )
 from src.common.infrastructure.adapters.http.output.messages import SimpleMessageSchema
 from src.common.infrastructure.adapters.security.cookies import (
@@ -43,59 +29,10 @@ from src.common.infrastructure.core import settings
 from src.common.infrastructure.presentation.dependencies.token import GetTokenService
 from src.common.infrastructure.presentation.middlewares.rate_limiter import rate_limit
 
-auth_router = APIRouter()
+authentication_router = APIRouter(tags=["Authentication"])
 
 
-@auth_router.post(
-    path="/register",
-    status_code=status.HTTP_201_CREATED,
-    summary="Create a new tenant with OWNER user",
-    description="SUPER_ADMIN only. Creates a tenant with the given slug and creates the first user as OWNER.",
-    response_model=UserSchema,
-    dependencies=[require_role(UserRole.SUPER_ADMIN)],
-)
-@rate_limit("3/minute")
-async def register_user(
-    request: Request,
-    data: CreateTenantSchema,
-    create_tenant_case: GetCreateTenantCase,
-):
-    return await create_tenant_case.execute(
-        tenant_name=data.tenant_name,
-        slug=data.slug,
-        name=data.name,
-        dni=data.dni,
-        email=data.email,
-        redirect_url=f"{settings.DOMAIN}/confirm-account",
-    )
-
-
-@auth_router.post(
-    path="/invite",
-    status_code=status.HTTP_201_CREATED,
-    summary="Invite a user to the tenant",
-    description="ADMIN or higher. Creates a user with role ≤ inviter's rank in the inviter's tenant.",
-    response_model=UserSchema,
-    dependencies=[require_role(UserRole.ADMIN)],
-)
-@rate_limit("5/minute")
-async def invite_user(
-    request: Request,
-    data: InviteSchema,
-    current_user: GetCurrentUser,
-    invite_user_case: GetInviteUserCase,
-):
-    return await invite_user_case.execute(
-        inviter=current_user,
-        name=data.name,
-        dni=data.dni,
-        email=data.email,
-        role=data.role,
-        redirect_url=f"{settings.DOMAIN}/confirm-account",
-    )
-
-
-@auth_router.post(
+@authentication_router.post(
     path="/login",
     status_code=status.HTTP_200_OK,
     summary="Authenticate a registered user",
@@ -133,7 +70,7 @@ async def login_user(
     requested_with = request.headers.get("x-requested-with", "")
     if requested_with == "XMLHttpRequest":
         set_auth_cookies(response, access_token, refresh_token, settings)
-        return SimpleMessageSchema(message="Login successful")
+        return SimpleMessageSchema(message="Sesión iniciada exitosamente")
 
     return LoginResponseSchema(
         access_token=access_token,
@@ -141,7 +78,7 @@ async def login_user(
     )
 
 
-@auth_router.get(
+@authentication_router.get(
     path="/ws-token",
     status_code=status.HTTP_200_OK,
     summary="Get a short-lived WebSocket token",
@@ -166,7 +103,7 @@ async def get_ws_token(
     return WsTokenResponse(ws_token=ws_token)
 
 
-@auth_router.post(
+@authentication_router.post(
     path="/password-change",
     status_code=status.HTTP_200_OK,
     summary="Change a registered user's password",
@@ -189,7 +126,7 @@ async def change_password(
     return SimpleMessageSchema(message="Contraseña actualizada exitosamente")
 
 
-@auth_router.post(
+@authentication_router.post(
     path="/logout",
     status_code=status.HTTP_200_OK,
     summary="Invalidate the current token (logout)",
@@ -210,68 +147,36 @@ async def logout_user(
     return SimpleMessageSchema(message="Sesión cerrada exitosamente")
 
 
-@auth_router.get(
-    path="/users/me",
+@authentication_router.post(
+    path="/refresh",
     status_code=status.HTTP_200_OK,
-    summary="Get current user profile",
-    response_model=UserSchema,
+    summary="Refresh authentication tokens",
+    description="Accepts a valid refresh token and returns a new access+refresh token pair. "
+    "The old refresh token is invalidated (rotated). "
+    "Rate limited at 10/min per IP.",
+    response_model=RefreshResponseSchema | SimpleMessageSchema,
 )
-async def get_current_user_profile(
-    current_user: GetCurrentUser,
-    get_user_profile_case: GetUserProfileCaseDep,
-) -> UserSchema:
-    """Return the authenticated user's profile."""
-    user = await get_user_profile_case.execute(current_user)
-    return UserSchema(
-        id=user.id,
-        created_at=user.created_at,
-        name=user.name,
-        dni=user.dni,
-        email=user.email,
-        role=user.role.value,
-        is_active=user.is_active,
-        tenant_id=user.tenant_id,
-    )
-
-
-@auth_router.put(
-    path="/users/me",
-    status_code=status.HTTP_200_OK,
-    summary="Update current user profile",
-    response_model=UserSchema,
-)
-async def update_current_user_profile(
-    data: UpdateProfileSchema,
-    current_user: GetCurrentUser,
-    update_user_profile_case: GetUpdateUserProfileCaseDep,
-) -> UserSchema:
-    """Update the authenticated user's name and/or email."""
-    user = await update_user_profile_case.execute(
-        current_user=current_user,
-        name=data.name,
-        email=data.email,
-    )
-    return UserSchema(
-        id=user.id,
-        created_at=user.created_at,
-        name=user.name,
-        dni=user.dni,
-        email=user.email,
-        role=user.role.value,
-        is_active=user.is_active,
-        tenant_id=user.tenant_id,
-    )
-
-
-@auth_router.get(
-    path="/users/me/tenant",
-    status_code=status.HTTP_200_OK,
-    summary="Get current tenant info",
-    response_model=TenantResponseSchema,
-)
-async def get_my_tenant(
-    current_user: GetCurrentUser,
-    get_tenant_case: GetObtainTenantCase,
+@rate_limit("10/minute")
+async def refresh_token(
+    refresh_token: GetRefreshToken,
+    refresh_token_case: GetRefreshTokenCase,
+    request: Request,
+    response: Response,
 ):
-    """Return the authenticated user's tenant info."""
-    return await get_tenant_case.execute(current_user.tenant_id)
+    """Refresh the access and refresh tokens.
+
+    The old refresh token is invalidated during rotation.
+    On success, the new tokens are returned in the response body.
+    """
+    access_token, new_refresh_token = await refresh_token_case.execute(
+        refresh_token=refresh_token,
+    )
+    if request.headers.get("x-requested-with"):
+        set_auth_cookies(response, access_token, new_refresh_token, settings)
+        return SimpleMessageSchema(message="Token actualizado exitosamente")
+
+    # Return both tokens in the response body
+    return RefreshResponseSchema(
+        access_token=access_token,
+        refresh_token=new_refresh_token,
+    )

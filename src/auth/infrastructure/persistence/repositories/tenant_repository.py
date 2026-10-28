@@ -96,13 +96,13 @@ class TenantRepository(ITenantRepository, TenantAwareRepository, AuditableReposi
     async def update(self, tenant_id: UUID, plan_id: UUID) -> TenantEntity:
         old = await self.get_by_id(tenant_id)
         if not old or not old.plan_id:
-            raise NotFoundError(f"Tenant {tenant_id} or plan not found for update")
+            raise NotFoundError(f"No existe el tenant {tenant_id} ni su plan para actualizar")
         old_plan_id = str(old.plan_id) if old.plan_id else None
         stmt = sql_update(Tenant).where(Tenant.id == tenant_id).values(plan_id=plan_id, updated_at=func.now())
         await self.db.execute(stmt)
         result = await self.get_by_id(tenant_id)
         if result is None:
-            raise NotFoundError(f"Tenant {tenant_id} not found after update")
+            raise NotFoundError(f"No existe el tenant {tenant_id} después de la actualización")
         self._audit_update(
             entity_type="tenant",
             entity_id=tenant_id,

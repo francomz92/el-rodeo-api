@@ -18,7 +18,7 @@ class GetTenantCase:
             tenant = await repository.get_by_id(tenant_id)
             if not tenant:
                 raise NotFoundError("No se encontró el la organización con el id proporcionado")
-            if tenant.plan_id is not None:
-                plan_reader = uow.get_repository(ITenantPlanReader)
-                tenant.plan = await plan_reader.get_by_id(tenant.plan_id)
+            # The billing subscription is the source of truth for the plan.
+            plan_reader = uow.get_repository(ITenantPlanReader)
+            tenant.plan = await plan_reader.get_current_plan_for_tenant(tenant_id)
             return tenant

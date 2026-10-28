@@ -19,7 +19,7 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
     TenantAwareRepository,
 )
 
-from ._mappers import build_user, json_safe
+from .mappers import build_user, json_safe
 
 
 class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepositoryMixin):

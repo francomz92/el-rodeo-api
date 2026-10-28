@@ -5,14 +5,11 @@ from fastapi import Depends, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.auth.application.services.authentication_service import AuthService
-from src.auth.application.services.notifications.wellcome_email_service import (
-    WellcomeEmailService,
-)
-from src.auth.application.uses_cases.change_password_case import ChangePasswordCase
-from src.auth.application.uses_cases.create_tenant_case import CreateTenantCase
-from src.auth.application.uses_cases.login_user_case import LoginUserCase
-from src.auth.application.uses_cases.logout_user_case import LogoutUserCase
-from src.auth.application.uses_cases.refresh_token_case import RefreshTokenCase
+from src.auth.application.uses_cases.authentication_cases.change_password_case import ChangePasswordCase
+from src.auth.application.uses_cases.authentication_cases.login_user_case import LoginUserCase
+from src.auth.application.uses_cases.authentication_cases.logout_user_case import LogoutUserCase
+from src.auth.application.uses_cases.authentication_cases.refresh_token_case import RefreshTokenCase
+from src.auth.application.uses_cases.tenant_cases.create_tenant_case import CreateTenantCase
 from src.auth.domain.entities import TenantEntity, UserEntity, UserRole
 from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
 from src.auth.infrastructure.composition import (
@@ -24,7 +21,6 @@ from src.auth.infrastructure.composition import (
     _get_refresh_token_case,
 )
 from src.common.domain.exceptions import NotPermissionError, UnauthorizedError
-from src.common.infrastructure.presentation.dependencies.notifier import GetNotifierClient
 from src.common.infrastructure.presentation.dependencies.security import GetSecurityService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
@@ -64,12 +60,6 @@ async def _get_refresh_token(
         data = await request.json()
         return data.get("refresh_token", "")
     return request.cookies.get("refresh_token", "")
-
-
-def get_wellcome_notifier_service(
-    notifier_client: GetNotifierClient,
-) -> WellcomeEmailService:
-    return WellcomeEmailService(notifier_client)
 
 
 async def _get_current_user(

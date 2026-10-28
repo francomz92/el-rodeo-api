@@ -13,7 +13,7 @@ from src.auth.domain.repositories.users_repository_port import (
     IUserRepository,
     UserCreationValueObject,
 )
-from src.auth.domain.services.register_user_service import RegisterUserService
+from src.auth.domain.services.tenant_services.register_user_service import RegisterUserService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotPermissionError
 from src.common.domain.ports.event_bus import IEventBus

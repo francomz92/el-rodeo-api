@@ -3,7 +3,7 @@ from src.auth.domain.repositories.refresh_token_repository_port import (
     IRefreshTokenRepository,
 )
 from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.auth.domain.services.change_password_service import ChangePasswordService
+from src.auth.domain.services.authentication_services.change_password_service import ChangePasswordService
 from src.common.application.ports.uow import IUoW
 from src.common.domain.exceptions import NotFoundError
 
