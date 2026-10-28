@@ -2,6 +2,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.billing.infrastructure.adapters.payment_gateway.shared import (
+    close_shared_mercadopago_client,
+)
 from src.common.domain.types import EnvironmentType
 from src.common.infrastructure.adapters.http.output.errors import StandardErrorResponse
 from src.common.infrastructure.adapters.websocket.subscriber import RedisPubSubSubscriber
@@ -39,6 +42,7 @@ async def lifespan(app: FastAPI):
     # ── Shutdown ─────────────────────────────────────────────────────────
     await ws_subscriber.stop()
     await ws_manager.close_all()
+    await close_shared_mercadopago_client()
 
 
 app = FastAPI(
