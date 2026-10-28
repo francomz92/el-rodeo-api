@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from src.billing.domain.entities._payment_status import PaymentStatus
+from src.billing.domain.constants.payments import PaymentStatus
+from src.billing.domain.constants.subscriptions import SubscriptionStatus
 
 
 @dataclass(frozen=True)
@@ -54,10 +55,16 @@ class PaymentResult:
 
 @dataclass(frozen=True)
 class SubscriptionResult:
-    """Result from gateway subscriptions API (/preapproval)."""
+    """Result from gateway subscriptions API (/preapproval).
+
+    ``subscription_status`` is the gateway ``status`` already mapped to the
+    domain constant; it is populated by the gateway adapter so the
+    application layer never imports infrastructure mappers.
+    """
 
     id: str
     status: str
+    subscription_status: SubscriptionStatus | None = None
     next_billing_date: datetime | None = None
     billing_date: datetime | None = None
     card_id: str | None = None
@@ -66,11 +73,19 @@ class SubscriptionResult:
 
 @dataclass(frozen=True)
 class AuthorizedPaymentResult:
-    """Result from gateway authorized payments API."""
+    """Result from gateway authorized payments API.
+
+    ``payment_status`` is the gateway ``status`` already mapped to the domain
+    constant, populated by the gateway adapter so the application layer never
+    imports infrastructure mappers (same pattern as
+    ``SubscriptionResult.subscription_status``). It is ``None`` when the
+    gateway reports a status the mapper does not know.
+    """
 
     id: str
     status: str
     preapproval_id: str
+    payment_status: PaymentStatus | None = None
     transaction_amount: Decimal | None = None
     payment_id: str | None = None
     next_billing_date: datetime | None = None
@@ -153,7 +168,7 @@ class IPaymentGateway(ABC):
         """
         raise NotImplementedError
 
-    # ── Subscription methods (Phase 0b) ────────────────────────────────────
+    # ── SubscriptionEntity methods (Phase 0b) ────────────────────────────────────
 
     @abstractmethod
     async def create_subscription(

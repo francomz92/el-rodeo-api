@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.billing.domain.entities._plan import PlanEntity
-from src.billing.domain.entities._plan_type import PlanTypeEntity
+from src.billing.domain.constants.plans import PlanTypeEntity
+from src.billing.domain.entities.plans import PlanEntity
 from src.common.domain.repository import IRepository
 
 

@@ -1,12 +1,12 @@
 from src.auth.domain.repositories.users_repository_port import IUserRepository
-from src.billing.application.events._payment_failed_email_handler import (
-    PaymentFailedEmailHandler,
-)
-from src.billing.application.events.payment_confirmation_email_handler import (
-    PaymentConfirmationEmailHandler,
-)
 from src.billing.application.ports.payment_event_bus_factory import (
     IPaymentEventBusFactory,
+)
+from src.billing.infrastructure.events.handlers._payment_failed_email_handler import (
+    PaymentFailedEmailHandler,
+)
+from src.billing.infrastructure.events.handlers.payment_confirmation_email_handler import (
+    PaymentConfirmationEmailHandler,
 )
 from src.common.application.ports.email_notifier import IEmailNotifier
 from src.common.application.ports.uow import IUoW

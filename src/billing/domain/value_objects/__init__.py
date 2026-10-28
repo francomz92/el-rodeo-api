@@ -1,3 +1,6 @@
-from ._money import MoneyVO
+from .payment_value_objects import MoneyVO, PaymentMethodVO
 
-__all__ = ["MoneyVO"]
+__all__ = [
+    "MoneyVO",
+    "PaymentMethodVO",
+]

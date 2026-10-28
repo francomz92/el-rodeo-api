@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from src.billing.domain.entities._plan_type import PlanTypeEntity
+from src.billing.domain.constants.plans import PlanTypeEntity
 
 
 class PlanChangeSchema(BaseModel):

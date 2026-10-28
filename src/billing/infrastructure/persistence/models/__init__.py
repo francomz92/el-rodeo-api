@@ -3,8 +3,8 @@
 All models are imported here for Alembic autodetection and easy access.
 """
 
-from ._payment_model import Payment
-from ._plan_model import Plan
-from ._subscription_model import Subscription
+from ._payments import Payment
+from ._plans import Plan
+from ._subscriptions import Subscription
 
 __all__ = ["Payment", "Plan", "Subscription"]

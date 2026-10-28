@@ -1,20 +1,23 @@
-from ._feature import FeatureEntity
-from ._payment import Payment, PaymentMethod
-from ._payment_status import PaymentStatus
-from ._plan import PlanEntity
-from ._plan_type import PlanTypeEntity
-from ._quota import QuotaEntity
-from ._subscription import Subscription
-from ._subscription_status import SubscriptionStatus
+# Re-exported from domain/constants and domain/value_objects for the stable
+# public API consumed by auth and the routers.
+from src.billing.domain.constants.payments import PaymentStatus
+from src.billing.domain.constants.plans import PlanTypeEntity
+from src.billing.domain.constants.subscriptions import SubscriptionStatus
+from src.billing.domain.value_objects.payment_value_objects import MoneyVO, PaymentMethodVO
+
+from .payments import PaymentEntity
+from .plans import FeatureEntity, PlanEntity, QuotaEntity
+from .subscriptions import SubscriptionEntity
 
 __all__ = [
     "PlanTypeEntity",
+    "SubscriptionEntity",
+    "PaymentEntity",
+    "PaymentMethodVO",
     "FeatureEntity",
     "QuotaEntity",
     "PlanEntity",
-    "Payment",
-    "PaymentMethod",
-    "PaymentStatus",
+    "MoneyVO",
     "SubscriptionStatus",
-    "Subscription",
+    "PaymentStatus",
 ]
