@@ -11,7 +11,7 @@ from src.cattle.domain.repositories.animals_repository_port import (
     IAnimalsRepository,
 )
 from src.cattle.infrastructure.persistence.models import Animal, AnimalType
-from src.common.application.pagination.cursor import decode_cursor
+from src.common.application.pagination.cursor import cursor_uuid, decode_cursor
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -118,7 +118,7 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
         has_next = False
         if cursor is not None:
             cursor_data = decode_cursor(cursor)
-            cursor_id = UUID(cursor_data["id"])
+            cursor_id = cursor_uuid(cursor_data)
             query = self._filter_tenant(
                 select(*base_columns)
                 .where(*conditions, Animal.id > cursor_id)

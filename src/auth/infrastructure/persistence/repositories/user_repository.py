@@ -11,7 +11,7 @@ from src.auth.domain.value_objects.user_value_object import (
     UserUpdateValueObject,
 )
 from src.auth.infrastructure.persistence.models import User
-from src.common.application.pagination.cursor import decode_cursor
+from src.common.application.pagination.cursor import cursor_uuid, decode_cursor
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -167,7 +167,7 @@ class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepository
             if not cursor:
                 return [], total, False
             cursor_data = decode_cursor(cursor)
-            cursor_id = UUID(cursor_data["id"])
+            cursor_id = cursor_uuid(cursor_data)
             # Keyset pagination by registration date: the cursor's
             # sort_value carries the previous page's last-row created_at
             # (ISO 8601). Legacy/hand-crafted cursors default sort_value
