@@ -32,6 +32,16 @@ from src.common.infrastructure.presentation.middlewares.rate_limiter import rate
 authentication_router = APIRouter(tags=["Authentication"])
 
 
+def _is_xhr(request: Request) -> bool:
+    """True only for the exact XHR marker used by web clients.
+
+    Dependencies (auth_dependencies) use this same exact-match semantic:
+    any header value other than exactly "XMLHttpRequest" ("1", "xhr", ...)
+    means a non-XHR (Bearer/body-token) client.
+    """
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
 @authentication_router.post(
     path="/login",
     status_code=status.HTTP_200_OK,
@@ -67,8 +77,7 @@ async def login_user(
     )
 
     # Set HttpOnly cookies for web clients (X-Requested-With: XMLHttpRequest)
-    requested_with = request.headers.get("x-requested-with", "")
-    if requested_with == "XMLHttpRequest":
+    if _is_xhr(request):
         set_auth_cookies(response, access_token, refresh_token, settings)
         return SimpleMessageSchema(message="Sesión iniciada exitosamente")
 
@@ -140,9 +149,12 @@ async def logout_user(
     response: Response,
     request: Request,
 ):  # type: ignore[reportInvalidTypeForm]
-    await logout_user_case.execute(token.credentials, refresh_token=refresh_token)
+    await logout_user_case.execute(
+        token.credentials if token is not None else None,
+        refresh_token=refresh_token,
+    )
     # Clear auth cookies
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+    if _is_xhr(request):
         clear_auth_cookies(response, settings)
     return SimpleMessageSchema(message="Sesión cerrada exitosamente")
 
@@ -171,7 +183,7 @@ async def refresh_token(
     access_token, new_refresh_token = await refresh_token_case.execute(
         refresh_token=refresh_token,
     )
-    if request.headers.get("x-requested-with"):
+    if _is_xhr(request):
         set_auth_cookies(response, access_token, new_refresh_token, settings)
         return SimpleMessageSchema(message="Token actualizado exitosamente")
 

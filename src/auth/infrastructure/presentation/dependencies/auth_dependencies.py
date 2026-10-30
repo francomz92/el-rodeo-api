@@ -134,7 +134,7 @@ def require_role(min_role: UserRole):
 
 is_authenticated_current_user = Depends(_get_current_user)
 
-GetOauthToken = Annotated[HTTPAuthorizationCredentials, Depends(_get_oauth_token)]
+GetOauthToken = Annotated[HTTPAuthorizationCredentials | None, Depends(_get_oauth_token)]
 GetRefreshToken = Annotated[str, Depends(_get_refresh_token)]
 GetAuthService = Annotated[AuthService, Depends(_get_auth_service)]
 GetCurrentUser = Annotated[UserEntity, Depends(_get_current_user)]
