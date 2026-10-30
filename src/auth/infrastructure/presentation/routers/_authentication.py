@@ -130,7 +130,7 @@ async def change_password(
     path="/logout",
     status_code=status.HTTP_200_OK,
     summary="Invalidate the current token (logout)",
-    description="Blacklists the access token, clears auth cookies, and revokes all refresh tokens for the user.",
+    description="Blacklists the access token, clears auth cookies (XHR clients), and revokes the provided refresh token when it is still valid.",
     response_model=SimpleMessageSchema,
 )
 async def logout_user(
