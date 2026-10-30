@@ -40,13 +40,8 @@ class LogoutUserCase:
         except InvalidCredentialError:
             return  # Already invalid, logout is a no-op
 
-        try:
-            refresh_payload = self.token_service.decode_refresh_token(refresh_token)
-            refresh_token_id: str = refresh_payload.get("refresh_token_id", "")
-        except InvalidCredentialError:
-            return  # Already invalid, logout is a no-op
-
-        # Blacklist the access token
+        # Blacklist the access token regardless of refresh token state: an
+        # unusable refresh token must never keep the access token alive.
         jti = payload.get("jti")
         if not jti:
             raise UnauthorizedError("No autorizado para realizar esta acción")
@@ -60,7 +55,17 @@ class LogoutUserCase:
 
         await self.blacklist_service.blacklist(jti, remaining)
 
-        # Revoke all refresh tokens for the user
+        # Revoke the refresh token — best effort. A missing, malformed, or
+        # already-invalid refresh token only skips the revocation step.
+        try:
+            refresh_payload = self.token_service.decode_refresh_token(refresh_token)
+            refresh_token_id: str = refresh_payload.get("refresh_token_id", "")
+        except InvalidCredentialError:
+            return
+
+        if not refresh_token_id:
+            return
+
         # TODO: Revoke all devices sessions in necessary.?
         user_id_str: str = payload.get("user_id")
         async with self.uow as uow:

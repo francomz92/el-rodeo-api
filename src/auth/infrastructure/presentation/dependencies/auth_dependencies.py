@@ -55,9 +55,19 @@ def _get_oauth_token(
 async def _get_refresh_token(
     request: Request,
 ) -> str | None:
-    """Extract the refresh token from the request cookies."""
+    """Extract the refresh token from the request.
+
+    Non-XHR clients send it in the JSON body; XHR clients carry it in the
+    ``refresh_token`` cookie. A missing, empty, or malformed body resolves
+    to an empty token instead of raising an unhandled error.
+    """
     if request.headers.get("x-requested-with") != "XMLHttpRequest":
-        data = await request.json()
+        try:
+            data = await request.json()
+        except ValueError:
+            return ""
+        if not isinstance(data, dict):
+            return ""
         return data.get("refresh_token", "")
     return request.cookies.get("refresh_token", "")
 
