@@ -56,8 +56,8 @@ def clear_auth_cookies(response: Response, settings: Any) -> None:
         value="",
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="strict",
-        path="/api",
+        samesite="lax",
+        path="/",
         max_age=0,
         domain=settings.COOKIE_DOMAIN,
     )
@@ -66,8 +66,8 @@ def clear_auth_cookies(response: Response, settings: Any) -> None:
         value="",
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="strict",
-        path="/auth/refresh",
+        samesite="lax",
+        path="/",
         max_age=0,
         domain=settings.COOKIE_DOMAIN,
     )
