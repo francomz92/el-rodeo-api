@@ -166,11 +166,11 @@ class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepository
             if not cursor:
                 return [], total, False
             cursor_data = decode_cursor(cursor)
-            cursor_sort_value = cursor_data["sort_value"]
+            cursor_id = UUID(cursor_data["id"])
             query = (
                 select(*User.__table__.columns)
-                .where(*conditions, User.created_at > cursor_sort_value)
-                .order_by(User.created_at.asc())
+                .where(*conditions, User.id > cursor_id)
+                .order_by(User.id.asc())
                 .limit(per_page + 1)  # one extra to detect next page
             )
         else:
