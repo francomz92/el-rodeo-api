@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import exists, func, insert, select, update
+from sqlalchemy import exists, func, insert, literal, select, tuple_, update
 
 from src.auth.domain.entities import UserEntity
 from src.auth.domain.entities._user_role import UserRole
@@ -167,14 +168,34 @@ class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepository
                 return [], total, False
             cursor_data = decode_cursor(cursor)
             cursor_id = UUID(cursor_data["id"])
+            # Keyset pagination by registration date: the cursor's
+            # sort_value carries the previous page's last-row created_at
+            # (ISO 8601). Legacy/hand-crafted cursors default sort_value
+            # to the id itself → fall back to the id-only keyset.
+            try:
+                cursor_created_at = datetime.fromisoformat(cursor_data["sort_value"])
+            except ValueError:
+                query = (
+                    select(*User.__table__.columns)
+                    .where(*conditions, User.id > cursor_id)
+                    .order_by(User.id.asc())
+                    .limit(per_page + 1)  # one extra to detect next page
+                )
+            else:
+                query = (
+                    select(*User.__table__.columns)
+                    .where(*conditions, tuple_(User.created_at, User.id) > tuple_(literal(cursor_created_at), literal(cursor_id)))
+                    .order_by(User.created_at.asc(), User.id.asc())
+                    .limit(per_page + 1)  # one extra to detect next page
+                )
+        else:
             query = (
                 select(*User.__table__.columns)
-                .where(*conditions, User.id > cursor_id)
-                .order_by(User.id.asc())
-                .limit(per_page + 1)  # one extra to detect next page
+                .where(*conditions)
+                .order_by(User.created_at.asc(), User.id.asc())
+                .offset((page - 1) * per_page)
+                .limit(per_page)
             )
-        else:
-            query = select(*User.__table__.columns).where(*conditions).offset((page - 1) * per_page).limit(per_page)
 
         result = await self.db.execute(query)
         rows = result.mappings().all()
