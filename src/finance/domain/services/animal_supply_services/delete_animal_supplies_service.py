@@ -16,13 +16,15 @@ class DeleteAnimalSuppliesService:
         supply = await repository.get_by_id(id=id)
         if not supply:
             raise NotFoundError("Insumo no encontrado")
-        has_related_purchases = await purchase_repository.list_for_user(
+        # list_for_user returns (items, total, has_next); only the items
+        # decide whether the supply has purchases.
+        related_purchases, _total, _has_next = await purchase_repository.list_for_user(
             filters=PurchaseListQueryParamValueObject(supply_id=id),
             limit=1,
             offset=0,
             order_by="id",
         )
-        if has_related_purchases:
+        if related_purchases:
             raise ConflictError("El insumo no puede ser eliminado porque tiene compras asociadas")
 
     async def delete_supply(

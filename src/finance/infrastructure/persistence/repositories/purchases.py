@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import delete, exists, func, insert, select, update
 
+from src.common.application.pagination.cursor import cursor_uuid, decode_cursor
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -50,7 +51,8 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[PurchaseEntity]:
+        cursor: str | None = None,
+    ) -> tuple[list[PurchaseEntity], int, bool]:
         conditions = []
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
@@ -63,20 +65,66 @@ class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, Auditable
                 "status",
             ):
                 conditions.append(getattr(Purchase, k) == v)
-        query = self._filter_tenant(
-            select(
-                *Purchase.__table__.columns,
-                AnimalSupply.name.label("supply_name"),
+
+        base_columns = [
+            *Purchase.__table__.columns,
+            AnimalSupply.name.label("supply_name"),
+        ]
+        base_join = Purchase.supply_id == AnimalSupply.id
+
+        # ── Explicit order column resolution ────────────────────────
+        # A raw string order_by ("id") is ambiguous once the AnimalSupply
+        # join enters the FROM clause: ambiguous keyset pages emit the
+        # wrong row as the continuation token and the next page comes
+        # back empty. Purchases map only the columns that actually exist
+        # on this table (the shared catalog also allows "name", which
+        # this table has not); anything else falls back to id so sort and
+        # keyset stay coherent.
+        order_column = {
+            "id": Purchase.id,
+            "created_at": Purchase.created_at,
+            "updated_at": Purchase.updated_at,
+        }.get(order_by, Purchase.id)
+
+        # ── Count total (filter-wide, not cursor-sliced) ────────────
+        count_query = self._filter_tenant(select(func.count()).select_from(Purchase).where(*conditions))
+        total_result = await self.db.execute(count_query)
+        total = total_result.scalar_one()
+
+        # ── Data query ──────────────────────────────────────────────
+        if cursor is not None:
+            cursor_data = decode_cursor(cursor)
+            cursor_id = cursor_uuid(cursor_data)
+            # The token carries id + sort_value, but only the id
+            # comparison applies here (same limitation as animals).
+            query = self._filter_tenant(
+                select(*base_columns)
+                .where(*conditions, Purchase.id > cursor_id)
+                .order_by(order_column)
+                .limit(limit + 1)  # fetch one extra to detect next page
+                .outerjoin(AnimalSupply, base_join)
             )
-            .where(*conditions)
-            .limit(limit)
-            .offset(offset)
-            .order_by(order_by)
-            .outerjoin(AnimalSupply, Purchase.supply_id == AnimalSupply.id)
-        )
+        else:
+            query = self._filter_tenant(
+                select(*base_columns)
+                .where(*conditions)
+                .limit(limit + 1)
+                .offset(offset)
+                .order_by(order_column)
+                .outerjoin(AnimalSupply, base_join)
+            )
+
         result = await self.db.execute(query)
         purchases_list = result.mappings().all()
-        return [build_purchase_with_supply(purchase_data) for purchase_data in purchases_list]
+
+        # Both modes fetch one extra row (limit+1) so has_next is always
+        # observable — the first page must hand the FE the next_cursor.
+        has_next = len(purchases_list) > limit
+        if has_next:
+            purchases_list = purchases_list[:limit]
+
+        items = [build_purchase_with_supply(purchase_data) for purchase_data in purchases_list]
+        return items, total, has_next
 
     async def create(
         self,

@@ -2,12 +2,15 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
+from fastapi.responses import JSONResponse
 
 from src.auth.domain.entities._user_role import UserRole
 from src.auth.infrastructure.presentation.dependencies.auth_dependencies import (
     GetCurrentUser,
     require_role,
 )
+from src.common.application.pagination.cursor import encode_cursor
+from src.common.infrastructure.adapters.http.output.cursor_page import CursorPage
 from src.finance.domain.constants.purchases import PurchaseStatus
 from src.finance.domain.value_objects.purchase_value_objects import (
     PurchaseCreateValueObject,
@@ -86,7 +89,7 @@ async def delete_purchase(
     path="",
     status_code=status.HTTP_200_OK,
     summary="Get all user purchases from database",
-    response_model=list[PurchaseSchema],
+    response_model=CursorPage[PurchaseSchema],
 )
 async def get_purchases(
     current_user: GetCurrentUser,
@@ -96,14 +99,34 @@ async def get_purchases(
     payload = PurchaseListQueryParamValueObject(
         **filters.model_dump(
             exclude_unset=True,
-            exclude={"limit", "offset", "order_by"},
+            exclude={"limit", "offset", "order_by", "cursor"},
         )
     )
-    return await list_purchases_case.execute(
+    result = await list_purchases_case.execute(
         filters=payload,
         limit=filters.limit,
         offset=filters.offset,
         order_by=filters.order_by,
+        cursor=filters.cursor,
+    )
+
+    # Emit next_cursor whenever there is a next page, regardless of the
+    # incoming cursor: the first page must carry the continuation too.
+    next_cursor: str | None = None
+    if result.has_next and result.items:
+        next_cursor = encode_cursor(str(result.items[-1].id))
+
+    # Return cursor-paginated response (bypasses response_model validation)
+    validated = [PurchaseSchema.model_validate(p) for p in result.items]
+    page = CursorPage[PurchaseSchema](
+        items=validated,
+        cursor=encode_cursor(str(validated[0].id)) if validated else None,
+        next_cursor=next_cursor,
+        total=result.total,
+    )
+    return JSONResponse(
+        content=page.model_dump(mode="json"),
+        status_code=status.HTTP_200_OK,
     )
 
 

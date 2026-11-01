@@ -24,7 +24,14 @@ class IPurchasesRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[PurchaseEntity]:
+        cursor: str | None = None,
+    ) -> tuple[list[PurchaseEntity], int, bool]:
+        """List purchases; returns ``(items, total_count, has_next)``.
+
+        With ``cursor``, the page continues after that opaque token
+        (keyset on the purchases id); ``total`` always counts every row
+        matching the filters, independent of the cursor slice.
+        """
         raise NotImplementedError
 
     @abstractmethod
