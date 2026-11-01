@@ -101,7 +101,7 @@ async def delete_animal(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List all animals by current user authenticated in the database",
-    response_model=CursorPage[AnimalSchema] | list[AnimalSchema],
+    response_model=CursorPage[AnimalSchema],
 )
 async def list_animals_user(
     current_user: GetCurrentUser,
@@ -123,7 +123,7 @@ async def list_animals_user(
     )
 
     next_cursor: str | None = None
-    if query_params.cursor is not None and result.has_next and result.items:
+    if result.has_next and result.items:
         next_cursor = encode_cursor(str(result.items[-1].id))
 
     # if query_params.cursor is not None:
