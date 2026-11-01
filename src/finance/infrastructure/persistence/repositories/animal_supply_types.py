@@ -57,6 +57,16 @@ class SupplyTypesRepository(ISupplyTypesRepository, TenantAwareRepository, Audit
         supply_db = result.mappings().one_or_none()
         return build_supply_type(supply_db) if supply_db else None
 
+    async def list_all(self) -> list[SupplyTypeEntity]:
+        # AnimalSupplyType is a deployment-wide shared catalog (no tenant_id
+        # column): unpaginated reference reads stay scoped like the sibling list.
+        query = select(
+            *AnimalSupplyType.__table__.columns,
+        ).order_by(AnimalSupplyType.name)
+        result = await self.db.execute(query)
+        supplies_list = result.mappings().all()
+        return [build_supply_type(supply_data) for supply_data in supplies_list]
+
     async def list(
         self,
         filters: AnimalSupplyTypeListQueryParamsValueObject,

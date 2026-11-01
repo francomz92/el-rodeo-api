@@ -7,10 +7,16 @@ from src.finance.application.uses_cases.animal_supply_cases.create_animal_suppli
 from src.finance.application.uses_cases.animal_supply_cases.delete_animal_supplies_case import DeleteAnimalSuppliesCase
 from src.finance.application.uses_cases.animal_supply_cases.get_animal_supplies_case import GetAnimalSuppliesCase
 from src.finance.application.uses_cases.animal_supply_cases.list_animal_supplies_case import ListAnimalSuppliesCase
+from src.finance.application.uses_cases.animal_supply_cases.list_animal_supplies_params_case import (
+    ListAnimalSuppliesParamsCase,
+)
 from src.finance.application.uses_cases.animal_supply_cases.update_animal_supplies_case import UpdateAnimalSuppliesCase
 from src.finance.domain.services.animal_supply_services.create_animal_supplies_service import CreateAnimalSuppliesService
 from src.finance.domain.services.animal_supply_services.delete_animal_supplies_service import DeleteAnimalSuppliesService
 from src.finance.domain.services.animal_supply_services.get_animal_supplies_service import GetAnimalSuppliesService
+from src.finance.domain.services.animal_supply_services.list_animal_supplies_params_service import (
+    ListAnimalSuppliesParamsService,
+)
 from src.finance.domain.services.animal_supply_services.list_animal_supplies_service import ListAnimalSuppliesService
 from src.finance.domain.services.animal_supply_services.update_animal_supplies_service import UpdateAnimalSuppliesService
 from src.finance.domain.services.animal_supply_type_services.get_animal_supply_type_service import GetSupplyTypeService
@@ -97,4 +103,20 @@ GetAnimalSuppliesCaseDep = Annotated[
 GetListAnimalSuppliesCase = Annotated[
     ListAnimalSuppliesCase,
     Depends(_get_list_animal_supplies_cases),
+]
+
+
+def _get_list_animal_supplies_params_cases(
+    uow: GetUnitOfWork,
+    service: Annotated[
+        ListAnimalSuppliesParamsService,
+        Depends(),
+    ],
+) -> ListAnimalSuppliesParamsCase:
+    return ListAnimalSuppliesParamsCase(uow, service)
+
+
+GetListAnimalSuppliesParamsCase = Annotated[
+    ListAnimalSuppliesParamsCase,
+    Depends(_get_list_animal_supplies_params_cases),
 ]

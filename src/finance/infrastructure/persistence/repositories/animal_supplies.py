@@ -81,6 +81,22 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         supplies_list = result.mappings().all()
         return [build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
 
+    async def list_all_for_user(self) -> list[AnimalSupplyEntity]:
+        query = self._filter_tenant(
+            select(
+                *AnimalSupply.__table__.columns,
+                AnimalSupplyType.name.label("type_name"),
+            )
+            .order_by(AnimalSupply.name)
+            .outerjoin(
+                AnimalSupplyType,
+                AnimalSupply.type_id == AnimalSupplyType.id,
+            )
+        )
+        result = await self.db.execute(query)
+        supplies_list = result.mappings().all()
+        return [build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
+
     async def create(
         self,
         data: AnimalSuppliesCreateValueObject,

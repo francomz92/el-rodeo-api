@@ -33,6 +33,10 @@ class IAnimalSuppliesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def list_all_for_user(self) -> list[AnimalSupplyEntity]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def create(
         self,
         data: AnimalSuppliesCreateValueObject,
