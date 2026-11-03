@@ -29,7 +29,7 @@ class IAnimalSuppliesRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalSupplyEntity]:
+    ) -> tuple[list[AnimalSupplyEntity], int]:
         raise NotImplementedError
 
     @abstractmethod
