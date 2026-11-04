@@ -4,8 +4,14 @@ from fastapi import Depends
 
 from src.cattle.application.uses_cases.animal_type_cases.create_animal_type_case import CreateAnimalTypeCase
 from src.cattle.application.uses_cases.animal_type_cases.list_animal_type_case import ListAnimalTypeCase
+from src.cattle.application.uses_cases.animal_type_cases.list_animal_type_params_case import (
+    ListAnimalTypeParamsCase,
+)
 from src.cattle.application.uses_cases.animal_type_cases.update_animal_type_case import UpdateAnimalTypeCase
 from src.cattle.domain.services.animal_type_services.create_animal_type_service import CreateAnimalTypeService
+from src.cattle.domain.services.animal_type_services.list_animal_type_params_service import (
+    ListAnimalTypeParamsService,
+)
 from src.cattle.domain.services.animal_type_services.list_animal_type_service import ListAnimalTypeService
 from src.cattle.domain.services.animal_type_services.update_animal_type_service import UpdateAnimalTypeService
 from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
@@ -35,3 +41,13 @@ def _get_list_animal_type_case(
 GetCreateAnimalTypeCase = Annotated[CreateAnimalTypeCase, Depends(_get_create_animal_type_case)]
 GetUpdateAnimalTypeCase = Annotated[UpdateAnimalTypeCase, Depends(_get_update_animal_type_case)]
 GetListAnimalTypeCase = Annotated[ListAnimalTypeCase, Depends(_get_list_animal_type_case)]
+
+
+def _get_list_animal_type_params_case(
+    uow: GetUnitOfWork,
+    service: Annotated[ListAnimalTypeParamsService, Depends()],
+) -> ListAnimalTypeParamsCase:
+    return ListAnimalTypeParamsCase(uow=uow, service=service)
+
+
+GetListAnimalTypeParamsCase = Annotated[ListAnimalTypeParamsCase, Depends(_get_list_animal_type_params_case)]

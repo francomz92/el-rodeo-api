@@ -101,6 +101,19 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
         ]
         base_join = Animal.type_id == AnimalType.id
 
+        # ── Explicit order column resolution ────────────────────────
+        # A raw string order_by ("id") is ambiguous once the AnimalType
+        # join enters the FROM clause: ambiguous keyset pages emit the
+        # wrong row as the continuation token and the next page comes
+        # back empty. Animals override the shared catalog options with
+        # the columns that actually exist on this table; anything else
+        # falls back to id so sort and keyset stay coherent.
+        order_column = {
+            "id": Animal.id,
+            "created_at": Animal.created_at,
+            "updated_at": Animal.updated_at,
+        }.get(order_by, Animal.id)
+
         # ── Count total (filter-wide, not cursor-sliced) ────────────
         query = (
             select(
@@ -122,25 +135,29 @@ class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepos
             query = self._filter_tenant(
                 select(*base_columns)
                 .where(*conditions, Animal.id > cursor_id)
-                .order_by(order_by)
+                .order_by(order_column)
                 .limit(limit + 1)  # fetch one extra to detect next page
                 .outerjoin(AnimalType, base_join)
             )
         else:
             query = self._filter_tenant(
-                select(*base_columns).where(*conditions).limit(limit).offset(offset).order_by(order_by).outerjoin(AnimalType, base_join)
+                select(*base_columns)
+                .where(*conditions)
+                .limit(limit + 1)
+                .offset(offset)
+                .order_by(order_column)
+                .outerjoin(AnimalType, base_join)
             )
 
         result = await self.db.execute(query)
         animal_list_db = result.mappings().all()
 
-        if cursor is not None:
-            if len(animal_list_db) > limit:
-                has_next = True
-                animal_list_db = animal_list_db[:limit]
-        else:
-            # offset mode: only compute has_next if caller requested it
-            has_next = False
+        # Both modes fetch one extra row (limit+1) so has_next is always
+        # observable — the first offset page must be able to hand the FE the
+        # next_cursor for keyset navigation.
+        if len(animal_list_db) > limit:
+            has_next = True
+            animal_list_db = animal_list_db[:limit]
 
         items = [build_animal_with_type(animal_data) for animal_data in animal_list_db]
         return items, total, has_next

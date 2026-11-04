@@ -22,6 +22,18 @@ class IPaymentRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_by_tenant(self, tenant_id: UUID, page: int = 1, per_page: int = 20) -> tuple[list[PaymentEntity], int]:
-        """Paginated list of payments for a tenant. Returns (items, total)."""
+    async def list_by_tenant(
+        self,
+        tenant_id: UUID,
+        limit: int,
+        offset: int = 0,
+        order_by: str = "id",
+        cursor: str | None = None,
+    ) -> tuple[list[PaymentEntity], int, bool]:
+        """List a tenant's payments; returns ``(items, total_count, has_next)``.
+
+        With ``cursor``, the page continues after that opaque token (keyset
+        on the payments id); ``total`` always counts every row matching the
+        tenant scope, independent of the cursor slice.
+        """
         raise NotImplementedError

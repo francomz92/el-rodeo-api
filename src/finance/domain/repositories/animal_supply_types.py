@@ -24,6 +24,10 @@ class ISupplyTypesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def list_all(self) -> list[SupplyTypeEntity]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def list(
         self,
         filters: AnimalSupplyTypeListQueryParamsValueObject,

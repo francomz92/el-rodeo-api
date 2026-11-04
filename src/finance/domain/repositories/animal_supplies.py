@@ -29,7 +29,11 @@ class IAnimalSuppliesRepository(IRepository):
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalSupplyEntity]:
+    ) -> tuple[list[AnimalSupplyEntity], int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_all_for_user(self) -> list[AnimalSupplyEntity]:
         raise NotImplementedError
 
     @abstractmethod

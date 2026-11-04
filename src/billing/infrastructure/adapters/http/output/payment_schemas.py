@@ -67,17 +67,7 @@ class PlanChangeResponseSchema(BaseModel):
     checkout_url: str | None = None
 
 
-class PaginatedPaymentListSchema(BaseModel):
-    """Response envelope for the paginated payment listing."""
-
-    payments: list[PaymentSchema]
-    total: int
-    page: int
-    per_page: int
-
-
 __all__ = [
-    "PaginatedPaymentListSchema",
     "PaymentSchema",
     "PlanChangeResponseSchema",
     "SubscriptionSchema",

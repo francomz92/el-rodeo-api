@@ -19,3 +19,20 @@ class AnimalSupplySchema(BaseModel):
     type: SupplyTypeSchema
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AnimalSuppliesListSchema(BaseModel):
+    "Offset/limit envelope for the finance animal-supplies list."
+
+    items: list[AnimalSupplySchema]
+    total: int
+
+
+class AnimalSupplyParamSchema(BaseModel):
+    "Lean reference projection consumed by the dropdown params endpoints."
+
+    id: UUID
+    name: str
+    unit_of_measurement: UnitOfMeasurement
+
+    model_config = ConfigDict(from_attributes=True)

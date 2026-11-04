@@ -25,7 +25,13 @@ class CreateAnimalSuppliesService:
             name=data.name,
             type_id=data.type_id,
         )
-        if await repository.list_for_user(filters=filters, limit=1, offset=0, order_by="id"):
+        supplies, _total = await repository.list_for_user(
+            filters=filters,
+            limit=1,
+            offset=0,
+            order_by="id",
+        )
+        if supplies:
             raise BusinessValidationError(message="Este suministro ya se encuentra cargado.")
 
     async def create_new(

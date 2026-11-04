@@ -54,7 +54,7 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalSupplyEntity]:
+    ) -> tuple[list[AnimalSupplyEntity], int]:
         conditions = []
         for k, v in vars(filters).items():
             if v is Sentinel.UNSET:
@@ -63,6 +63,27 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
                 conditions.append(AnimalSupply.name.icontains(v))
             elif k in ("id", "type_id"):
                 conditions.append(getattr(AnimalSupply, k) == v)
+        base_join = AnimalSupply.type_id == AnimalSupplyType.id
+
+        # ── Filter-wide total (NOT offset-sliced) ────────────────────
+        count_result = await self.db.execute(
+            self._filter_tenant(select(func.count()).select_from(AnimalSupply).outerjoin(AnimalSupplyType, base_join).where(*conditions))
+        )
+        total = count_result.scalar_one()
+
+        # ── Explicit order column resolution ────────────────────────
+        # A raw string order_by ("name" in particular) is ambiguous once
+        # the AnimalSupplyType join enters the FROM clause — animals hit
+        # this exact bug with cursor pages (L7): resolve against the
+        # columns that actually live on this table so sort and any
+        # keyset predicate never diverge.
+        order_column = {
+            "id": AnimalSupply.id,
+            "created_at": AnimalSupply.created_at,
+            "updated_at": AnimalSupply.updated_at,
+            "name": AnimalSupply.name,
+        }.get(order_by, AnimalSupply.id)
+
         query = self._filter_tenant(
             select(
                 *AnimalSupply.__table__.columns,
@@ -71,7 +92,24 @@ class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository,
             .where(*conditions)
             .limit(limit)
             .offset(offset)
-            .order_by(order_by)
+            .order_by(order_column)
+            .outerjoin(
+                AnimalSupplyType,
+                base_join,
+            )
+        )
+        result = await self.db.execute(query)
+        supplies_list = result.mappings().all()
+        items = [build_animal_supply_with_type(supply_data) for supply_data in supplies_list]
+        return items, total
+
+    async def list_all_for_user(self) -> list[AnimalSupplyEntity]:
+        query = self._filter_tenant(
+            select(
+                *AnimalSupply.__table__.columns,
+                AnimalSupplyType.name.label("type_name"),
+            )
+            .order_by(AnimalSupply.name)
             .outerjoin(
                 AnimalSupplyType,
                 AnimalSupply.type_id == AnimalSupplyType.id,

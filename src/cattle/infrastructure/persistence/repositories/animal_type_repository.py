@@ -40,6 +40,17 @@ class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, Audita
         animal_type_db = result.mappings().one_or_none()
         return build_animal_type(animal_type_db) if animal_type_db else None
 
+    async def list_all(self) -> list[AnimalTypeEntity]:
+        # AnimalType is a deployment-wide shared catalog (no tenant_id column):
+        # unpaginated reference reads stay scoped exactly like the sibling list.
+        query = select(
+            AnimalType.id,
+            AnimalType.name,
+        ).order_by(AnimalType.name)
+        result = await self.db.execute(query)
+        animal_types_list = result.mappings().all()
+        return [build_animal_type(type_data) for type_data in animal_types_list]
+
     async def list(
         self,
         filters: AnimalTypeListQueryParamsValueObject,

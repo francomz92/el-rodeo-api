@@ -16,6 +16,10 @@ class IAnimalTypesRepository(IRepository):
         raise NotImplementedError
 
     @abstractmethod
+    async def list_all(self) -> list[AnimalTypeEntity]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def list(
         self,
         filters: AnimalTypeListQueryParamsValueObject,

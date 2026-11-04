@@ -18,7 +18,10 @@ from src.finance.infrastructure.adapters.http.input.animal_supplies_schemas impo
     AnimalSuppliesListQueryParamsSchema,
     AnimalSuppliesUpdateSchema,
 )
-from src.finance.infrastructure.adapters.http.output.animal_supplies_schemas import AnimalSupplySchema
+from src.finance.infrastructure.adapters.http.output.animal_supplies_schemas import (
+    AnimalSuppliesListSchema,
+    AnimalSupplySchema,
+)
 from src.finance.infrastructure.presentation.dependencies.animal_supplies_dependencies import (
     GetAnimalSuppliesCaseDep,
     GetCreateAnimalSuppliesCase,
@@ -95,7 +98,7 @@ async def delete_animal_supply(
     path="",
     status_code=status.HTTP_200_OK,
     summary="List all animal supplies of the current user in data base",
-    response_model=list[AnimalSupplySchema],
+    response_model=AnimalSuppliesListSchema,
 )
 async def list_animal_supplies(
     current_user: GetCurrentUser,
@@ -108,12 +111,13 @@ async def list_animal_supplies(
             exclude={"limit", "offset", "order_by", "cursor"},
         )
     )
-    return await list_animal_supplies_case.execute(
+    items, total = await list_animal_supplies_case.execute(
         filters=filters,
         limit=query_params.limit,
         offset=query_params.offset,
         order_by=query_params.order_by,
     )
+    return {"items": items, "total": total}
 
 
 @animal_supplies_router.get(

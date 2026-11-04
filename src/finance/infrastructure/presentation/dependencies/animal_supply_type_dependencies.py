@@ -6,9 +6,15 @@ from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWor
 from src.finance.application.uses_cases.animal_supply_type_cases.create_animal_supply_type_case import CreateAnimalSupplyTypeCase
 from src.finance.application.uses_cases.animal_supply_type_cases.delete_animal_supply_type_case import DeleteAnimalSupplyTypeCase
 from src.finance.application.uses_cases.animal_supply_type_cases.list_animal_supply_type_case import ListAnimalSupplyTypeCase
+from src.finance.application.uses_cases.animal_supply_type_cases.list_animal_supply_type_params_case import (
+    ListAnimalSupplyTypeParamsCase,
+)
 from src.finance.application.uses_cases.animal_supply_type_cases.update_animal_supply_type_case import UpdateAnimalSupplyTypeCase
 from src.finance.domain.services.animal_supply_type_services.create_animal_supply_type_service import CreateAnimalSupplyTypeService
 from src.finance.domain.services.animal_supply_type_services.delete_animal_supply_type_service import DeleteAnimalSupplyTypeService
+from src.finance.domain.services.animal_supply_type_services.list_animal_supply_type_params_service import (
+    ListAnimalSupplyTypeParamsService,
+)
 from src.finance.domain.services.animal_supply_type_services.list_animal_supply_type_service import ListAnimalSupplyTypeService
 from src.finance.domain.services.animal_supply_type_services.update_animal_supply_type_service import UpdateAnimalSupplyTypeService
 
@@ -56,4 +62,17 @@ GetDeleteAnimalSupplyTypeCase = Annotated[
 GetListAnimalSupplyTypeCase = Annotated[
     ListAnimalSupplyTypeCase,
     Depends(_get_list_animal_supply_types_case),
+]
+
+
+def _get_list_animal_supply_type_params_case(
+    uow: GetUnitOfWork,
+    service: Annotated[ListAnimalSupplyTypeParamsService, Depends()],
+) -> ListAnimalSupplyTypeParamsCase:
+    return ListAnimalSupplyTypeParamsCase(uow=uow, service=service)
+
+
+GetListAnimalSupplyTypeParamsCase = Annotated[
+    ListAnimalSupplyTypeParamsCase,
+    Depends(_get_list_animal_supply_type_params_case),
 ]

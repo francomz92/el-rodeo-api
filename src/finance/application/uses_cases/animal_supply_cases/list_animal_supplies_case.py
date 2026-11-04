@@ -20,7 +20,7 @@ class ListAnimalSuppliesCase:
         limit: int,
         offset: int,
         order_by: str,
-    ) -> list[AnimalSupplyEntity]:
+    ) -> tuple[list[AnimalSupplyEntity], int]:
         async with self.uow as uow:
             repository = uow.get_repository(IAnimalSuppliesRepository)
             return await self.service.get_supplies(
