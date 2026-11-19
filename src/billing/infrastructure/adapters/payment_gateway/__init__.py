@@ -1,5 +1,5 @@
 """MercadoPago payment gateway implementation."""
 
-from .client import MercadoPagoHttpClient
+from src.billing.infrastructure.adapters.payment_gateway.client import MercadoPagoHttpClient
 
 __all__ = ["MercadoPagoHttpClient"]

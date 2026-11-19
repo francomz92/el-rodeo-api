@@ -7,8 +7,7 @@ from src.billing.domain.constants.plans import PlanTypeEntity
 from src.billing.domain.entities.plans import PlanEntity
 from src.billing.domain.repositories import IPlanRepository
 from src.billing.infrastructure.persistence.models import Plan
-
-from .mappers import build_plan
+from src.billing.infrastructure.persistence.repositories.mappers import build_plan
 
 
 class PlanRepository(IPlanRepository):

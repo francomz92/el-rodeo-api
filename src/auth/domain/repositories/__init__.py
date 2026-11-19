@@ -1,7 +1,7 @@
-from .refresh_token_repository_port import IRefreshTokenRepository
-from .tenant_plan_reader_port import ITenantPlanReader
-from .tenant_repository_port import ITenantRepository
-from .users_repository_port import IUserRepository
+from src.auth.domain.repositories.refresh_token_repository_port import IRefreshTokenRepository
+from src.auth.domain.repositories.tenant_plan_reader_port import ITenantPlanReader
+from src.auth.domain.repositories.tenant_repository_port import ITenantRepository
+from src.auth.domain.repositories.users_repository_port import IUserRepository
 
 __all__ = [
     "IRefreshTokenRepository",

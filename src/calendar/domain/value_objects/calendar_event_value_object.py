@@ -2,9 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from src.calendar.domain.constants.calendar_event import CalendarEventType
 from src.common.domain.types import Sentinel
-
-from ..constants.calendar_event import CalendarEventType
 
 
 @dataclass

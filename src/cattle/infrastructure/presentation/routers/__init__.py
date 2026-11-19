@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
-from ._animal_protocols import protocols_router as _protocols_router
-from ._animal_type_params import animal_type_params_router as _animal_type_params_router
-from ._animal_types import animal_type_router as _animal_type_router
-from ._animals import animals_router as _animals_router
+from src.cattle.infrastructure.presentation.routers._animal_protocols import protocols_router as _protocols_router
+from src.cattle.infrastructure.presentation.routers._animal_type_params import animal_type_params_router as _animal_type_params_router
+from src.cattle.infrastructure.presentation.routers._animal_types import animal_type_router as _animal_type_router
+from src.cattle.infrastructure.presentation.routers._animals import animals_router as _animals_router
 
 cattle_routers = APIRouter()
 cattle_routers.include_router(_animals_router, tags=["Cattle / Animals"])

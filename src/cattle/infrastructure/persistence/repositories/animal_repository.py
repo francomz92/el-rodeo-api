@@ -11,6 +11,7 @@ from src.cattle.domain.repositories.animals_repository_port import (
     IAnimalsRepository,
 )
 from src.cattle.infrastructure.persistence.models import Animal, AnimalType
+from src.cattle.infrastructure.persistence.repositories.mappers import build_animal_with_type
 from src.common.application.pagination.cursor import cursor_uuid, decode_cursor
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -19,8 +20,6 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
-
-from .mappers import build_animal_with_type
 
 
 class AnimalRepository(IAnimalsRepository, TenantAwareRepository, AuditableRepositoryMixin):

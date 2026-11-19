@@ -1,11 +1,10 @@
 from uuid import UUID
 
+from src.calendar.application.services.notifications.calendar_events_reminder_service import CalendarEventsReminderService
 from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 from src.calendar.domain.repositories.calendar_user_projection_port import ICalendarUserProjectionReader
 from src.common.application.ports.email_notifier import IEmailNotifier
 from src.common.application.ports.uow import IUoW
-
-from ...services.notifications.calendar_events_reminder_service import CalendarEventsReminderService
 
 
 class NotifyUpcomingEventsCase:

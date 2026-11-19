@@ -6,8 +6,7 @@ from celery.signals import worker_process_init, worker_ready
 from src.common.infrastructure.adapters.logger import configure_logger
 from src.common.infrastructure.core import settings
 from src.common.infrastructure.persistence.connections.db import worker_session_engine
-
-from .cron_tasks_register import register_cron_tasks
+from src.common.infrastructure.workers.cron_tasks_register import register_cron_tasks
 
 app = Celery(
     broker=settings.BROKER_URL,

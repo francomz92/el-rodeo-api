@@ -1,8 +1,7 @@
 from uuid import UUID
 
+from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 from src.common.domain.exceptions import ConflictError, NotFoundError
-
-from ...repositories.calendar_events_repository_port import ICalendarEventRepository
 
 
 class DeleteCalendarEventService:

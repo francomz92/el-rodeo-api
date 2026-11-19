@@ -1,8 +1,5 @@
-from ._audit_log_entry import AuditLogEntry
-from .webhook_subscription import (
-    WebhookSubscriptionCreateData,
-    WebhookSubscriptionEntity,
-)
+from src.common.domain.entities._audit_log_entry import AuditLogEntry
+from src.common.domain.entities.webhook_subscription import WebhookSubscriptionCreateData, WebhookSubscriptionEntity
 
 __all__ = [
     "AuditLogEntry",

@@ -1,14 +1,14 @@
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.13
-    hooks:
-      - id: ruff-check
-        types_or: [python]
-        args: [--fix, --unsafe-fixes]
-      - id: ruff-format
-        types_or: [python]
-        args: [--config=ruff.toml]
-  # - repo: https://github.com/RobertCraigie/pyright-python
-  #   rev: v1.1.400
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.15.13
+      hooks:
+          - id: ruff-check
+            types_or: [python]
+            args: [--config=ruff.toml, --fix, --unsafe-fixes]
+          - id: ruff-format
+            types_or: [python]
+            args: [--config=ruff.toml]
+    # - repo: https://github.com/RobertCraigie/pyright-python
+    #   rev: v1.1.400
     # hooks:
     #   - id: pyright

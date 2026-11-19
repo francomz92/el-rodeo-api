@@ -1,6 +1,5 @@
 from src.calendar.domain.entities.calendar_event_entity import CalendarEventEntity
-
-from ...repositories.calendar_events_repository_port import ICalendarEventRepository
+from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
 
 
 class RegisterCalendarEventService:

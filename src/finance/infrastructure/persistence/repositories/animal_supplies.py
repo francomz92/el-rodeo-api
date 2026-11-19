@@ -17,8 +17,7 @@ from src.finance.domain.value_objects.animal_supplies_value_objects import (
     AnimalSuppliesUpdateValueObject,
 )
 from src.finance.infrastructure.persistence.models import AnimalSupply, AnimalSupplyType
-
-from .mappers import build_animal_supply_with_type
+from src.finance.infrastructure.persistence.repositories.mappers import build_animal_supply_with_type
 
 
 class AnimalSuppliesRepository(IAnimalSuppliesRepository, TenantAwareRepository, AuditableRepositoryMixin):

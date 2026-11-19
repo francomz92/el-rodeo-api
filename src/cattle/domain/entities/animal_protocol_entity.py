@@ -3,9 +3,8 @@ from datetime import date, datetime, timezone
 from uuid import UUID
 
 from src.cattle.domain.constants.animal import AnimalStatus
+from src.cattle.domain.entities.animal_entity import AnimalEntity
 from src.common.domain.exceptions import BusinessValidationError
-
-from .animal_entity import AnimalEntity
 
 
 @dataclass

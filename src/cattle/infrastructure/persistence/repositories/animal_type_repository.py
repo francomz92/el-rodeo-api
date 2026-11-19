@@ -10,6 +10,7 @@ from src.cattle.domain.value_objects.animal_type_value_object import (
     AnimalTypeUpdateValueObject,
 )
 from src.cattle.infrastructure.persistence.models import AnimalType
+from src.cattle.infrastructure.persistence.repositories.mappers import build_animal_type
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -17,8 +18,6 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
-
-from .mappers import build_animal_type
 
 
 class AnimalTypeRepository(IAnimalTypesRepository, TenantAwareRepository, AuditableRepositoryMixin):

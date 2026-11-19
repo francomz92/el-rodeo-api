@@ -10,10 +10,13 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [lint]
-extend-select = ["I"]
+extend-select = ["I", "TID"]
 
 [lint.isort]
 force-wrap-aliases = true
 combine-as-imports = true
 order-by-type = true
 known-first-party = ["src"]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"

@@ -7,14 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.common.application.ports.uow import IUoW, IUoWFactory, RepositoryType
 from src.common.domain.events.base import DomainEvent
 from src.common.infrastructure.persistence.connections.db import AsyncSessionMaker
+from src.common.infrastructure.persistence.outbox_collector import OutboxCollector, serialize_event
+from src.common.infrastructure.persistence.repositories import repositories_list
 from src.common.infrastructure.persistence.repositories.audit_repository import (
     AuditRepository,
 )
-
-from .outbox_collector import OutboxCollector, serialize_event
-from .repositories import repositories_list
-from .repository_factory import RepositoryFactory
-from .tenant_context import TenantContext
+from src.common.infrastructure.persistence.repository_factory import RepositoryFactory
+from src.common.infrastructure.persistence.tenant_context import TenantContext
 
 
 def _serialize_event(event: DomainEvent) -> dict:

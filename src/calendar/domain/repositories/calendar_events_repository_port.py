@@ -1,17 +1,13 @@
 from abc import abstractmethod
 from uuid import UUID
 
-from src.common.domain.repository import IRepository
-
-from ..entities.calendar_event_entity import (
-    CalendarEventEntity,
-    CalendarEventRemindedEntity,
-)
-from ..value_objects.calendar_event_value_object import (
+from src.calendar.domain.entities.calendar_event_entity import CalendarEventEntity, CalendarEventRemindedEntity
+from src.calendar.domain.value_objects.calendar_event_value_object import (
     CalendarEventCreationValueObject,
     CalendarEventsListQueryParamsValueObject,
     CalendarEventUpdateValueObject,
 )
+from src.common.domain.repository import IRepository
 
 
 class ICalendarEventRepository(IRepository):

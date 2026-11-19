@@ -7,8 +7,7 @@ from fastapi import Depends
 from src.common.application.uses_cases.gdpr_cases.export_user_data_case import (
     GDPRExportUserDataCase,
 )
-
-from .uow import GetUnitOfWork
+from src.common.infrastructure.presentation.dependencies.uow import GetUnitOfWork
 
 
 def _get_gdpr_export_user_data_case(

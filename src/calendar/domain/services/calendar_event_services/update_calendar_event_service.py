@@ -1,10 +1,9 @@
 from uuid import UUID
 
+from src.calendar.domain.entities.calendar_event_entity import CalendarEventEntity
+from src.calendar.domain.repositories.calendar_events_repository_port import ICalendarEventRepository
+from src.calendar.domain.value_objects.calendar_event_value_object import CalendarEventUpdateValueObject
 from src.common.domain.exceptions import BusinessValidationError, ConflictError, NotFoundError
-
-from ...entities.calendar_event_entity import CalendarEventEntity
-from ...repositories.calendar_events_repository_port import ICalendarEventRepository
-from ...value_objects.calendar_event_value_object import CalendarEventUpdateValueObject
 
 
 class UpdateCalendarEventService:

@@ -13,20 +13,19 @@ from src.calendar.domain.value_objects.calendar_event_value_object import (
     CalendarEventsListQueryParamsValueObject,
     CalendarEventUpdateValueObject,
 )
-from src.common.domain.exceptions import NotPermissionError
-
-from ...adapters.http.input.calendar_event_schemas import (
+from src.calendar.infrastructure.adapters.http.input.calendar_event_schemas import (
     CalendarEventCreationSchema,
     CalendarEventsQueryParams,
     CalendarEventUpdateSchema,
 )
-from ...adapters.http.output.calendar_events_schemas import CalendarEventSchema
-from ..dependencies.calendar_events import (
+from src.calendar.infrastructure.adapters.http.output.calendar_events_schemas import CalendarEventSchema
+from src.calendar.infrastructure.presentation.dependencies.calendar_events import (
     GetDeleteCalendarEventCase,
     GetListCalendarEventsCase,
     GetRegisterCalendarEventCase,
     GetUpdateCalendarEventCase,
 )
+from src.common.domain.exceptions import NotPermissionError
 
 
 def _get_calendar_tenant_id(current_user: GetCurrentUser) -> UUID:

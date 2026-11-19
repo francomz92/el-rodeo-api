@@ -40,7 +40,7 @@ if __name__ == "__main__":
     LOOP = Loops.uvloop if parsed["prod"] else Loops.auto
 
     a = Server(
-        target="main:app",
+        target="src.main:app",
         address=HOST,
         port=PORT,
         interface=Interfaces.ASGI,

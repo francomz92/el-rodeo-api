@@ -1,4 +1,4 @@
-from ._payment_gateway_port import (
+from src.billing.domain.repositories._payment_gateway_port import (
     AuthorizedPaymentResult,
     AutoRecurringData,
     BackUrlsData,
@@ -8,9 +8,9 @@ from ._payment_gateway_port import (
     PreferenceResult,
     SubscriptionResult,
 )
-from ._payment_repository_port import IPaymentRepository
-from ._plan_repository_port import IPlanRepository
-from ._subscription_repository_port import ISubscriptionRepository
+from src.billing.domain.repositories._payment_repository_port import IPaymentRepository
+from src.billing.domain.repositories._plan_repository_port import IPlanRepository
+from src.billing.domain.repositories._subscription_repository_port import ISubscriptionRepository
 
 __all__ = [
     "AuthorizedPaymentResult",

@@ -1,9 +1,8 @@
 from abc import abstractmethod
 from uuid import UUID
 
+from src.calendar.domain.entities.calendar_user_projection import CalendarUserProjection
 from src.common.domain.repository import IRepository
-
-from ..entities.calendar_user_projection import CalendarUserProjection
 
 
 class ICalendarUserProjectionReader(IRepository):

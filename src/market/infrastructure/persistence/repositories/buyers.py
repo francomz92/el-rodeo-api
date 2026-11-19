@@ -18,8 +18,7 @@ from src.market.domain.value_objects.buyer_value_objects import (
     BuyerUpdateValueObject,
 )
 from src.market.infrastructure.persistence.models import Buyer
-
-from .mappers import build_buyer
+from src.market.infrastructure.persistence.repositories.mappers import build_buyer
 
 
 class BuyersRepository(IBuyersRepository, TenantAwareRepository, AuditableRepositoryMixin):

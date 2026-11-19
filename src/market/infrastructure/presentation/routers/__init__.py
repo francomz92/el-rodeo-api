@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from ._buyers import buyer_router as _buyer_router
-from ._sales import sale_router as _sale_router
+from src.market.infrastructure.presentation.routers._buyers import buyer_router as _buyer_router
+from src.market.infrastructure.presentation.routers._sales import sale_router as _sale_router
 
 market_routers = APIRouter()
 

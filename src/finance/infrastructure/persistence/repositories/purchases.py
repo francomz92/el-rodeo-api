@@ -17,8 +17,7 @@ from src.finance.domain.entities.purchases import PurchaseEntity
 from src.finance.domain.repositories.purchases import IPurchasesRepository
 from src.finance.domain.value_objects.purchase_value_objects import PurchaseCreateValueObject, PurchaseListQueryParamValueObject
 from src.finance.infrastructure.persistence.models import AnimalSupply, Purchase
-
-from .mappers import build_purchase_with_supply
+from src.finance.infrastructure.persistence.repositories.mappers import build_purchase_with_supply
 
 
 class PurchasesRepository(IPurchasesRepository, TenantAwareRepository, AuditableRepositoryMixin):

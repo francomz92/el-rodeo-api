@@ -11,6 +11,7 @@ from src.auth.domain.value_objects.user_value_object import (
     UserUpdateValueObject,
 )
 from src.auth.infrastructure.persistence.models import User
+from src.auth.infrastructure.persistence.repositories.mappers import build_user, json_safe
 from src.common.application.pagination.cursor import cursor_uuid, decode_cursor
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
@@ -19,8 +20,6 @@ from src.common.infrastructure.persistence.repositories._auditable_mixin import 
 from src.common.infrastructure.persistence.repositories.tenant_aware_repository import (
     TenantAwareRepository,
 )
-
-from .mappers import build_user, json_safe
 
 
 class UserRepository(IUserRepository, TenantAwareRepository, AuditableRepositoryMixin):

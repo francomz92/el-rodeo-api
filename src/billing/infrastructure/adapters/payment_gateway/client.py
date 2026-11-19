@@ -26,15 +26,14 @@ from src.billing.domain.repositories._payment_gateway_port import (
     PreferenceResult,
     SubscriptionResult,
 )
-from src.common.infrastructure.core import settings
-
-from .http import request as _request
-from .mappers import (
+from src.billing.infrastructure.adapters.payment_gateway.http import request as _request
+from src.billing.infrastructure.adapters.payment_gateway.mappers import (
     map_mp_status as _map_mp_status,
     map_mp_subscription_status as _map_mp_subscription_status,
     map_subscription_status_to_mp as _map_subscription_status_to_mp,
 )
-from .signature import validate_signature as _validate_signature
+from src.billing.infrastructure.adapters.payment_gateway.signature import validate_signature as _validate_signature
+from src.common.infrastructure.core import settings
 
 __all__ = ["MercadoPagoHttpClient"]
 

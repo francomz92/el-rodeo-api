@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
-from ._animal_supplies import animal_supplies_router as _animal_supplies_router
-from ._animal_supplies_params import supplies_params_router as _supplies_params_router
-from ._animal_supply_types import supply_type_router as _supply_type_router
-from ._purchases import purchase_router as _purchase_router
+from src.finance.infrastructure.presentation.routers._animal_supplies import animal_supplies_router as _animal_supplies_router
+from src.finance.infrastructure.presentation.routers._animal_supplies_params import supplies_params_router as _supplies_params_router
+from src.finance.infrastructure.presentation.routers._animal_supply_types import supply_type_router as _supply_type_router
+from src.finance.infrastructure.presentation.routers._purchases import purchase_router as _purchase_router
 
 finance_routers = APIRouter()
 

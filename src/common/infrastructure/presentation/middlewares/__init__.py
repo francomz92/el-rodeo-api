@@ -1,17 +1,16 @@
 from fastapi import FastAPI
 
 from src.common.infrastructure.core import settings
-
-from .body_size_limit import configure_body_size_limit
-from .compresion import configure_compression_body
+from src.common.infrastructure.presentation.middlewares.body_size_limit import configure_body_size_limit
+from src.common.infrastructure.presentation.middlewares.compresion import configure_compression_body
 
 # Observability middleware — only added when OBSERVABILITY_MIDDLEWARE_ENABLED=True
-from .correlation_id import configure_correlation_id_middleware
-from .cors import configure_cors
-from .rate_limiter import configure_rate_limiter
-from .request_logging import configure_request_logging_middleware
-from .security_headers import configure_security_headers
-from .trusted_host import configure_trusted_host
+from src.common.infrastructure.presentation.middlewares.correlation_id import configure_correlation_id_middleware
+from src.common.infrastructure.presentation.middlewares.cors import configure_cors
+from src.common.infrastructure.presentation.middlewares.rate_limiter import configure_rate_limiter
+from src.common.infrastructure.presentation.middlewares.request_logging import configure_request_logging_middleware
+from src.common.infrastructure.presentation.middlewares.security_headers import configure_security_headers
+from src.common.infrastructure.presentation.middlewares.trusted_host import configure_trusted_host
 
 
 def configure_middlewares(app: FastAPI):

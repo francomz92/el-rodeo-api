@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
-from ..constants.calendar_event import CalendarEventType
+from src.calendar.domain.constants.calendar_event import CalendarEventType
 
 
 @dataclass

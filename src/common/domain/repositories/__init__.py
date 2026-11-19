@@ -1,4 +1,4 @@
-from .webhook_subscription_repository_port import IWebhookSubscriptionRepository
+from src.common.domain.repositories.webhook_subscription_repository_port import IWebhookSubscriptionRepository
 
 __all__ = [
     "IWebhookSubscriptionRepository",

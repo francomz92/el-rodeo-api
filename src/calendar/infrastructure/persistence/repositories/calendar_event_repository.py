@@ -13,6 +13,8 @@ from src.calendar.domain.value_objects.calendar_event_value_object import (
     CalendarEventsListQueryParamsValueObject,
     CalendarEventUpdateValueObject,
 )
+from src.calendar.infrastructure.persistence.models import CalendarEvent, CalendarEventParticipant
+from src.calendar.infrastructure.persistence.repositories.mappers import build_calendar_event
 from src.common.domain.types import Sentinel
 from src.common.infrastructure.persistence.repositories._auditable_mixin import (
     AuditableRepositoryMixin,
@@ -21,9 +23,6 @@ from src.common.infrastructure.persistence.repositories.tenant_aware_repository 
     TenantAwareRepository,
 )
 from src.common.utils.date_utils import get_current_datetime
-
-from ..models import CalendarEvent, CalendarEventParticipant
-from .mappers import build_calendar_event
 
 
 class CalendarEventRepository(ICalendarEventRepository, TenantAwareRepository, AuditableRepositoryMixin):
